@@ -1,6 +1,6 @@
 @brebase.server_HostAddress = http://localhost:5025
 
-GET {{brebase.server_HostAddress}}/weatherforecast/
+GET {{brewbase.server_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
