@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace brewbase.server.Models;
 
-public partial class BrewdbContext : DbContext
+public partial class BrewDbContext : DbContext
 {
-    public BrewdbContext()
+    public BrewDbContext()
     {
     }
 
-    public BrewdbContext(DbContextOptions<BrewdbContext> options)
+    public BrewDbContext(DbContextOptions<BrewDbContext> options)
         : base(options)
     {
     }
