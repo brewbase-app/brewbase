@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -8,6 +10,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+    
+builder.Services.AddDbContext<BrewDbContext>(opt => {
+    var connectionString = builder.Configuration.GetConnectionString("ConnectionString");
+    opt.UseNpgsql(connectionString);
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
