@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "brebase.server", "brebase.server\brebase.server.csproj", "{ECD1640D-EC2F-4EDD-83B3-DCA2461DE54A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "brewbase.server", "brewbase.server\brewbase.server.csproj", "{ECD1640D-EC2F-4EDD-83B3-DCA2461DE54A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
