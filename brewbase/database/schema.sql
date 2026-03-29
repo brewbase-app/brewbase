@@ -1,7 +1,4 @@
--- WIP database schema generated from ERD
--- Schema reviewed and refined for consistency and correctness
--- Naming conventions unified and indexes added for all foreign keys
-
+-- database schema generated from ERD
 -- Last modification date: 2026-03-18 13:04:04.822
 
 -- =====================
