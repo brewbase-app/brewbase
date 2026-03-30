@@ -34,4 +34,31 @@ public class CoffeeController : ControllerBase
 
         return Ok(coffees);
     }
+    
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var coffee = await _context.Coffees
+            .Where(c => c.Id == id)
+            .Select(c => new
+            {
+                c.Id,
+                c.Name,
+                c.IsVerified,
+                Region = c.Region != null ? c.Region.Name : null,
+                Roastery = c.Roastery != null ? c.Roastery.Name : null,
+                ProcessingMethod = c.ProcessingMethod != null ? c.ProcessingMethod.Name : null,
+                Variety = c.Variety != null ? c.Variety.Name : null,
+                CreatedByUserId = c.CreatedByUserId
+            })
+            .FirstOrDefaultAsync();
+
+        if (coffee == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(coffee);
+    }
+    
 }
