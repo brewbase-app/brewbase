@@ -21,4 +21,18 @@ public class BrewingMethodsController : ControllerBase
         var brewingMethods = await _context.BrewingMethods.ToListAsync();
         return Ok(brewingMethods);
     }
+    
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var brewingMethod = await _context.BrewingMethods
+            .FirstOrDefaultAsync(b => b.Id == id);
+
+        if (brewingMethod == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(brewingMethod);
+    }
 }
