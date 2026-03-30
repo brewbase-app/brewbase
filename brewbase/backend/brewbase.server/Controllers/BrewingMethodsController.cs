@@ -26,7 +26,14 @@ public class BrewingMethodsController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var brewingMethod = await _context.BrewingMethods
-            .FirstOrDefaultAsync(b => b.Id == id);
+            .Where(b => b.Id == id)
+            .Select(b => new
+            {
+                b.Id,
+                b.Name,
+                b.Description
+            })
+            .FirstOrDefaultAsync();
 
         if (brewingMethod == null)
         {
