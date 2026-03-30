@@ -16,9 +16,21 @@ public class CoffeeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int? regionId, [FromQuery] int? roasteryId)
     {
-        var coffees = await _context.Coffees
+        var query = _context.Coffees.AsQueryable();
+
+        if (regionId.HasValue)
+        {
+            query = query.Where(c => c.RegionId == regionId.Value);
+        }
+
+        if (roasteryId.HasValue)
+        {
+            query = query.Where(c => c.RoasteryId == roasteryId.Value);
+        }
+
+        var coffees = await query
             .Select(c => new
             {
                 c.Id,
