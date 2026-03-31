@@ -16,7 +16,7 @@ public class CoffeeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? regionId, [FromQuery] int? roasteryId)
+    public async Task<IActionResult> GetAll([FromQuery] int? regionId, [FromQuery] int? roasteryId, [FromQuery] int? page, [FromQuery] int? pageSize)
     {
         var query = _context.Coffees.AsQueryable();
 
@@ -29,6 +29,14 @@ public class CoffeeController : ControllerBase
         {
             query = query.Where(c => c.RoasteryId == roasteryId.Value);
         }
+
+		query = query.OrderBy(c => c.Id);
+		
+		if (page.HasValue && pageSize.HasValue)
+    	{
+        	var skip = (page.Value - 1) * pageSize.Value;
+        	query = query.Skip(skip).Take(pageSize.Value);
+    	}
 
         var coffees = await query
             .Select(c => new
