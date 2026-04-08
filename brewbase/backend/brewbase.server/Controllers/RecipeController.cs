@@ -16,9 +16,18 @@ public class RecipeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize)
     {
-        var recipes = await _context.Recipes
+		var query = _context.Recipes
+        	.OrderBy(r => r.Id)
+        	.AsQueryable();
+
+   	 	if (page.HasValue && pageSize.HasValue)
+    	{
+        	var skip = (page.Value - 1) * pageSize.Value;
+        	query = query.Skip(skip).Take(pageSize.Value);
+    	}
+        var recipes = await query
             .Select(r => new
             {
                 r.Id,
