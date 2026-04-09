@@ -20,6 +20,7 @@ public class RecipeController : ControllerBase
         [FromQuery] int? coffeeId,
         [FromQuery] int? userId,
         [FromQuery] int? brewingMethodId,
+        [FromQuery] string? search,
         [FromQuery] int? page,
         [FromQuery] int? pageSize)
     {
@@ -40,6 +41,11 @@ public class RecipeController : ControllerBase
         if (brewingMethodId.HasValue)
         {
             query = query.Where(r => r.BrewingMethodId == brewingMethodId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(r => r.Title != null && EF.Functions.ILike(r.Title, $"%{search}%"));
         }
 
    	 	if (page.HasValue && pageSize.HasValue)

@@ -16,7 +16,7 @@ public class CoffeeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? regionId, [FromQuery] int? roasteryId, [FromQuery] int? page, [FromQuery] int? pageSize)
+    public async Task<IActionResult> GetAll([FromQuery] int? regionId, [FromQuery] int? roasteryId, [FromQuery] string? search, [FromQuery] int? page, [FromQuery] int? pageSize)
     {
         var query = _context.Coffees.AsQueryable();
 
@@ -28,6 +28,11 @@ public class CoffeeController : ControllerBase
         if (roasteryId.HasValue)
         {
             query = query.Where(c => c.RoasteryId == roasteryId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(c => c.Name != null && EF.Functions.ILike(c.Name, $"%{search}%"));
         }
 
 		query = query.OrderBy(c => c.Id);
