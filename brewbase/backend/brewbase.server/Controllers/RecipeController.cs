@@ -16,11 +16,31 @@ public class RecipeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? page, [FromQuery] int? pageSize)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int? coffeeId,
+        [FromQuery] int? userId,
+        [FromQuery] int? brewingMethodId,
+        [FromQuery] int? page,
+        [FromQuery] int? pageSize)
     {
 		var query = _context.Recipes
         	.OrderBy(r => r.Id)
         	.AsQueryable();
+
+        if (coffeeId.HasValue)
+        {
+            query = query.Where(r => r.CoffeeId == coffeeId.Value);
+        }
+
+        if (userId.HasValue)
+        {
+            query = query.Where(r => r.UserId == userId.Value);
+        }
+
+        if (brewingMethodId.HasValue)
+        {
+            query = query.Where(r => r.BrewingMethodId == brewingMethodId.Value);
+        }
 
    	 	if (page.HasValue && pageSize.HasValue)
     	{
