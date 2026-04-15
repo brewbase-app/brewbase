@@ -1,3 +1,4 @@
+using brewbase.server.Dtos;
 using brewbase.server.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -62,13 +63,13 @@ public class RecipeController : ControllerBase
         	query = query.Skip(skip).Take(pageSize.Value);
     	}
         var recipes = await query
-            .Select(r => new
+            .Select(r => new RecipeListResponseDto
             {
-                r.Id,
-                r.Title,
-                r.Parameters,
-                r.Steps,
-                r.IsPublic,
+                Id = r.Id,
+                Title = r.Title,
+                Parameters = r.Parameters,
+                Steps = r.Steps,
+                IsPublic = r.IsPublic,
                 UserId = r.UserId,
                 BrewingMethod = r.BrewingMethod != null ? r.BrewingMethod.Name : null,
                 Coffee = r.Coffee != null ? r.Coffee.Name : null
