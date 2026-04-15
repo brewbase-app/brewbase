@@ -21,11 +21,12 @@ public class RecipeController : ControllerBase
         [FromQuery] int? userId,
         [FromQuery] int? brewingMethodId,
         [FromQuery] string? search,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortOrder,
         [FromQuery] int? page,
         [FromQuery] int? pageSize)
     {
 		var query = _context.Recipes
-        	.OrderBy(r => r.Id)
         	.AsQueryable();
 
         if (coffeeId.HasValue)
@@ -47,6 +48,13 @@ public class RecipeController : ControllerBase
         {
             query = query.Where(r => r.Title != null && EF.Functions.ILike(r.Title, $"%{search}%"));
         }
+
+        var isDesc = string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+        var isTitleSort = string.Equals(sortBy, "title", StringComparison.OrdinalIgnoreCase);
+
+        query = isTitleSort
+            ? (isDesc ? query.OrderByDescending(r => r.Title) : query.OrderBy(r => r.Title))
+            : query.OrderBy(r => r.Id);
 
    	 	if (page.HasValue && pageSize.HasValue)
     	{
