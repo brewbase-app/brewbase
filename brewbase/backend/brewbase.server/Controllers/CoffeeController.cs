@@ -16,7 +16,14 @@ public class CoffeeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? regionId, [FromQuery] int? roasteryId, [FromQuery] string? search, [FromQuery] int? page, [FromQuery] int? pageSize)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int? regionId,
+        [FromQuery] int? roasteryId,
+        [FromQuery] string? search,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortOrder,
+        [FromQuery] int? page,
+        [FromQuery] int? pageSize)
     {
         var query = _context.Coffees.AsQueryable();
 
@@ -35,7 +42,12 @@ public class CoffeeController : ControllerBase
             query = query.Where(c => c.Name != null && EF.Functions.ILike(c.Name, $"%{search}%"));
         }
 
-		query = query.OrderBy(c => c.Id);
+        var isDesc = string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
+        var isNameSort = string.Equals(sortBy, "name", StringComparison.OrdinalIgnoreCase);
+
+        query = isNameSort
+            ? (isDesc ? query.OrderByDescending(c => c.Name) : query.OrderBy(c => c.Name))
+            : query.OrderBy(c => c.Id);
 		
 		if (page.HasValue && pageSize.HasValue)
     	{
