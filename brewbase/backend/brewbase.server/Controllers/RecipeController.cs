@@ -84,13 +84,13 @@ public class RecipeController : ControllerBase
     {
         var recipe = await _context.Recipes
             .Where(r => r.Id == id)
-            .Select(r => new
+            .Select(r => new RecipeDetailResponseDto
             {
-                r.Id,
-                r.Title,
-                r.Parameters,
-                r.Steps,
-                r.IsPublic,
+                Id = r.Id,
+                Title = r.Title,
+                Parameters = r.Parameters,
+                Steps = r.Steps,
+                IsPublic = r.IsPublic,
                 UserId = r.UserId,
                 BrewingMethod = r.BrewingMethod != null ? r.BrewingMethod.Name : null,
                 Coffee = r.Coffee != null ? r.Coffee.Name : null
