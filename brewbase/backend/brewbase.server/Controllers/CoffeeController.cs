@@ -1,3 +1,4 @@
+using brewbase.server.Dtos;
 using brewbase.server.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -56,11 +57,11 @@ public class CoffeeController : ControllerBase
     	}
 
         var coffees = await query
-            .Select(c => new
+            .Select(c => new CoffeeListResponseDto
             {
-                c.Id,
-                c.Name,
-                c.IsVerified,
+                Id = c.Id,
+                Name = c.Name,
+                IsVerified = c.IsVerified,
                 Region = c.Region != null ? c.Region.Name : null,
                 Roastery = c.Roastery != null ? c.Roastery.Name : null,
                 ProcessingMethod = c.ProcessingMethod != null ? c.ProcessingMethod.Name : null,
@@ -77,11 +78,11 @@ public class CoffeeController : ControllerBase
     {
         var coffee = await _context.Coffees
             .Where(c => c.Id == id)
-            .Select(c => new
+            .Select(c => new CoffeeDetailResponseDto
             {
-                c.Id,
-                c.Name,
-                c.IsVerified,
+                Id = c.Id,
+                Name = c.Name,
+                IsVerified = c.IsVerified,
                 Region = c.Region != null ? c.Region.Name : null,
                 Roastery = c.Roastery != null ? c.Roastery.Name : null,
                 ProcessingMethod = c.ProcessingMethod != null ? c.ProcessingMethod.Name : null,

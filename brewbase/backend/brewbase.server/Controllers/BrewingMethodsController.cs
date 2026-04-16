@@ -1,3 +1,4 @@
+using brewbase.server.Dtos;
 using brewbase.server.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +19,15 @@ public class BrewingMethodsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var brewingMethods = await _context.BrewingMethods.ToListAsync();
+        var brewingMethods = await _context.BrewingMethods
+            .Select(b => new BrewingMethodResponseDto
+            {
+                Id = b.Id,
+                Name = b.Name,
+                Description = b.Description
+            })
+            .ToListAsync();
+
         return Ok(brewingMethods);
     }
     
@@ -27,11 +36,11 @@ public class BrewingMethodsController : ControllerBase
     {
         var brewingMethod = await _context.BrewingMethods
             .Where(b => b.Id == id)
-            .Select(b => new
+            .Select(b => new BrewingMethodResponseDto
             {
-                b.Id,
-                b.Name,
-                b.Description
+                Id = b.Id,
+                Name = b.Name,
+                Description = b.Description
             })
             .FirstOrDefaultAsync();
 
