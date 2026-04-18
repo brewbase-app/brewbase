@@ -3,17 +3,15 @@ using System.Collections.Generic;
 
 namespace brewbase.server.Models;
 
-public partial class QuickNote
+public partial class UserRecipeFavorite
 {
-    public int Id { get; set; }
+    public int UserId { get; set; }
 
-    public string Content { get; set; } = null!;
+    public int RecipeId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
-    public DateTime UpdatedAt { get; set; }
-
-    public int UserId { get; set; }
+    public virtual Recipe Recipe { get; set; } = null!;
 
     public virtual AppUser User { get; set; } = null!;
 }
