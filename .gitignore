@@ -6,6 +6,7 @@
 
 .idea/
 .DS_Store
+**/.DS_Store
 
 # User-specific files
 *.rsuser
@@ -14,6 +15,7 @@
 *.userosscache
 *.sln.docstates
 *.env
+!.env.example
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -423,3 +425,4 @@ FodyWeavers.xsd
 
 # secrets
 appsettings.Development.json
+secrets.json
