@@ -1,5 +1,7 @@
 using brewbase.server.Models;
 using Microsoft.EntityFrameworkCore;
+using brewbase.server.Services;
+using brewbase.server.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +15,10 @@ builder.Services.AddDbContext<BrewDbContext>(opt =>
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     opt.UseNpgsql(connectionString);
 });
+
+builder.Services.AddScoped<ICoffeeReadService, CoffeeReadService>();
+builder.Services.AddScoped<IRecipeReadService, RecipeReadService>();
+builder.Services.AddScoped<IBrewingMethodReadService, BrewingMethodReadService>();
 
 var app = builder.Build();
 
