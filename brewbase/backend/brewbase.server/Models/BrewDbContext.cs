@@ -55,6 +55,8 @@ public partial class BrewDbContext : DbContext
 
     public virtual DbSet<UserRanking> UserRankings { get; set; }
 
+    public virtual DbSet<UserRecipeFavorite> UserRecipeFavorites { get; set; }
+
     public virtual DbSet<Variety> Varieties { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -610,6 +612,32 @@ public partial class BrewDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("ranking_user_user");
+        });
+
+        modelBuilder.Entity<UserRecipeFavorite>(entity =>
+        {
+            entity.HasKey(e => new { e.UserId, e.RecipeId }).HasName("user_recipe_favorite_pk");
+
+            entity.ToTable("user_recipe_favorite");
+
+            entity.HasIndex(e => e.RecipeId, "idx_user_recipe_favorite_recipe_id");
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+
+            entity.HasOne(d => d.Recipe).WithMany(p => p.UserRecipeFavorites)
+                .HasForeignKey(d => d.RecipeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("user_recipe_favorite_recipe");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserRecipeFavorites)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("user_recipe_favorite_user");
         });
 
         modelBuilder.Entity<Variety>(entity =>

@@ -32,4 +32,6 @@ public partial class Recipe
     public virtual ICollection<Recommendation> Recommendations { get; set; } = new List<Recommendation>();
 
     public virtual AppUser User { get; set; } = null!;
+
+    public virtual ICollection<UserRecipeFavorite> UserRecipeFavorites { get; set; } = new List<UserRecipeFavorite>();
 }
