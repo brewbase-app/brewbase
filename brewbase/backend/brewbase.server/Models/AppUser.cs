@@ -50,4 +50,6 @@ public partial class AppUser
     public virtual ICollection<UserPreference> UserPreferences { get; set; } = new List<UserPreference>();
 
     public virtual ICollection<UserRanking> UserRankings { get; set; } = new List<UserRanking>();
+
+    public virtual ICollection<UserRecipeFavorite> UserRecipeFavorites { get; set; } = new List<UserRecipeFavorite>();
 }

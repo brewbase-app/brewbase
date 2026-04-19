@@ -224,6 +224,14 @@ CREATE TABLE app_user (
                           CONSTRAINT app_user_pk PRIMARY KEY (id)
 );
 
+-- Table: user_recipe_favorite
+CREATE TABLE user_recipe_favorite (
+    user_id int NOT NULL,
+    recipe_id int NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT user_recipe_favorite_pk PRIMARY KEY (user_id, recipe_id)
+);
+
 -- foreign keys
 -- Reference: article_moderator_user (table: article)
 ALTER TABLE article ADD CONSTRAINT article_moderator_user
@@ -465,6 +473,22 @@ ALTER TABLE user_preference ADD CONSTRAINT user_preferences_user
             INITIALLY IMMEDIATE
 ;
 
+-- Reference: user_recipe_favorite_user (table: user_recipe_favorite)
+ALTER TABLE user_recipe_favorite ADD CONSTRAINT user_recipe_favorite_user
+    FOREIGN KEY (user_id)
+        REFERENCES app_user (id)
+        NOT DEFERRABLE
+            INITIALLY IMMEDIATE
+;
+
+-- Reference: user_recipe_favorite_recipe (table: user_recipe_favorite)
+ALTER TABLE user_recipe_favorite ADD CONSTRAINT user_recipe_favorite_recipe
+    FOREIGN KEY (recipe_id)
+        REFERENCES recipe (id)
+        NOT DEFERRABLE
+            INITIALLY IMMEDIATE
+;
+
 
 -- =====================
 -- CHECK Constraints
@@ -528,6 +552,9 @@ CREATE INDEX idx_user_preference_user_id ON user_preference(user_id);
 
 -- user_ranking
 CREATE INDEX idx_user_ranking_user_id ON user_ranking(user_id);
+
+-- user_recipe_favorite
+CREATE INDEX idx_user_recipe_favorite_recipe_id ON user_recipe_favorite(recipe_id);
 
 -- cupping_session
 CREATE INDEX idx_cupping_session_user_id ON cupping_session(user_id);
