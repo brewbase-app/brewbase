@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 namespace brewbase.server.Dtos;
 
 public class AuthRegisterRequestDto
