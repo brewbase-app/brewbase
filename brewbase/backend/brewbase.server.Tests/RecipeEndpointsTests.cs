@@ -73,6 +73,112 @@ public class RecipeEndpointsTests : IClassFixture<RecipeApiFactory>
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+    [Fact]
+    public async Task ShouldFilterRecipesByCoffeeId()
+    {
+        var response = await _client.GetAsync("/api/Recipe?coffeeId=1");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
+
+        Assert.Equal(2, recipes.GetArrayLength());
+        Assert.All(recipes.EnumerateArray(), recipe =>
+        {
+            Assert.Equal("Alpha Coffee", recipe.GetProperty("coffee").GetString());
+        });
+    }
+
+    [Fact]
+    public async Task ShouldFilterRecipesByUserId()
+    {
+        var response = await _client.GetAsync("/api/Recipe?userId=2");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
+
+        Assert.Single(recipes.EnumerateArray());
+        Assert.Equal("Zulu Recipe", recipes[0].GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task ShouldFilterRecipesByBrewingMethodId()
+    {
+        var response = await _client.GetAsync("/api/Recipe?brewingMethodId=2");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
+
+        Assert.Single(recipes.EnumerateArray());
+        Assert.Equal("Beta Recipe", recipes[0].GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task ShouldSearchRecipesByTitle()
+    {
+        var response = await _client.GetAsync("/api/Recipe?search=beta");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
+
+        Assert.Single(recipes.EnumerateArray());
+        Assert.Equal("Beta Recipe", recipes[0].GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task ShouldSortRecipesByTitleAscending()
+    {
+        var response = await _client.GetAsync("/api/Recipe?sortBy=title&sortOrder=asc");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
+
+        var titles = recipes.EnumerateArray()
+            .Select(r => r.GetProperty("title").GetString())
+            .ToList();
+
+        Assert.Equal(new List<string?> { "Alpha Recipe", "Beta Recipe", "Zulu Recipe" }, titles);
+    }
+
+    [Fact]
+    public async Task ShouldSortRecipesByTitleDescending()
+    {
+        var response = await _client.GetAsync("/api/Recipe?sortBy=title&sortOrder=desc");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
+
+        var titles = recipes.EnumerateArray()
+            .Select(r => r.GetProperty("title").GetString())
+            .ToList();
+
+        Assert.Equal(new List<string?> { "Zulu Recipe", "Beta Recipe", "Alpha Recipe" }, titles);
+    }
+
+    [Fact]
+    public async Task ShouldPaginateRecipes()
+    {
+        var response = await _client.GetAsync("/api/Recipe?page=2&pageSize=1");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
+
+        Assert.Single(recipes.EnumerateArray());
+        Assert.Equal("Beta Recipe", recipes[0].GetProperty("title").GetString());
+    }
 }
 
 public sealed class RecipeApiFactory : WebApplicationFactory<Program>
@@ -114,72 +220,123 @@ public sealed class RecipeApiFactory : WebApplicationFactory<Program>
     }
 
     private static void SeedRecipeData(BrewDbContext context)
+{
+    var user1 = new AppUser
     {
-        var user = new AppUser
-        {
-            Id = 1,
-            Login = "recipe.tester",
-            Email = "recipe.tester@brewbase.local",
-            PasswordHash = "test-hash",
-            Role = "User",
-            CreatedAt = DateTime.UtcNow
-        };
+        Id = 1,
+        Login = "recipe.tester.one",
+        Email = "recipe.tester.one@brewbase.local",
+        PasswordHash = "test-hash",
+        Role = "User",
+        CreatedAt = DateTime.UtcNow
+    };
 
-        var country = new Country
-        {
-            Id = 1,
-            Name = "Test Country"
-        };
+    var user2 = new AppUser
+    {
+        Id = 2,
+        Login = "recipe.tester.two",
+        Email = "recipe.tester.two@brewbase.local",
+        PasswordHash = "test-hash",
+        Role = "User",
+        CreatedAt = DateTime.UtcNow
+    };
 
-        var region = new Region
-        {
-            Id = 1,
-            Name = "Test Region",
-            CountryId = country.Id
-        };
+    var country = new Country
+    {
+        Id = 1,
+        Name = "Test Country"
+    };
 
-        var roastery = new Roastery
-        {
-            Id = 1,
-            Name = "Test Roastery"
-        };
+    var region = new Region
+    {
+        Id = 1,
+        Name = "Test Region",
+        CountryId = country.Id
+    };
 
-        var brewingMethod = new BrewingMethod
-        {
-            Id = 1,
-            Name = "V60",
-            Description = "Pour over"
-        };
+    var roastery = new Roastery
+    {
+        Id = 1,
+        Name = "Test Roastery"
+    };
 
-        var coffee = new Coffee
-        {
-            Id = 1,
-            Name = "Test Coffee",
-            IsVerified = true,
-            RegionId = region.Id,
-            RoasteryId = roastery.Id,
-            CreatedByUserId = user.Id
-        };
+    var brewingMethod1 = new BrewingMethod
+    {
+        Id = 1,
+        Name = "V60",
+        Description = "Pour over"
+    };
 
-        var recipe = new Recipe
-        {
-            Id = 1,
-            Title = "Test Recipe",
-            Parameters = "{\"coffee_grams\":20,\"water_ml\":300,\"temperature\":94}",
-            Steps = "1. Bloom\n2. Pour\n3. Finish",
-            IsPublic = true,
-            UserId = user.Id,
-            BrewingMethodId = brewingMethod.Id,
-            CoffeeId = coffee.Id
-        };
+    var brewingMethod2 = new BrewingMethod
+    {
+        Id = 2,
+        Name = "AeroPress",
+        Description = "Pressure brewing"
+    };
 
-        context.AppUsers.Add(user);
-        context.Countries.Add(country);
-        context.Regions.Add(region);
-        context.Roasteries.Add(roastery);
-        context.BrewingMethods.Add(brewingMethod);
-        context.Coffees.Add(coffee);
-        context.Recipes.Add(recipe);
-        context.SaveChanges();
-    }
+    var coffee1 = new Coffee
+    {
+        Id = 1,
+        Name = "Alpha Coffee",
+        IsVerified = true,
+        RegionId = region.Id,
+        RoasteryId = roastery.Id,
+        CreatedByUserId = user1.Id
+    };
+
+    var coffee2 = new Coffee
+    {
+        Id = 2,
+        Name = "Beta Coffee",
+        IsVerified = true,
+        RegionId = region.Id,
+        RoasteryId = roastery.Id,
+        CreatedByUserId = user1.Id
+    };
+
+    var recipe1 = new Recipe
+    {
+        Id = 1,
+        Title = "Alpha Recipe",
+        Parameters = "{\"coffee_grams\":20,\"water_ml\":300,\"temperature\":94}",
+        Steps = "1. Bloom\n2. Pour\n3. Finish",
+        IsPublic = true,
+        UserId = user1.Id,
+        BrewingMethodId = brewingMethod1.Id,
+        CoffeeId = coffee1.Id
+    };
+
+    var recipe2 = new Recipe
+    {
+        Id = 2,
+        Title = "Beta Recipe",
+        Parameters = "{\"coffee_grams\":18,\"water_ml\":250,\"temperature\":92}",
+        Steps = "1. Stir\n2. Press\n3. Serve",
+        IsPublic = true,
+        UserId = user1.Id,
+        BrewingMethodId = brewingMethod2.Id,
+        CoffeeId = coffee2.Id
+    };
+
+    var recipe3 = new Recipe
+    {
+        Id = 3,
+        Title = "Zulu Recipe",
+        Parameters = "{\"coffee_grams\":22,\"water_ml\":320,\"temperature\":95}",
+        Steps = "1. Rinse\n2. Pour\n3. Drawdown",
+        IsPublic = false,
+        UserId = user2.Id,
+        BrewingMethodId = brewingMethod1.Id,
+        CoffeeId = coffee1.Id
+    };
+
+    context.AppUsers.AddRange(user1, user2);
+    context.Countries.Add(country);
+    context.Regions.Add(region);
+    context.Roasteries.Add(roastery);
+    context.BrewingMethods.AddRange(brewingMethod1, brewingMethod2);
+    context.Coffees.AddRange(coffee1, coffee2);
+    context.Recipes.AddRange(recipe1, recipe2, recipe3);
+    context.SaveChanges();
+}
 }

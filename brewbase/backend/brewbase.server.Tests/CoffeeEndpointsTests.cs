@@ -72,7 +72,102 @@ public class CoffeeEndpointsTests : IClassFixture<CoffeeApiFactory>
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+    
+    [Fact]
+    public async Task ShouldFilterCoffeesByRegionId()
+    {
+        var response = await _client.GetAsync("/api/Coffee?regionId=1");
+        response.EnsureSuccessStatusCode();
 
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var coffees = document.RootElement;
+
+        Assert.Equal(2, coffees.GetArrayLength());
+        Assert.All(coffees.EnumerateArray(), coffee =>
+        {
+            Assert.Equal("North Region", coffee.GetProperty("region").GetString());
+        });
+    }
+
+    [Fact]
+    public async Task ShouldFilterCoffeesByRoasteryId()
+    {
+        var response = await _client.GetAsync("/api/Coffee?roasteryId=1");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var coffees = document.RootElement;
+
+        Assert.Equal(2, coffees.GetArrayLength());
+        Assert.All(coffees.EnumerateArray(), coffee =>
+        {
+            Assert.Equal("Roastery One", coffee.GetProperty("roastery").GetString());
+        });
+    }
+
+    [Fact]
+    public async Task ShouldSearchCoffeesByName()
+    {
+        var response = await _client.GetAsync("/api/Coffee?search=beta");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var coffees = document.RootElement;
+
+        Assert.Single(coffees.EnumerateArray());
+        Assert.Equal("Beta Coffee", coffees[0].GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public async Task ShouldSortCoffeesByNameAscending()
+    {
+        var response = await _client.GetAsync("/api/Coffee?sortBy=name&sortOrder=asc");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var coffees = document.RootElement;
+
+        var names = coffees.EnumerateArray()
+            .Select(c => c.GetProperty("name").GetString())
+            .ToList();
+
+        Assert.Equal(new List<string?> { "Alpha Coffee", "Beta Coffee", "Zulu Coffee" }, names);
+    }
+
+    [Fact]
+    public async Task ShouldSortCoffeesByNameDescending()
+    {
+        var response = await _client.GetAsync("/api/Coffee?sortBy=name&sortOrder=desc");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var coffees = document.RootElement;
+
+        var names = coffees.EnumerateArray()
+            .Select(c => c.GetProperty("name").GetString())
+            .ToList();
+
+        Assert.Equal(new List<string?> { "Zulu Coffee", "Beta Coffee", "Alpha Coffee" }, names);
+    }
+
+    [Fact]
+    public async Task ShouldPaginateCoffees()
+    {
+        var response = await _client.GetAsync("/api/Coffee?page=2&pageSize=1");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var coffees = document.RootElement;
+
+        Assert.Single(coffees.EnumerateArray());
+        Assert.Equal("Beta Coffee", coffees[0].GetProperty("name").GetString());
+    }
 }
 
 public sealed class CoffeeApiFactory : WebApplicationFactory<Program>
@@ -131,34 +226,68 @@ public sealed class CoffeeApiFactory : WebApplicationFactory<Program>
             Name = "Test Country"
         };
 
-        var region = new Region
+        var northRegion = new Region
         {
             Id = 1,
-            Name = "Test Region",
+            Name = "North Region",
             CountryId = country.Id
         };
 
-        var roastery = new Roastery
+        var southRegion = new Region
         {
-            Id = 1,
-            Name = "Test Roastery"
+            Id = 2,
+            Name = "South Region",
+            CountryId = country.Id
         };
 
-        var coffee = new Coffee
+        var roasteryOne = new Roastery
         {
             Id = 1,
-            Name = "Test Coffee",
+            Name = "Roastery One"
+        };
+
+        var roasteryTwo = new Roastery
+        {
+            Id = 2,
+            Name = "Roastery Two"
+        };
+
+        var coffee1 = new Coffee
+        {
+            Id = 1,
+            Name = "Alpha Coffee",
             IsVerified = true,
-            RegionId = region.Id,
-            RoasteryId = roastery.Id,
+            RegionId = northRegion.Id,
+            RoasteryId = roasteryOne.Id,
+            CreatedByUserId = user.Id
+        };
+
+        var coffee2 = new Coffee
+        {
+            Id = 2,
+            Name = "Beta Coffee",
+            IsVerified = true,
+            RegionId = northRegion.Id,
+            RoasteryId = roasteryTwo.Id,
+            CreatedByUserId = user.Id
+        };
+
+        var coffee3 = new Coffee
+        {
+            Id = 3,
+            Name = "Zulu Coffee",
+            IsVerified = false,
+            RegionId = southRegion.Id,
+            RoasteryId = roasteryOne.Id,
             CreatedByUserId = user.Id
         };
 
         context.AppUsers.Add(user);
         context.Countries.Add(country);
-        context.Regions.Add(region);
-        context.Roasteries.Add(roastery);
-        context.Coffees.Add(coffee);
+        context.Regions.AddRange(northRegion, southRegion);
+        context.Roasteries.AddRange(roasteryOne, roasteryTwo);
+        context.Coffees.AddRange(coffee1, coffee2, coffee3);
         context.SaveChanges();
     }
+    
 }
