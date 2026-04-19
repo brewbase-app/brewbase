@@ -1,5 +1,6 @@
 using Xunit;
 using System.Text.Json;
+using brewbase.server.Tests.Infrastructure;
 
 namespace brewbase.server.Tests;
 

@@ -1,5 +1,6 @@
 using brewbase.server.Dtos;
 using brewbase.server.Models;
+using brewbase.server.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,13 +8,15 @@ namespace brewbase.server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class RecipeController : ControllerBase
+public partial class RecipeController : ControllerBase
 {
     private readonly BrewDbContext _context;
+    private readonly ICurrentUserProvider _currentUserProvider;
 
-    public RecipeController(BrewDbContext context)
+    public RecipeController(BrewDbContext context, ICurrentUserProvider currentUserProvider)
     {
         _context = context;
+        _currentUserProvider = currentUserProvider;
     }
 
     [HttpGet]
