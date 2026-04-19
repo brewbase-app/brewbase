@@ -21,13 +21,23 @@ public class AuthController : ControllerBase
     {
         
         //Sprawdzenie czy user istnieje o takim loginie
-        var exists = await _context.AppUsers
+        var existsLogin = await _context.AppUsers
             .AnyAsync(login => login.Login == dto.Login);
         
         //Jeżeli taki user istnieje zwróć błąd
-        if (exists)
+        if (existsLogin)
         {
-            return BadRequest("User already exists");
+            return Conflict("User with this login already exists");
+        }
+		
+		//Sprawdzenie czy email już nie istnieje
+		var existsEmail = await _context.AppUsers
+            .AnyAsync(email => email.Email == dto.Email);
+
+		//Jeżeli taki email istnieje zwróć błąd
+        if (existsLogin)
+        {
+             return Conflict("User with this email already exists");
         }
 
         var createUser = new AppUser
