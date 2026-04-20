@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit;
 using brewbase.server.Tests.Infrastructure;
+using Microsoft.AspNetCore.Hosting;
 
 namespace brewbase.server.Tests;
 
