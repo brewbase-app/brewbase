@@ -4,8 +4,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "brewbase.server.Tests", "br
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "brewbase.server", "brewbase.server\brewbase.server.csproj", "{AA090B3C-0D92-455C-AC63-09337D710137}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Frontend", "..\Frontend\Frontend.csproj", "{FB33D584-1E8F-41A4-B8F7-104A0537C28C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,18 +38,6 @@ Global
 		{AA090B3C-0D92-455C-AC63-09337D710137}.Release|x64.Build.0 = Release|Any CPU
 		{AA090B3C-0D92-455C-AC63-09337D710137}.Release|x86.ActiveCfg = Release|Any CPU
 		{AA090B3C-0D92-455C-AC63-09337D710137}.Release|x86.Build.0 = Release|Any CPU
-		{FB33D584-1E8F-41A4-B8F7-104A0537C28C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FB33D584-1E8F-41A4-B8F7-104A0537C28C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FB33D584-1E8F-41A4-B8F7-104A0537C28C}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{FB33D584-1E8F-41A4-B8F7-104A0537C28C}.Debug|x64.Build.0 = Debug|Any CPU
-		{FB33D584-1E8F-41A4-B8F7-104A0537C28C}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{FB33D584-1E8F-41A4-B8F7-104A0537C28C}.Debug|x86.Build.0 = Debug|Any CPU
-		{FB33D584-1E8F-41A4-B8F7-104A0537C28C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FB33D584-1E8F-41A4-B8F7-104A0537C28C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FB33D584-1E8F-41A4-B8F7-104A0537C28C}.Release|x64.ActiveCfg = Release|Any CPU
-		{FB33D584-1E8F-41A4-B8F7-104A0537C28C}.Release|x64.Build.0 = Release|Any CPU
-		{FB33D584-1E8F-41A4-B8F7-104A0537C28C}.Release|x86.ActiveCfg = Release|Any CPU
-		{FB33D584-1E8F-41A4-B8F7-104A0537C28C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
