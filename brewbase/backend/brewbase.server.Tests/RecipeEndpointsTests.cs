@@ -212,4 +212,90 @@ public class RecipeEndpointsTests : IClassFixture<CoffeeApiFactory>
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task ShouldDeleteRecipeSuccessfully()
+    {
+        var createPayload = new
+        {
+            title = "To delete",
+            parameters = new { },
+            steps = "Steps",
+            isPublic = false,
+            coffeeId = 1,
+            brewingMethodId = 1
+        };
+
+        var createResponse = await _client.PostAsJsonAsync("/api/Recipe", createPayload);
+        createResponse.EnsureSuccessStatusCode();
+        using var createDoc = JsonDocument.Parse(await createResponse.Content.ReadAsStringAsync());
+        var recipeId = createDoc.RootElement.GetProperty("id").GetInt32();
+
+        var deleteResponse = await _client.DeleteAsync($"/api/Recipe/{recipeId}");
+
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        var getResponse = await _client.GetAsync($"/api/Recipe/{recipeId}");
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldReturnUnauthorizedWhenDeletingWithoutUser()
+    {
+        await using var factory = new CoffeeApiFactory().WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Production");
+        });
+
+        var client = factory.CreateClient();
+        var response = await client.DeleteAsync("/api/Recipe/1");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldReturnForbiddenWhenDeletingNotOwnedRecipe()
+    {
+        await using var factory = new CoffeeApiFactory().WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureAppConfiguration((_, config) =>
+            {
+                config.AddInMemoryCollection(
+                    new Dictionary<string, string?> { ["DevUser:UserId"] = "0" });
+            });
+        });
+
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add(CurrentUserProvider.DevUserIdHeaderName, "1");
+
+        var createPayload = new
+        {
+            title = "Owned by user 1 for delete",
+            parameters = new { },
+            steps = "Steps",
+            isPublic = true,
+            coffeeId = 1,
+            brewingMethodId = 1
+        };
+
+        var createResponse = await client.PostAsJsonAsync("/api/Recipe", createPayload);
+        createResponse.EnsureSuccessStatusCode();
+        using var createDoc = JsonDocument.Parse(await createResponse.Content.ReadAsStringAsync());
+        var recipeId = createDoc.RootElement.GetProperty("id").GetInt32();
+
+        client.DefaultRequestHeaders.Remove(CurrentUserProvider.DevUserIdHeaderName);
+        client.DefaultRequestHeaders.Add(CurrentUserProvider.DevUserIdHeaderName, "2");
+
+        var response = await client.DeleteAsync($"/api/Recipe/{recipeId}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldReturnNotFoundWhenDeletingNonExistingRecipe()
+    {
+        var response = await _client.DeleteAsync("/api/Recipe/999999");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }
