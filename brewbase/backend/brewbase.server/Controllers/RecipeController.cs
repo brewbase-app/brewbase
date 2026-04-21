@@ -15,6 +15,8 @@ public partial class RecipeController : ControllerBase
     public RecipeController(IRecipeReadService recipeReadService)
     {
         _recipeReadService = recipeReadService;
+    }
+
     private readonly BrewDbContext _context;
     private readonly ICurrentUserProvider _currentUserProvider;
 
