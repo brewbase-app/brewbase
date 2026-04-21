@@ -1,7 +1,5 @@
-using brewbase.server.Dtos;
-using brewbase.server.Models;
+using brewbase.server.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace brewbase.server.Controllers;
 
@@ -9,40 +7,24 @@ namespace brewbase.server.Controllers;
 [Route("api/[controller]")]
 public class BrewingMethodsController : ControllerBase
 {
-    private readonly BrewDbContext _context;
+    private readonly IBrewingMethodReadService _brewingMethodReadService;
 
-    public BrewingMethodsController(BrewDbContext context)
+    public BrewingMethodsController(IBrewingMethodReadService brewingMethodReadService)
     {
-        _context = context;
+        _brewingMethodReadService = brewingMethodReadService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var brewingMethods = await _context.BrewingMethods
-            .Select(b => new BrewingMethodResponseDto
-            {
-                Id = b.Id,
-                Name = b.Name,
-                Description = b.Description
-            })
-            .ToListAsync();
-
+        var brewingMethods = await _brewingMethodReadService.GetAllAsync();
         return Ok(brewingMethods);
     }
     
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var brewingMethod = await _context.BrewingMethods
-            .Where(b => b.Id == id)
-            .Select(b => new BrewingMethodResponseDto
-            {
-                Id = b.Id,
-                Name = b.Name,
-                Description = b.Description
-            })
-            .FirstOrDefaultAsync();
+        var brewingMethod = await _brewingMethodReadService.GetByIdAsync(id);
 
         if (brewingMethod == null)
         {

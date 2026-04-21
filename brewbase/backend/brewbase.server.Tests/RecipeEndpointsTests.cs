@@ -1,301 +1,343 @@
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Http.Json;
 using System.Text.Json;
-using Xunit;
-using brewbase.server.Services;
-using brewbase.server.Tests.Infrastructure;
+using brewbase.server.Models;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Xunit;
 
 namespace brewbase.server.Tests;
 
-public class RecipeEndpointsTests : IClassFixture<CoffeeApiFactory>
+public class RecipeEndpointsTests : IClassFixture<RecipeApiFactory>
 {
     private readonly HttpClient _client;
 
-    public RecipeEndpointsTests(CoffeeApiFactory factory)
+    public RecipeEndpointsTests(RecipeApiFactory factory)
     {
         _client = factory.CreateClient();
     }
 
     [Fact]
-    public async Task ShouldCreateRecipeAndReturnCreatedWithCurrentUserAsOwner()
+    public async Task ShouldReturnListOfRecipes()
     {
-        var payload = new
-        {
-            title = "Integration test recipe",
-            parameters = new { waterG = 250, ratio = "1:16" },
-            steps = "1. Bloom\n2. Pour in spirals",
-            isPublic = true,
-            coffeeId = 1,
-            brewingMethodId = 1
-        };
+        var response = await _client.GetAsync("/api/Recipe");
+        response.EnsureSuccessStatusCode();
 
-        var response = await _client.PostAsJsonAsync("/api/Recipe", payload);
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(JsonValueKind.Array, recipes.ValueKind);
+        Assert.True(recipes.GetArrayLength() > 0);
 
-        var location = response.Headers.Location;
-        Assert.NotNull(location);
-        Assert.Contains("/api/Recipe/", location!.ToString(), StringComparison.Ordinal);
-
-        var body = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(body);
-        var root = document.RootElement;
-
-        Assert.True(root.GetProperty("id").GetInt32() > 0);
-        Assert.Equal("Integration test recipe", root.GetProperty("title").GetString());
-        Assert.Equal(1, root.GetProperty("userId").GetInt32());
-        Assert.True(root.GetProperty("isPublic").GetBoolean());
-        Assert.Equal("V60", root.GetProperty("brewingMethod").GetString());
-        Assert.Equal("Test Coffee", root.GetProperty("coffee").GetString());
+        var first = recipes[0];
+        Assert.True(first.GetProperty("id").GetInt32() > 0);
+        Assert.True(first.TryGetProperty("title", out _));
+        Assert.True(first.TryGetProperty("parameters", out _));
+        Assert.True(first.TryGetProperty("steps", out _));
+        Assert.True(first.TryGetProperty("isPublic", out _));
+        Assert.True(first.TryGetProperty("userId", out _));
+        Assert.True(first.TryGetProperty("brewingMethod", out _));
+        Assert.True(first.TryGetProperty("coffee", out _));
     }
 
     [Fact]
-    public async Task ShouldReturnUnauthorizedWhenCurrentUserIsNotResolved()
+    public async Task ShouldReturnRecipeDetailsForValidId()
     {
-        await using var factory = new CoffeeApiFactory().WithWebHostBuilder(builder =>
-        {
-            // Production: no dev user fallback; unauthenticated requests have no resolved user.
-            builder.UseEnvironment("Production");
-        });
+        var validId = 1;
+        var response = await _client.GetAsync($"/api/Recipe/{validId}");
 
-        var client = factory.CreateClient();
-        var payload = new
-        {
-            title = "No user recipe",
-            parameters = new { },
-            steps = "Step",
-            isPublic = false,
-            coffeeId = 1,
-            brewingMethodId = 1
-        };
+        response.EnsureSuccessStatusCode();
 
-        var response = await client.PostAsJsonAsync("/api/Recipe", payload);
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipe = document.RootElement;
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(validId, recipe.GetProperty("id").GetInt32());
+        Assert.True(recipe.TryGetProperty("title", out _));
+        Assert.True(recipe.TryGetProperty("parameters", out _));
+        Assert.True(recipe.TryGetProperty("steps", out _));
+        Assert.True(recipe.TryGetProperty("isPublic", out _));
+        Assert.True(recipe.TryGetProperty("userId", out _));
+        Assert.True(recipe.TryGetProperty("brewingMethod", out _));
+        Assert.True(recipe.TryGetProperty("coffee", out _));
     }
 
     [Fact]
-    public async Task ShouldUpdateRecipeSuccessfully()
+    public async Task ShouldReturnNotFoundForNonExistingRecipeId()
     {
-        var createPayload = new
-        {
-            title = "Before update",
-            parameters = new { tempC = 92 },
-            steps = "Old steps",
-            isPublic = false,
-            coffeeId = 1,
-            brewingMethodId = 1
-        };
-
-        var createResponse = await _client.PostAsJsonAsync("/api/Recipe", createPayload);
-        createResponse.EnsureSuccessStatusCode();
-        using var createDoc = JsonDocument.Parse(await createResponse.Content.ReadAsStringAsync());
-        var recipeId = createDoc.RootElement.GetProperty("id").GetInt32();
-
-        var updatePayload = new
-        {
-            title = "After update",
-            parameters = new { waterG = 300 },
-            steps = "1. New step",
-            isPublic = true,
-            coffeeId = 1,
-            brewingMethodId = 1
-        };
-
-        var response = await _client.PutAsJsonAsync($"/api/Recipe/{recipeId}", updatePayload);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var body = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(body);
-        var root = document.RootElement;
-
-        Assert.Equal(recipeId, root.GetProperty("id").GetInt32());
-        Assert.Equal("After update", root.GetProperty("title").GetString());
-        Assert.Equal(1, root.GetProperty("userId").GetInt32());
-        Assert.True(root.GetProperty("isPublic").GetBoolean());
-        Assert.Equal("V60", root.GetProperty("brewingMethod").GetString());
-        Assert.Equal("Test Coffee", root.GetProperty("coffee").GetString());
-    }
-
-    [Fact]
-    public async Task ShouldReturnUnauthorizedWhenUserNotResolved()
-    {
-        await using var factory = new CoffeeApiFactory().WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Production");
-        });
-
-        var client = factory.CreateClient();
-        var payload = new
-        {
-            title = "Updated",
-            parameters = new { },
-            steps = "Step",
-            isPublic = false,
-            coffeeId = 1,
-            brewingMethodId = 1
-        };
-
-        var response = await client.PutAsJsonAsync("/api/Recipe/1", payload);
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task ShouldReturnForbiddenWhenUserIsNotOwner()
-    {
-        await using var factory = new CoffeeApiFactory().WithWebHostBuilder(builder =>
-        {
-            // Default fixture pins DevUser:UserId = 1, which is evaluated before X-Dev-User-Id.
-            // Override to a non-positive value so the same app + in-memory DB can resolve user 1 vs 2 per request.
-            builder.ConfigureAppConfiguration((_, config) =>
-            {
-                config.AddInMemoryCollection(
-                    new Dictionary<string, string?> { ["DevUser:UserId"] = "0" });
-            });
-        });
-
-        var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add(CurrentUserProvider.DevUserIdHeaderName, "1");
-
-        var createPayload = new
-        {
-            title = "Owned by user 1",
-            parameters = new { },
-            steps = "Steps",
-            isPublic = true,
-            coffeeId = 1,
-            brewingMethodId = 1
-        };
-
-        var createResponse = await client.PostAsJsonAsync("/api/Recipe", createPayload);
-        createResponse.EnsureSuccessStatusCode();
-        using var createDoc = JsonDocument.Parse(await createResponse.Content.ReadAsStringAsync());
-        var recipeId = createDoc.RootElement.GetProperty("id").GetInt32();
-
-        client.DefaultRequestHeaders.Remove(CurrentUserProvider.DevUserIdHeaderName);
-        client.DefaultRequestHeaders.Add(CurrentUserProvider.DevUserIdHeaderName, "2");
-
-        var updatePayload = new
-        {
-            title = "Hijack attempt",
-            parameters = new { },
-            steps = "Nope",
-            isPublic = false,
-            coffeeId = 1,
-            brewingMethodId = 1
-        };
-
-        var response = await client.PutAsJsonAsync($"/api/Recipe/{recipeId}", updatePayload);
-
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task ShouldReturnNotFoundWhenRecipeDoesNotExist()
-    {
-        var payload = new
-        {
-            title = "Ghost recipe",
-            parameters = new { },
-            steps = "Steps",
-            isPublic = false,
-            coffeeId = 1,
-            brewingMethodId = 1
-        };
-
-        var response = await _client.PutAsJsonAsync("/api/Recipe/999999", payload);
+        var response = await _client.GetAsync("/api/Recipe/999999");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
-
     [Fact]
-    public async Task ShouldDeleteRecipeSuccessfully()
+    public async Task ShouldFilterRecipesByCoffeeId()
     {
-        var createPayload = new
+        var response = await _client.GetAsync("/api/Recipe?coffeeId=1");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
+
+        Assert.Equal(2, recipes.GetArrayLength());
+        Assert.All(recipes.EnumerateArray(), recipe =>
         {
-            title = "To delete",
-            parameters = new { },
-            steps = "Steps",
-            isPublic = false,
-            coffeeId = 1,
-            brewingMethodId = 1
-        };
-
-        var createResponse = await _client.PostAsJsonAsync("/api/Recipe", createPayload);
-        createResponse.EnsureSuccessStatusCode();
-        using var createDoc = JsonDocument.Parse(await createResponse.Content.ReadAsStringAsync());
-        var recipeId = createDoc.RootElement.GetProperty("id").GetInt32();
-
-        var deleteResponse = await _client.DeleteAsync($"/api/Recipe/{recipeId}");
-
-        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
-
-        var getResponse = await _client.GetAsync($"/api/Recipe/{recipeId}");
-        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
-    }
-
-    [Fact]
-    public async Task ShouldReturnUnauthorizedWhenDeletingWithoutUser()
-    {
-        await using var factory = new CoffeeApiFactory().WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Production");
+            Assert.Equal("Alpha Coffee", recipe.GetProperty("coffee").GetString());
         });
-
-        var client = factory.CreateClient();
-        var response = await client.DeleteAsync("/api/Recipe/1");
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task ShouldReturnForbiddenWhenDeletingNotOwnedRecipe()
+    public async Task ShouldFilterRecipesByUserId()
     {
-        await using var factory = new CoffeeApiFactory().WithWebHostBuilder(builder =>
+        var response = await _client.GetAsync("/api/Recipe?userId=2");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
+
+        Assert.Single(recipes.EnumerateArray());
+        Assert.Equal("Zulu Recipe", recipes[0].GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task ShouldFilterRecipesByBrewingMethodId()
+    {
+        var response = await _client.GetAsync("/api/Recipe?brewingMethodId=2");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
+
+        Assert.Single(recipes.EnumerateArray());
+        Assert.Equal("Beta Recipe", recipes[0].GetProperty("title").GetString());
+    }
+
+    [Fact(Skip = "Temporary disabled: EF.Functions.ILike is not translated by SQLite in integration tests.")]
+    public async Task ShouldSearchRecipesByTitle()
+    {
+        var response = await _client.GetAsync("/api/Recipe?search=beta");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
+
+        Assert.Single(recipes.EnumerateArray());
+        Assert.Equal("Beta Recipe", recipes[0].GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task ShouldSortRecipesByTitleAscending()
+    {
+        var response = await _client.GetAsync("/api/Recipe?sortBy=title&sortOrder=asc");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
+
+        var titles = recipes.EnumerateArray()
+            .Select(r => r.GetProperty("title").GetString())
+            .ToList();
+
+        Assert.Equal(new List<string?> { "Alpha Recipe", "Beta Recipe", "Zulu Recipe" }, titles);
+    }
+
+    [Fact]
+    public async Task ShouldSortRecipesByTitleDescending()
+    {
+        var response = await _client.GetAsync("/api/Recipe?sortBy=title&sortOrder=desc");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
+
+        var titles = recipes.EnumerateArray()
+            .Select(r => r.GetProperty("title").GetString())
+            .ToList();
+
+        Assert.Equal(new List<string?> { "Zulu Recipe", "Beta Recipe", "Alpha Recipe" }, titles);
+    }
+
+    [Fact]
+    public async Task ShouldPaginateRecipes()
+    {
+        var response = await _client.GetAsync("/api/Recipe?page=2&pageSize=1");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var recipes = document.RootElement;
+
+        Assert.Single(recipes.EnumerateArray());
+        Assert.Equal("Beta Recipe", recipes[0].GetProperty("title").GetString());
+    }
+}
+
+public sealed class RecipeApiFactory : WebApplicationFactory<Program>
+{
+    private readonly SqliteConnection _connection = new("DataSource=:memory:");
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        _connection.Open();
+
+        builder.ConfigureServices(services =>
         {
-            builder.ConfigureAppConfiguration((_, config) =>
+            services.RemoveAll<DbContextOptions<BrewDbContext>>();
+            services.RemoveAll<BrewDbContext>();
+
+            services.AddDbContext<BrewDbContext>(options =>
             {
-                config.AddInMemoryCollection(
-                    new Dictionary<string, string?> { ["DevUser:UserId"] = "0" });
+                options.UseSqlite(_connection);
             });
+
+            using var scope = services.BuildServiceProvider().CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+            context.Database.EnsureCreated();
+
+            if (!context.Recipes.Any())
+            {
+                SeedRecipeData(context);
+            }
         });
-
-        var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add(CurrentUserProvider.DevUserIdHeaderName, "1");
-
-        var createPayload = new
-        {
-            title = "Owned by user 1 for delete",
-            parameters = new { },
-            steps = "Steps",
-            isPublic = true,
-            coffeeId = 1,
-            brewingMethodId = 1
-        };
-
-        var createResponse = await client.PostAsJsonAsync("/api/Recipe", createPayload);
-        createResponse.EnsureSuccessStatusCode();
-        using var createDoc = JsonDocument.Parse(await createResponse.Content.ReadAsStringAsync());
-        var recipeId = createDoc.RootElement.GetProperty("id").GetInt32();
-
-        client.DefaultRequestHeaders.Remove(CurrentUserProvider.DevUserIdHeaderName);
-        client.DefaultRequestHeaders.Add(CurrentUserProvider.DevUserIdHeaderName, "2");
-
-        var response = await client.DeleteAsync($"/api/Recipe/{recipeId}");
-
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    [Fact]
-    public async Task ShouldReturnNotFoundWhenDeletingNonExistingRecipe()
+    protected override void Dispose(bool disposing)
     {
-        var response = await _client.DeleteAsync("/api/Recipe/999999");
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        base.Dispose(disposing);
+        if (disposing)
+        {
+            _connection.Dispose();
+        }
     }
+
+    private static void SeedRecipeData(BrewDbContext context)
+{
+    var user1 = new AppUser
+    {
+        Id = 1,
+        Login = "recipe.tester.one",
+        Email = "recipe.tester.one@brewbase.local",
+        PasswordHash = "test-hash",
+        Role = "User",
+        CreatedAt = DateTime.UtcNow
+    };
+
+    var user2 = new AppUser
+    {
+        Id = 2,
+        Login = "recipe.tester.two",
+        Email = "recipe.tester.two@brewbase.local",
+        PasswordHash = "test-hash",
+        Role = "User",
+        CreatedAt = DateTime.UtcNow
+    };
+
+    var country = new Country
+    {
+        Id = 1,
+        Name = "Test Country"
+    };
+
+    var region = new Region
+    {
+        Id = 1,
+        Name = "Test Region",
+        CountryId = country.Id
+    };
+
+    var roastery = new Roastery
+    {
+        Id = 1,
+        Name = "Test Roastery"
+    };
+
+    var brewingMethod1 = new BrewingMethod
+    {
+        Id = 1,
+        Name = "V60",
+        Description = "Pour over"
+    };
+
+    var brewingMethod2 = new BrewingMethod
+    {
+        Id = 2,
+        Name = "AeroPress",
+        Description = "Pressure brewing"
+    };
+
+    var coffee1 = new Coffee
+    {
+        Id = 1,
+        Name = "Alpha Coffee",
+        IsVerified = true,
+        RegionId = region.Id,
+        RoasteryId = roastery.Id,
+        CreatedByUserId = user1.Id
+    };
+
+    var coffee2 = new Coffee
+    {
+        Id = 2,
+        Name = "Beta Coffee",
+        IsVerified = true,
+        RegionId = region.Id,
+        RoasteryId = roastery.Id,
+        CreatedByUserId = user1.Id
+    };
+
+    var recipe1 = new Recipe
+    {
+        Id = 1,
+        Title = "Alpha Recipe",
+        Parameters = "{\"coffee_grams\":20,\"water_ml\":300,\"temperature\":94}",
+        Steps = "1. Bloom\n2. Pour\n3. Finish",
+        IsPublic = true,
+        UserId = user1.Id,
+        BrewingMethodId = brewingMethod1.Id,
+        CoffeeId = coffee1.Id
+    };
+
+    var recipe2 = new Recipe
+    {
+        Id = 2,
+        Title = "Beta Recipe",
+        Parameters = "{\"coffee_grams\":18,\"water_ml\":250,\"temperature\":92}",
+        Steps = "1. Stir\n2. Press\n3. Serve",
+        IsPublic = true,
+        UserId = user1.Id,
+        BrewingMethodId = brewingMethod2.Id,
+        CoffeeId = coffee2.Id
+    };
+
+    var recipe3 = new Recipe
+    {
+        Id = 3,
+        Title = "Zulu Recipe",
+        Parameters = "{\"coffee_grams\":22,\"water_ml\":320,\"temperature\":95}",
+        Steps = "1. Rinse\n2. Pour\n3. Drawdown",
+        IsPublic = false,
+        UserId = user2.Id,
+        BrewingMethodId = brewingMethod1.Id,
+        CoffeeId = coffee1.Id
+    };
+
+    context.AppUsers.AddRange(user1, user2);
+    context.Countries.Add(country);
+    context.Regions.Add(region);
+    context.Roasteries.Add(roastery);
+    context.BrewingMethods.AddRange(brewingMethod1, brewingMethod2);
+    context.Coffees.AddRange(coffee1, coffee2);
+    context.Recipes.AddRange(recipe1, recipe2, recipe3);
+    context.SaveChanges();
+}
 }

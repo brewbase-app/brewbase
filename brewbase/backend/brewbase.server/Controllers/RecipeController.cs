@@ -1,8 +1,8 @@
+using brewbase.server.Services.Interfaces;
 using brewbase.server.Dtos;
 using brewbase.server.Models;
 using brewbase.server.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace brewbase.server.Controllers;
 
@@ -10,11 +10,16 @@ namespace brewbase.server.Controllers;
 [Route("api/[controller]")]
 public partial class RecipeController : ControllerBase
 {
+    private readonly IRecipeReadService _recipeReadService;
     private readonly BrewDbContext _context;
     private readonly ICurrentUserProvider _currentUserProvider;
 
-    public RecipeController(BrewDbContext context, ICurrentUserProvider currentUserProvider)
+    public RecipeController(
+        IRecipeReadService recipeReadService,
+        BrewDbContext context,
+        ICurrentUserProvider currentUserProvider)
     {
+        _recipeReadService = recipeReadService;
         _context = context;
         _currentUserProvider = currentUserProvider;
     }
@@ -30,54 +35,15 @@ public partial class RecipeController : ControllerBase
         [FromQuery] int? page,
         [FromQuery] int? pageSize)
     {
-		var query = _context.Recipes
-        	.AsQueryable();
-
-        if (coffeeId.HasValue)
-        {
-            query = query.Where(r => r.CoffeeId == coffeeId.Value);
-        }
-
-        if (userId.HasValue)
-        {
-            query = query.Where(r => r.UserId == userId.Value);
-        }
-
-        if (brewingMethodId.HasValue)
-        {
-            query = query.Where(r => r.BrewingMethodId == brewingMethodId.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            query = query.Where(r => r.Title != null && EF.Functions.ILike(r.Title, $"%{search}%"));
-        }
-
-        var isDesc = string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
-        var isTitleSort = string.Equals(sortBy, "title", StringComparison.OrdinalIgnoreCase);
-
-        query = isTitleSort
-            ? (isDesc ? query.OrderByDescending(r => r.Title) : query.OrderBy(r => r.Title))
-            : query.OrderBy(r => r.Id);
-
-   	 	if (page.HasValue && pageSize.HasValue)
-    	{
-        	var skip = (page.Value - 1) * pageSize.Value;
-        	query = query.Skip(skip).Take(pageSize.Value);
-    	}
-        var recipes = await query
-            .Select(r => new RecipeListResponseDto
-            {
-                Id = r.Id,
-                Title = r.Title,
-                Parameters = r.Parameters,
-                Steps = r.Steps,
-                IsPublic = r.IsPublic,
-                UserId = r.UserId,
-                BrewingMethod = r.BrewingMethod != null ? r.BrewingMethod.Name : null,
-                Coffee = r.Coffee != null ? r.Coffee.Name : null
-            })
-            .ToListAsync();
+        var recipes = await _recipeReadService.GetAllAsync(
+            coffeeId,
+            userId,
+            brewingMethodId,
+            search,
+            sortBy,
+            sortOrder,
+            page,
+            pageSize);
 
         return Ok(recipes);
     }
@@ -85,20 +51,7 @@ public partial class RecipeController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var recipe = await _context.Recipes
-            .Where(r => r.Id == id)
-            .Select(r => new RecipeDetailResponseDto
-            {
-                Id = r.Id,
-                Title = r.Title,
-                Parameters = r.Parameters,
-                Steps = r.Steps,
-                IsPublic = r.IsPublic,
-                UserId = r.UserId,
-                BrewingMethod = r.BrewingMethod != null ? r.BrewingMethod.Name : null,
-                Coffee = r.Coffee != null ? r.Coffee.Name : null
-            })
-            .FirstOrDefaultAsync();
+        var recipe = await _recipeReadService.GetByIdAsync(id);
 
         if (recipe == null)
         {
