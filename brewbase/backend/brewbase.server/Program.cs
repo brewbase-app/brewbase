@@ -1,5 +1,7 @@
+using brewbase.server.Authentication;
 using brewbase.server.Models;
 using brewbase.server.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using brewbase.server.Services;
 using brewbase.server.Services.Interfaces;
@@ -8,6 +10,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = "ApiPassthrough";
+        options.DefaultForbidScheme = "ApiPassthrough";
+        options.DefaultChallengeScheme = "ApiPassthrough";
+    })
+    .AddScheme<AuthenticationSchemeOptions, ApiPassthroughAuthHandler>("ApiPassthrough", _ => { });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -34,6 +43,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
