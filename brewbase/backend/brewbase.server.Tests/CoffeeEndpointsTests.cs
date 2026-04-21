@@ -1,13 +1,7 @@
 using System.Net;
 using Xunit;
 using System.Text.Json;
-using brewbase.server.Models;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+using brewbase.server.Tests.Infrastructure;
 
 namespace brewbase.server.Tests;
 
