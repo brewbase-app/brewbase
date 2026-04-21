@@ -11,17 +11,15 @@ namespace brewbase.server.Controllers;
 public partial class RecipeController : ControllerBase
 {
     private readonly IRecipeReadService _recipeReadService;
-
-    public RecipeController(IRecipeReadService recipeReadService)
-    {
-        _recipeReadService = recipeReadService;
-    }
-
     private readonly BrewDbContext _context;
     private readonly ICurrentUserProvider _currentUserProvider;
 
-    public RecipeController(BrewDbContext context, ICurrentUserProvider currentUserProvider)
+    public RecipeController(
+        IRecipeReadService recipeReadService,
+        BrewDbContext context,
+        ICurrentUserProvider currentUserProvider)
     {
+        _recipeReadService = recipeReadService;
         _context = context;
         _currentUserProvider = currentUserProvider;
     }
