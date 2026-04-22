@@ -44,7 +44,7 @@ public class AuthController : ControllerBase
         {
             Email = dto.Email,
             Login = dto.Login,
-            PasswordHash = dto.Password,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
             Role = "User",
             ActivityPoints = 0,
             CreatedAt = DateTime.Now,
@@ -69,7 +69,7 @@ public class AuthController : ControllerBase
         var user = await _context.AppUsers.FirstOrDefaultAsync(u => u.Login == dto.Login);
 
         //Jeżeli użytkownik nie istnieje lub hasło jest nie poprawnie to błąd
-        if (user == null || user.PasswordHash != dto.Password)
+        if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
         {
             return Unauthorized("Invalid login or password");
         }
