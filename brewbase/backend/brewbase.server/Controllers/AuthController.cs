@@ -35,7 +35,7 @@ public class AuthController : ControllerBase
             .AnyAsync(email => email.Email == dto.Email);
 
 		//Jeżeli taki email istnieje zwróć błąd
-        if (existsLogin)
+        if (existsEmail)
         {
              return Conflict("User with this email already exists");
         }
@@ -60,5 +60,20 @@ public class AuthController : ControllerBase
             Id = createUser.Id,
             Login = createUser.Login
         });
+    }
+
+
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] AuthLoginRequestDto dto)
+    {
+        var user = await _context.AppUsers.FirstOrDefaultAsync(u => u.Login == dto.Login);
+
+        //Jeżeli użytkownik nie istnieje lub hasło jest nie poprawnie to błąd
+        if (user == null || user.PasswordHash != dto.Password)
+        {
+            return Unauthorized("Invalid login or password");
+        }
+
+        return Ok("Login successful");
     }
 }
