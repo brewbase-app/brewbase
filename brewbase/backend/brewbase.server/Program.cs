@@ -3,7 +3,6 @@ using brewbase.server.Models;
 using brewbase.server.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
-using brewbase.server.Services;
 using brewbase.server.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
