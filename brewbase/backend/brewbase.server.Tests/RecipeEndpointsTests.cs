@@ -77,13 +77,13 @@ public class RecipeEndpointsTests : IClassFixture<RecipeApiFactory>
     [Fact]
     public async Task ShouldFilterRecipesByCoffeeId()
     {
+        // Arrange & Act
         var response = await _client.GetAsync("/api/Recipe?coffeeId=1");
         response.EnsureSuccessStatusCode();
+        var recipes = await ParseResponseRootAsync(response);
 
-        var payload = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(payload);
-        var recipes = document.RootElement;
-
+        // Assert
+        Assert.Equal(JsonValueKind.Array, recipes.ValueKind);
         Assert.Equal(2, recipes.GetArrayLength());
         Assert.All(recipes.EnumerateArray(), recipe =>
         {
@@ -94,13 +94,13 @@ public class RecipeEndpointsTests : IClassFixture<RecipeApiFactory>
     [Fact]
     public async Task ShouldFilterRecipesByUserId()
     {
+        // Arrange & Act
         var response = await _client.GetAsync("/api/Recipe?userId=2");
         response.EnsureSuccessStatusCode();
+        var recipes = await ParseResponseRootAsync(response);
 
-        var payload = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(payload);
-        var recipes = document.RootElement;
-
+        // Assert
+        Assert.Equal(JsonValueKind.Array, recipes.ValueKind);
         Assert.Single(recipes.EnumerateArray());
         Assert.Equal("Zulu Recipe", recipes[0].GetProperty("title").GetString());
     }
@@ -108,13 +108,13 @@ public class RecipeEndpointsTests : IClassFixture<RecipeApiFactory>
     [Fact]
     public async Task ShouldFilterRecipesByBrewingMethodId()
     {
+        // Arrange & Act
         var response = await _client.GetAsync("/api/Recipe?brewingMethodId=2");
         response.EnsureSuccessStatusCode();
+        var recipes = await ParseResponseRootAsync(response);
 
-        var payload = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(payload);
-        var recipes = document.RootElement;
-
+        // Assert
+        Assert.Equal(JsonValueKind.Array, recipes.ValueKind);
         Assert.Single(recipes.EnumerateArray());
         Assert.Equal("Beta Recipe", recipes[0].GetProperty("title").GetString());
     }
@@ -170,15 +170,35 @@ public class RecipeEndpointsTests : IClassFixture<RecipeApiFactory>
     [Fact]
     public async Task ShouldPaginateRecipes()
     {
+        // Arrange & Act
         var response = await _client.GetAsync("/api/Recipe?page=2&pageSize=1");
         response.EnsureSuccessStatusCode();
+        var recipes = await ParseResponseRootAsync(response);
 
-        var payload = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(payload);
-        var recipes = document.RootElement;
-
+        // Assert
+        Assert.Equal(JsonValueKind.Array, recipes.ValueKind);
         Assert.Single(recipes.EnumerateArray());
         Assert.Equal("Beta Recipe", recipes[0].GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task ShouldHandleInvalidPaginationValuesSafely()
+    {
+        // Arrange & Act
+        var response = await _client.GetAsync("/api/Recipe?page=-1&pageSize=-5");
+        response.EnsureSuccessStatusCode();
+        var recipes = await ParseResponseRootAsync(response);
+
+        // Assert
+        Assert.Equal(JsonValueKind.Array, recipes.ValueKind);
+        Assert.True(recipes.GetArrayLength() > 0);
+    }
+
+    private static async Task<JsonElement> ParseResponseRootAsync(HttpResponseMessage response)
+    {
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        return document.RootElement.Clone();
     }
 }
 

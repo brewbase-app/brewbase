@@ -24,7 +24,9 @@ public class RecipeReadService : IRecipeReadService
         int? page,
         int? pageSize)
     {
-        var query = _context.Recipes.AsQueryable();
+        var query = _context.Recipes
+            .AsNoTracking()
+            .AsQueryable();
 
         if (coffeeId.HasValue)
         {
@@ -53,11 +55,11 @@ public class RecipeReadService : IRecipeReadService
             ? (isDesc ? query.OrderByDescending(r => r.Title) : query.OrderBy(r => r.Title))
             : query.OrderBy(r => r.Id);
 
-        if (page.HasValue && pageSize.HasValue)
-        {
-            var skip = (page.Value - 1) * pageSize.Value;
-            query = query.Skip(skip).Take(pageSize.Value);
-        }
+        var safePage = Math.Max(page ?? 1, 1);
+        var safePageSize = Math.Clamp(pageSize ?? 10, 1, 100);
+
+        var skip = (safePage - 1) * safePageSize;
+        query = query.Skip(skip).Take(safePageSize);
 
         return await query
             .Select(r => new RecipeListResponseDto
@@ -77,6 +79,7 @@ public class RecipeReadService : IRecipeReadService
     public async Task<RecipeDetailResponseDto?> GetByIdAsync(int id)
     {
         return await _context.Recipes
+            .AsNoTracking()
             .Where(r => r.Id == id)
             .Select(r => new RecipeDetailResponseDto
             {
