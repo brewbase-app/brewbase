@@ -9,11 +9,13 @@ public partial class CuppingSession
 
     public string Name { get; set; } = null!;
 
-    public string Notes { get; set; } = null!;
+    public string? Description { get; set; }
+    
+    public DateTime CreatedAt { get; set; }
 
     public int UserId { get; set; }
 
-    public virtual ICollection<Coffee> Coffees { get; set; } = new List<Coffee>();
+    public virtual ICollection<CuppingSessionCoffee> CuppingSessionCoffees { get; set; } = new List<CuppingSessionCoffee>();
 
     public virtual AppUser User { get; set; } = null!;
 }

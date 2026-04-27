@@ -45,10 +45,10 @@ INSERT INTO app_user (
 INSERT INTO coffee (
     id, name, roastery_id, region_id,
     variety_id, processing_method_id,
-    created_by_user_id, is_verified, cupping_session_id
+    created_by_user_id, is_verified
 ) VALUES
-      (1, 'Etiopia Guji Natural', 1, 1, 1, 2, 1, true, NULL),
-      (2, 'Kolumbia Huila Washed', 2, 3, 3, 1, 1, true, NULL);
+      (1, 'Etiopia Guji Natural', 1, 1, 1, 2, 1, true),
+      (2, 'Kolumbia Huila Washed', 2, 3, 3, 1, 1, true);
 
 -- RECIPE (FIXED COLUMN NAME)
 INSERT INTO recipe (
