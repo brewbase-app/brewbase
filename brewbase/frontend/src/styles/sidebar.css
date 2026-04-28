@@ -1,0 +1,65 @@
+.sidebar {
+    width: 40px;
+    height: 100vh;
+    background: #0f0f0f;
+    color: white;
+    padding: 24px 12px;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease;
+    overflow: hidden;
+}
+
+.sidebar:hover {
+    width: 220px;
+}
+
+.logo {
+    font-weight: 600;
+    font-size: 18px;
+    margin-bottom: 40px;
+    white-space: nowrap;
+}
+.logo-full {
+    display: none;
+}
+.menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    color: #bbb;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.menu-item svg {
+    min-width: 24px;
+}
+
+.menu-item:hover {
+    color: white;
+}
+
+/*  znika gdy sidebar zwinięty */
+.menu-text {
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+/* pojawia się przy hover */
+.sidebar:hover .menu-text {
+    opacity: 1;
+}
+.sidebar:hover .logo-full {
+    display: inline;
+}
+
+.sidebar:hover .logo-short {
+    display: none;
+}
