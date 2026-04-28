@@ -31,6 +31,7 @@ builder.Services.AddDbContext<BrewDbContext>(opt =>
 builder.Services.AddScoped<ICoffeeReadService, CoffeeReadService>();
 builder.Services.AddScoped<IRecipeReadService, RecipeReadService>();
 builder.Services.AddScoped<IBrewingMethodReadService, BrewingMethodReadService>();
+builder.Services.AddScoped<ITastingSessionWriteService, TastingSessionWriteService>();
 
 var app = builder.Build();
 
