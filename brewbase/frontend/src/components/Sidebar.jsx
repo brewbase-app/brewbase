@@ -1,3 +1,4 @@
+import { NavLink } from "react-router-dom";
 import "../styles/sidebar.css";
 import {
     Home,
@@ -29,9 +30,11 @@ function Sidebar() {
                     <span className="menu-text">Profil</span>
                 </li>
 
-                <li className="menu-item">
-                    <BookOpen size={20} />
-                    <span className="menu-text">Receptury</span>
+                <li>
+                    <NavLink to="/recipes" className="menu-item">
+                        <BookOpen size={20} />
+                        <span className="menu-text">Receptury</span>
+                    </NavLink>
                 </li>
 
                 <li className="menu-item">

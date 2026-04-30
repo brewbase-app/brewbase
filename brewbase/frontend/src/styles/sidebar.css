@@ -45,6 +45,10 @@
 .menu-item:hover {
     color: white;
 }
+.menu-item.active {
+    background-color: #2f2f2f;
+    border-radius: 10px;
+}
 
 /*  znika gdy sidebar zwinięty */
 .menu-text {
