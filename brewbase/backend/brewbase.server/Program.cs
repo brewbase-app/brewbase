@@ -32,6 +32,7 @@ builder.Services.AddScoped<ICoffeeReadService, CoffeeReadService>();
 builder.Services.AddScoped<IRecipeReadService, RecipeReadService>();
 builder.Services.AddScoped<IBrewingMethodReadService, BrewingMethodReadService>();
 builder.Services.AddScoped<ITastingSessionWriteService, TastingSessionWriteService>();
+builder.Services.AddScoped<ITastingSessionReadService, TastingSessionReadService>();
 
 var app = builder.Build();
 

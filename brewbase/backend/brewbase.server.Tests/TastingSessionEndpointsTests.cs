@@ -69,4 +69,83 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+	
+	[Fact]
+	public async Task ShouldReturnUserTastingSessions()
+	{
+    	var firstSessionName = $"User session 1 {Guid.NewGuid()}";
+    	var secondSessionName = $"User session 2 {Guid.NewGuid()}";
+
+    	using var scope = _factory.Services.CreateScope();
+    	var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+    	context.CuppingSessions.AddRange(
+        	new CuppingSession
+        	{
+            	Name = firstSessionName,
+            	Description = "First session description",
+            	CreatedAt = DateTime.Now,
+            	UserId = 1
+        	},
+        	new CuppingSession
+        	{
+            	Name = secondSessionName,
+            	Description = "Second session description",
+            	CreatedAt = DateTime.Now,
+            	UserId = 1
+        	}
+    	);
+
+    	await context.SaveChangesAsync();
+
+   		var response = await _client.GetAsync("/api/TastingSessions");
+
+    	Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+    	var payload = await response.Content.ReadAsStringAsync();
+
+    	Assert.Contains(firstSessionName, payload);
+    	Assert.Contains(secondSessionName, payload);
+	}
+
+	[Fact]
+	public async Task ShouldReturnTastingSessionDetailsById()
+	{
+    	var sessionName = $"Details session {Guid.NewGuid()}";
+
+    	using var scope = _factory.Services.CreateScope();
+    	var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+    	var session = new CuppingSession
+    	{
+        	Name = sessionName,
+        	Description = "Session details description",
+        	CreatedAt = DateTime.Now,
+        	UserId = 1
+    	};
+
+    	context.CuppingSessions.Add(session);
+    	await context.SaveChangesAsync();
+
+    	var response = await _client.GetAsync($"/api/TastingSessions/{session.Id}");
+
+    	Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+    	var payload = await response.Content.ReadAsStringAsync();
+    	using var document = JsonDocument.Parse(payload);
+    	var root = document.RootElement;
+
+    	Assert.Equal(session.Id, root.GetProperty("id").GetInt32());
+    	Assert.Equal(sessionName, root.GetProperty("name").GetString());
+    	Assert.Equal("Session details description", root.GetProperty("description").GetString());
+    	Assert.True(root.TryGetProperty("createdAt", out _));
+	}
+
+	[Fact]
+	public async Task ShouldReturnNotFoundWhenTastingSessionDoesNotExist()
+	{
+    	var response = await _client.GetAsync("/api/TastingSessions/999999");
+
+    	Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+	}
 }
