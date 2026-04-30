@@ -9,11 +9,15 @@ namespace brewbase.server.Controllers;
 public class TastingSessionsController : ControllerBase
 {
     private readonly ITastingSessionWriteService _tastingSessionWriteService;
+	private readonly ITastingSessionReadService _tastingSessionReadService;
 
-    public TastingSessionsController(ITastingSessionWriteService tastingSessionWriteService)
-    {
-        _tastingSessionWriteService = tastingSessionWriteService;
-    }
+    public TastingSessionsController(
+    	ITastingSessionWriteService tastingSessionWriteService,
+    	ITastingSessionReadService tastingSessionReadService)
+	{
+    	_tastingSessionWriteService = tastingSessionWriteService;
+    	_tastingSessionReadService = tastingSessionReadService;
+	}
 
     [HttpPost]
     [ProducesResponseType(typeof(TastingSessionResponseDto), StatusCodes.Status201Created)]
@@ -35,5 +39,36 @@ public class TastingSessionsController : ControllerBase
         }
 
         return Created($"/api/TastingSessions/{tastingSession.Id}", tastingSession);
+    }
+	
+	[HttpGet]
+    [ProducesResponseType(typeof(List<TastingSessionListItemResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetAll()
+    {
+        var tastingSessions = await _tastingSessionReadService.GetUserSessionsAsync();
+
+        if (tastingSessions is null)
+        {
+            return Unauthorized();
+        }
+
+        return Ok(tastingSessions);
+    }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(TastingSessionDetailsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var tastingSession = await _tastingSessionReadService.GetSessionDetailsAsync(id);
+
+        if (tastingSession is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(tastingSession);
     }
 }
