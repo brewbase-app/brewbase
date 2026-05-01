@@ -20,9 +20,9 @@ public class AuthService : IAuthService
     {
         var claims = new[]
         {
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim("login", user.Login),
-            new Claim("role", user.Role),
-            new Claim("uid", user.Id.ToString())
+            new Claim("role", user.Role)
         };
 
         var keyString = _config["Jwt:Key"];

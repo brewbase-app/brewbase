@@ -6,6 +6,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
 
 namespace brewbase.server.Tests.Infrastructure;
 
@@ -51,6 +56,41 @@ public sealed class CoffeeApiFactory : WebApplicationFactory<Program>
             }
         });
     }
+    
+    public HttpClient CreateAuthenticatedClient(int userId = 1)
+    {
+        var client = CreateClient();
+
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new Claim("user_id", userId.ToString()),
+            new Claim("login", "coffee.tester"),
+            new Claim(ClaimTypes.Role, "User"),
+            new Claim("role", "User"),
+            new Claim("uid", userId.ToString())
+        };
+
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes("TEST_SECRET_KEY_12345678901234567890"));
+
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: "test",
+            audience: "test",
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(1),
+            signingCredentials: credentials);
+
+        var tokenValue = new JwtSecurityTokenHandler().WriteToken(token);
+
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", tokenValue);
+
+        return client;
+    }
 
     protected override void Dispose(bool disposing)
     {
@@ -79,17 +119,30 @@ public sealed class CoffeeApiFactory : WebApplicationFactory<Program>
             Name = "Test Country"
         };
 
-        var region = new Region
+        var northRegion = new Region
         {
             Id = 1,
-            Name = "Test Region",
+            Name = "North Region",
             CountryId = country.Id
         };
 
-        var roastery = new Roastery
+        var southRegion = new Region
+        {
+            Id = 2,
+            Name = "South Region",
+            CountryId = country.Id
+        };
+
+        var roasteryOne = new Roastery
         {
             Id = 1,
-            Name = "Test Roastery"
+            Name = "Roastery One"
+        };
+
+        var roasteryTwo = new Roastery
+        {
+            Id = 2,
+            Name = "Roastery Two"
         };
 
         var brewingMethod = new BrewingMethod
@@ -99,22 +152,42 @@ public sealed class CoffeeApiFactory : WebApplicationFactory<Program>
             Description = "Pour-over brewing method for tests."
         };
 
-        var coffee = new Coffee
+        var coffee1 = new Coffee
         {
             Id = 1,
-            Name = "Test Coffee",
+            Name = "Alpha Coffee",
             IsVerified = true,
-            RegionId = region.Id,
-            RoasteryId = roastery.Id,
+            RegionId = northRegion.Id,
+            RoasteryId = roasteryOne.Id,
+            CreatedByUserId = user.Id
+        };
+
+        var coffee2 = new Coffee
+        {
+            Id = 2,
+            Name = "Beta Coffee",
+            IsVerified = true,
+            RegionId = northRegion.Id,
+            RoasteryId = roasteryTwo.Id,
+            CreatedByUserId = user.Id
+        };
+
+        var coffee3 = new Coffee
+        {
+            Id = 3,
+            Name = "Zulu Coffee",
+            IsVerified = false,
+            RegionId = southRegion.Id,
+            RoasteryId = roasteryOne.Id,
             CreatedByUserId = user.Id
         };
 
         context.AppUsers.Add(user);
         context.Countries.Add(country);
-        context.Regions.Add(region);
-        context.Roasteries.Add(roastery);
+        context.Regions.AddRange(northRegion, southRegion);
+        context.Roasteries.AddRange(roasteryOne, roasteryTwo);
         context.BrewingMethods.Add(brewingMethod);
-        context.Coffees.Add(coffee);
+        context.Coffees.AddRange(coffee1, coffee2, coffee3);
         context.SaveChanges();
     }
 }
