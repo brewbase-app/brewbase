@@ -51,7 +51,7 @@ public class AuthController : ControllerBase
             Email = dto.Email,
             Login = dto.Login,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-            Role = "Admin",
+            Role = "User",
             ActivityPoints = 0,
             CreatedAt = DateTime.Now,
             IsBlocked = false,

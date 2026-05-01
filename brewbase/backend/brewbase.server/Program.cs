@@ -28,7 +28,12 @@ builder.Services.AddControllers();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]);
+        var keyString = builder.Configuration["Jwt:Key"];
+
+        if (string.IsNullOrEmpty(keyString))
+            throw new InvalidOperationException("JWT Key is not configured");
+
+        var key = Encoding.UTF8.GetBytes(keyString);
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
