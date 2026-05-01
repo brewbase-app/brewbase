@@ -8,20 +8,15 @@ namespace brewbase.server.Services;
 public class TastingSessionReadService : ITastingSessionReadService
 {
     private readonly BrewDbContext _context;
-    private readonly IConfiguration _configuration;
 
-    public TastingSessionReadService(BrewDbContext context, IConfiguration configuration)
+    public TastingSessionReadService(BrewDbContext context)
     {
         _context = context;
-        _configuration = configuration;
     }
 
-    public async Task<List<TastingSessionListItemResponseDto>> GetUserSessionsAsync()
+    public async Task<List<TastingSessionListItemResponseDto>> GetUserSessionsAsync(int userId)
     {
-        var userId = GetCurrentUserId();
-
         return await _context.CuppingSessions
-            .AsNoTracking()
             .Where(session => session.UserId == userId)
             .OrderByDescending(session => session.CreatedAt)
             .Select(session => new TastingSessionListItemResponseDto
@@ -35,12 +30,9 @@ public class TastingSessionReadService : ITastingSessionReadService
             .ToListAsync();
     }
 
-    public async Task<TastingSessionDetailsResponseDto?> GetSessionDetailsAsync(int id)
+    public async Task<TastingSessionDetailsResponseDto?> GetSessionDetailsAsync(int id, int userId)
     {
-        var userId = GetCurrentUserId();
-
         return await _context.CuppingSessions
-            .AsNoTracking()
             .Where(session => session.Id == id && session.UserId == userId)
             .Select(session => new TastingSessionDetailsResponseDto
             {
@@ -49,7 +41,6 @@ public class TastingSessionReadService : ITastingSessionReadService
                 Description = session.Description,
                 CreatedAt = session.CreatedAt,
                 Coffees = session.CuppingSessionCoffees
-                    .OrderBy(sessionCoffee => sessionCoffee.Id)
                     .Select(sessionCoffee => new TastingSessionCoffeeResponseDto
                     {
                         CoffeeId = sessionCoffee.CoffeeId,
@@ -59,10 +50,5 @@ public class TastingSessionReadService : ITastingSessionReadService
                     .ToList()
             })
             .SingleOrDefaultAsync();
-    }
-
-    private int GetCurrentUserId()
-    {
-        return _configuration.GetValue<int>("DevUser:UserId");
     }
 }

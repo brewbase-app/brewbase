@@ -1,6 +1,7 @@
 using brewbase.server.Dtos;
 using brewbase.server.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using brewbase.server.Services;
 
 namespace brewbase.server.Controllers;
 
@@ -10,13 +11,17 @@ public class TastingSessionsController : ControllerBase
 {
     private readonly ITastingSessionWriteService _tastingSessionWriteService;
 	private readonly ITastingSessionReadService _tastingSessionReadService;
+	private readonly ICurrentUserProvider _currentUserProvider;
 
     public TastingSessionsController(
     	ITastingSessionWriteService tastingSessionWriteService,
-    	ITastingSessionReadService tastingSessionReadService)
+    	ITastingSessionReadService tastingSessionReadService,
+    	ICurrentUserProvider currentUserProvider)
+
 	{
     	_tastingSessionWriteService = tastingSessionWriteService;
     	_tastingSessionReadService = tastingSessionReadService;
+    	_currentUserProvider = currentUserProvider;
 	}
 
     [HttpPost]
@@ -25,12 +30,6 @@ public class TastingSessionsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Create([FromBody] CreateTastingSessionRequestDto request)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            ModelState.AddModelError(nameof(request.Name), "Name is required.");
-            return ValidationProblem(ModelState);
-        }
-
         var tastingSession = await _tastingSessionWriteService.CreateAsync(request);
 
         if (tastingSession is null)
@@ -42,33 +41,42 @@ public class TastingSessionsController : ControllerBase
     }
 	
 	[HttpGet]
-    [ProducesResponseType(typeof(List<TastingSessionListItemResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetAll()
-    {
-        var tastingSessions = await _tastingSessionReadService.GetUserSessionsAsync();
+	[ProducesResponseType(typeof(List<TastingSessionListItemResponseDto>), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	public async Task<IActionResult> GetAll()
+	{
+    	var userId = _currentUserProvider.GetUserId();
 
-        if (tastingSessions is null)
-        {
-            return Unauthorized();
-        }
+    	if (userId is null)
+    	{
+        	return Unauthorized();
+    	}
 
-        return Ok(tastingSessions);
-    }
+    	var tastingSessions = await _tastingSessionReadService.GetUserSessionsAsync(userId.Value);
+
+    	return Ok(tastingSessions);
+	}
 
     [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(TastingSessionDetailsResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetById(int id)
-    {
-        var tastingSession = await _tastingSessionReadService.GetSessionDetailsAsync(id);
+	[ProducesResponseType(typeof(TastingSessionDetailsResponseDto), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	public async Task<IActionResult> GetById(int id)
+	{
+    	var userId = _currentUserProvider.GetUserId();
 
-        if (tastingSession is null)
-        {
-            return NotFound();
-        }
+    	if (userId is null)
+    	{
+        	return Unauthorized();
+    	}
 
-        return Ok(tastingSession);
-    }
+    	var tastingSession = await _tastingSessionReadService.GetSessionDetailsAsync(id, userId.Value);
+
+    	if (tastingSession is null)
+    	{
+        	return NotFound();
+    	}	
+
+    	return Ok(tastingSession);
+	}
 }
