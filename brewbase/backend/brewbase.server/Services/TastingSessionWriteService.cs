@@ -1,6 +1,7 @@
 using brewbase.server.Dtos;
 using brewbase.server.Models;
 using brewbase.server.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace brewbase.server.Services;
 
@@ -45,5 +46,74 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
             CreatedAt = tastingSession.CreatedAt,
             UserId = tastingSession.UserId
         };
+    }
+	
+	public async Task<TastingSessionWriteResult<TastingSessionCoffeeResponseDto>> AddCoffeeAsync(
+        int sessionId,
+        AddCoffeeToTastingSessionRequestDto request)
+    {
+        var userId = _currentUserProvider.GetUserId();
+
+        if (userId is null)
+        {
+            return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+                TastingSessionWriteStatus.Unauthorized);
+        }
+
+        var sessionExists = await _context.CuppingSessions
+            .AnyAsync(session => session.Id == sessionId && session.UserId == userId.Value);
+
+        if (!sessionExists)
+        {
+            return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+                TastingSessionWriteStatus.TastingSessionNotFound);
+        }
+
+        var coffee = await _context.Coffees
+            .Where(coffee => coffee.Id == request.CoffeeId)
+            .Select(coffee => new
+            {
+                coffee.Id,
+                coffee.Name
+            })
+            .SingleOrDefaultAsync();
+
+        if (coffee is null)
+        {
+            return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+                TastingSessionWriteStatus.CoffeeNotFound);
+        }
+
+        var coffeeAlreadyAdded = await _context.CuppingSessionCoffees
+            .AnyAsync(sessionCoffee =>
+                sessionCoffee.CuppingSessionId == sessionId &&
+                sessionCoffee.CoffeeId == request.CoffeeId);
+
+        if (coffeeAlreadyAdded)
+        {
+            return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+                TastingSessionWriteStatus.CoffeeAlreadyAdded);
+        }
+
+        var sessionCoffee = new CuppingSessionCoffee
+        {
+            CuppingSessionId = sessionId,
+            CoffeeId = request.CoffeeId,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+
+        _context.CuppingSessionCoffees.Add(sessionCoffee);
+        await _context.SaveChangesAsync();
+
+        var response = new TastingSessionCoffeeResponseDto
+        {
+            CoffeeId = coffee.Id,
+            CoffeeName = coffee.Name,
+            Notes = null
+        };
+
+        return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+            TastingSessionWriteStatus.Success,
+            response);
     }
 }

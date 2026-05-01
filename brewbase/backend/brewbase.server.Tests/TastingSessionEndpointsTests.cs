@@ -17,8 +17,8 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
     public TastingSessionEndpointsTests(CoffeeApiFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient();
-    }
+		_client = _factory.CreateAuthenticatedClient();    
+	}
 
     [Fact]
     public async Task ShouldCreateTastingSession()
@@ -191,6 +191,185 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
 
         Assert.Equal(1, savedSession.UserId);
         Assert.NotEqual(new DateTime(2000, 1, 1), savedSession.CreatedAt);
+    }
+	
+	[Fact]
+    public async Task ShouldAddCoffeeToTastingSession()
+    {
+        var sessionName = $"Add coffee session {Guid.NewGuid()}";
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        await EnsureTestUsersExistAsync(context);
+
+        var session = new CuppingSession
+        {
+            Name = sessionName,
+            Description = "Session for adding coffee",
+            CreatedAt = DateTime.Now,
+            UserId = 1
+        };
+
+        context.CuppingSessions.Add(session);
+        await context.SaveChangesAsync();
+
+        var request = new
+        {
+            coffeeId = 1
+        };
+
+        var response = await _client.PostAsJsonAsync($"/api/TastingSessions/{session.Id}/coffees", request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var root = document.RootElement;
+
+        Assert.Equal(1, root.GetProperty("coffeeId").GetInt32());
+		Assert.Equal("Alpha Coffee", root.GetProperty("coffeeName").GetString());
+        Assert.Equal(JsonValueKind.Null, root.GetProperty("notes").ValueKind);
+
+        var savedSessionCoffee = await context.CuppingSessionCoffees
+            .SingleOrDefaultAsync(sessionCoffee =>
+                sessionCoffee.CuppingSessionId == session.Id &&
+                sessionCoffee.CoffeeId == 1);
+
+        Assert.NotNull(savedSessionCoffee);
+
+        var detailsResponse = await _client.GetAsync($"/api/TastingSessions/{session.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, detailsResponse.StatusCode);
+
+        var detailsPayload = await detailsResponse.Content.ReadAsStringAsync();
+        using var detailsDocument = JsonDocument.Parse(detailsPayload);
+        var coffees = detailsDocument.RootElement.GetProperty("coffees");
+
+        Assert.Contains(coffees.EnumerateArray(), coffee =>
+            coffee.GetProperty("coffeeId").GetInt32() == 1);
+    }
+
+    [Fact]
+    public async Task ShouldReturnNotFoundWhenAddingMissingCoffeeToTastingSession()
+    {
+        var sessionName = $"Missing coffee session {Guid.NewGuid()}";
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        await EnsureTestUsersExistAsync(context);
+
+        var session = new CuppingSession
+        {
+            Name = sessionName,
+            Description = "Session for missing coffee",
+            CreatedAt = DateTime.Now,
+            UserId = 1
+        };
+
+        context.CuppingSessions.Add(session);
+        await context.SaveChangesAsync();
+
+        var request = new
+        {
+            coffeeId = 999999
+        };
+
+        var response = await _client.PostAsJsonAsync($"/api/TastingSessions/{session.Id}/coffees", request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldReturnNotFoundWhenAddingCoffeeToMissingTastingSession()
+    {
+        var request = new
+        {
+            coffeeId = 1
+        };
+
+        var response = await _client.PostAsJsonAsync("/api/TastingSessions/999999/coffees", request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldReturnConflictWhenAddingSameCoffeeTwiceToTastingSession()
+    {
+        var sessionName = $"Duplicate coffee session {Guid.NewGuid()}";
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        await EnsureTestUsersExistAsync(context);
+
+        var session = new CuppingSession
+        {
+            Name = sessionName,
+            Description = "Session for duplicate coffee",
+            CreatedAt = DateTime.Now,
+            UserId = 1
+        };
+
+        context.CuppingSessions.Add(session);
+        await context.SaveChangesAsync();
+
+        context.CuppingSessionCoffees.Add(new CuppingSessionCoffee
+        {
+            CuppingSessionId = session.Id,
+            CoffeeId = 1,
+            CreatedAt = DateTime.Now
+        });
+
+        await context.SaveChangesAsync();
+
+        var request = new
+        {
+            coffeeId = 1
+        };
+
+        var response = await _client.PostAsJsonAsync($"/api/TastingSessions/{session.Id}/coffees", request);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        var count = await context.CuppingSessionCoffees
+            .CountAsync(sessionCoffee =>
+                sessionCoffee.CuppingSessionId == session.Id &&
+                sessionCoffee.CoffeeId == 1);
+
+        Assert.Equal(1, count);
+    }
+
+    [Fact]
+    public async Task ShouldReturnNotFoundWhenAddingCoffeeToOtherUserTastingSession()
+    {
+        var sessionName = $"Other user add coffee session {Guid.NewGuid()}";
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        await EnsureTestUsersExistAsync(context);
+
+        var session = new CuppingSession
+        {
+            Name = sessionName,
+            Description = "Other user session",
+            CreatedAt = DateTime.Now,
+            UserId = 2
+        };
+
+        context.CuppingSessions.Add(session);
+        await context.SaveChangesAsync();
+
+        var request = new
+        {
+            coffeeId = 1
+        };
+
+        var response = await _client.PostAsJsonAsync($"/api/TastingSessions/{session.Id}/coffees", request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     private static async Task EnsureTestUsersExistAsync(BrewDbContext context)

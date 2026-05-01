@@ -79,4 +79,26 @@ public class TastingSessionsController : ControllerBase
 
     	return Ok(tastingSession);
 	}
+	[HttpPost("{id:int}/coffees")]
+    [ProducesResponseType(typeof(TastingSessionCoffeeResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> AddCoffee(
+        int id,
+        [FromBody] AddCoffeeToTastingSessionRequestDto request)
+    {
+        var result = await _tastingSessionWriteService.AddCoffeeAsync(id, request);
+
+        return result.Status switch
+        {
+            TastingSessionWriteStatus.Success => CreatedAtAction(nameof(GetById), new { id }, result.Data),
+            TastingSessionWriteStatus.Unauthorized => Unauthorized(),
+            TastingSessionWriteStatus.TastingSessionNotFound => NotFound(new SimpleErrorResponseDto { Message = "Tasting session not found." }),
+            TastingSessionWriteStatus.CoffeeNotFound => NotFound(new SimpleErrorResponseDto { Message = "Coffee not found." }),
+            TastingSessionWriteStatus.CoffeeAlreadyAdded => Conflict(new SimpleErrorResponseDto { Message = "Coffee is already added to this tasting session." }),
+            _ => BadRequest()
+        };
+    }
 }
