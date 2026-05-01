@@ -1,7 +1,11 @@
+using System.Security.Claims;
 using brewbase.server.Models;
 using brewbase.server.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using brewbase.server.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace brewbase.server.Controllers;
 
@@ -10,10 +14,12 @@ namespace brewbase.server.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly BrewDbContext _context;
+    private readonly IAuthService _authService;
 
-    public AuthController(BrewDbContext context)
+    public AuthController(BrewDbContext context, IAuthService authService)
     {
         _context = context;
+        _authService = authService;
     }
 
     [HttpPost("register")]
@@ -45,7 +51,7 @@ public class AuthController : ControllerBase
             Email = dto.Email,
             Login = dto.Login,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-            Role = "User",
+            Role = "Admin",
             ActivityPoints = 0,
             CreatedAt = DateTime.Now,
             IsBlocked = false,
@@ -74,6 +80,27 @@ public class AuthController : ControllerBase
             return Unauthorized("Invalid login or password");
         }
 
-        return Ok("Login successful");
+        var token = _authService.GenerateJwt(user);
+
+        return Ok(new
+        {
+            token = token
+        });
+    }
+    
+    
+    //test
+    [Authorize]
+    [HttpGet("me")]
+    public IActionResult Me()
+    {
+        var userId = User.FindFirst("uid")?.Value;
+        var login = User.FindFirst("login")?.Value;
+
+        return Ok(new
+        {
+            userId,
+            login
+        });
     }
 }
