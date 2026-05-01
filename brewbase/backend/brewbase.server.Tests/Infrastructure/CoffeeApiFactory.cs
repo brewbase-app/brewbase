@@ -22,7 +22,13 @@ public sealed class CoffeeApiFactory : WebApplicationFactory<Program>
         builder.ConfigureAppConfiguration((_, config) =>
         {
             config.AddInMemoryCollection(
-                new Dictionary<string, string?> { ["DevUser:UserId"] = "1" });
+                new Dictionary<string, string?>
+                {
+                    ["DevUser:UserId"] = "1",
+                    ["Jwt:Key"] = "TEST_SECRET_KEY_12345678901234567890",
+                    ["Jwt:Issuer"] = "test",
+                    ["Jwt:Audience"] = "test"
+                });
         });
 
         builder.ConfigureServices(services =>
