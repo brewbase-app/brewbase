@@ -20,17 +20,15 @@ public partial class Coffee
     public int CreatedByUserId { get; set; }
 
     public bool IsVerified { get; set; }
-
-    public int? CuppingSessionId { get; set; }
-
+    
     public virtual ICollection<CoffeeRanking> CoffeeRankings { get; set; } = new List<CoffeeRanking>();
 
     public virtual ICollection<CoffeeRating> CoffeeRatings { get; set; } = new List<CoffeeRating>();
+    
+    public virtual ICollection<CuppingSessionCoffee> CuppingSessionCoffees { get; set; } = new List<CuppingSessionCoffee>();
 
     public virtual AppUser CreatedByUser { get; set; } = null!;
-
-    public virtual CuppingSession? CuppingSession { get; set; }
-
+    
     public virtual ProcessingMethod? ProcessingMethod { get; set; }
 
     public virtual ICollection<Recipe> Recipes { get; set; } = new List<Recipe>();

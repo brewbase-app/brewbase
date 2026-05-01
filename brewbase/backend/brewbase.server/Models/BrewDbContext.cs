@@ -30,6 +30,8 @@ public partial class BrewDbContext : DbContext
     public virtual DbSet<Country> Countries { get; set; }
 
     public virtual DbSet<CuppingSession> CuppingSessions { get; set; }
+    
+    public virtual DbSet<CuppingSessionCoffee> CuppingSessionCoffees { get; set; }
 
     public virtual DbSet<Follow> Follows { get; set; }
 
@@ -164,8 +166,6 @@ public partial class BrewDbContext : DbContext
 
             entity.HasIndex(e => e.CreatedByUserId, "idx_coffee_created_by_user_id");
 
-            entity.HasIndex(e => e.CuppingSessionId, "idx_coffee_cupping_session_id");
-
             entity.HasIndex(e => e.ProcessingMethodId, "idx_coffee_processing_method_id");
 
             entity.HasIndex(e => e.RegionId, "idx_coffee_region_id");
@@ -176,7 +176,6 @@ public partial class BrewDbContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
-            entity.Property(e => e.CuppingSessionId).HasColumnName("cupping_session_id");
             entity.Property(e => e.IsVerified).HasColumnName("is_verified");
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
@@ -190,10 +189,6 @@ public partial class BrewDbContext : DbContext
                 .HasForeignKey(d => d.CreatedByUserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("coffee_user");
-
-            entity.HasOne(d => d.CuppingSession).WithMany(p => p.Coffees)
-                .HasForeignKey(d => d.CuppingSessionId)
-                .HasConstraintName("coffee_cupping_session");
 
             entity.HasOne(d => d.ProcessingMethod).WithMany(p => p.Coffees)
                 .HasForeignKey(d => d.ProcessingMethodId)
@@ -290,16 +285,52 @@ public partial class BrewDbContext : DbContext
             entity.HasIndex(e => e.UserId, "idx_cupping_session_user_id");
 
             entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
                 .HasColumnName("name");
-            entity.Property(e => e.Notes).HasColumnName("notes");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.User).WithMany(p => p.CuppingSessions)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("cupping_session_user");
+        });
+        
+        modelBuilder.Entity<CuppingSessionCoffee>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("cupping_session_coffee_pk");
+
+            entity.ToTable("cupping_session_coffee");
+
+            entity.HasIndex(e => e.CoffeeId, "idx_cupping_session_coffee_coffee_id");
+
+            entity.HasIndex(e => e.CuppingSessionId, "idx_cupping_session_coffee_cupping_session_id");
+
+            entity.HasIndex(e => new { e.CuppingSessionId, e.CoffeeId }, "uq_session_coffee").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.CoffeeId).HasColumnName("coffee_id");
+            entity.Property(e => e.CuppingSessionId).HasColumnName("cupping_session_id");
+
+            entity.HasOne(d => d.Coffee).WithMany(p => p.CuppingSessionCoffees)
+                .HasForeignKey(d => d.CoffeeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("cupping_session_coffee_coffee");
+
+            entity.HasOne(d => d.CuppingSession).WithMany(p => p.CuppingSessionCoffees)
+                .HasForeignKey(d => d.CuppingSessionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("cupping_session_coffee_session");
         });
 
         modelBuilder.Entity<Follow>(entity =>
