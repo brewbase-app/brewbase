@@ -216,7 +216,8 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
 
         var request = new
         {
-            coffeeId = 1
+            coffeeId = 1,
+			notes = "Bright acidity and floral aroma"
         };
 
         var response = await _client.PostAsJsonAsync($"/api/TastingSessions/{session.Id}/coffees", request);
@@ -229,7 +230,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
 
         Assert.Equal(1, root.GetProperty("coffeeId").GetInt32());
 		Assert.Equal("Alpha Coffee", root.GetProperty("coffeeName").GetString());
-        Assert.Equal(JsonValueKind.Null, root.GetProperty("notes").ValueKind);
+        Assert.Equal("Bright acidity and floral aroma", root.GetProperty("notes").GetString());
 
         var savedSessionCoffee = await context.CuppingSessionCoffees
             .SingleOrDefaultAsync(sessionCoffee =>
@@ -237,6 +238,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
                 sessionCoffee.CoffeeId == 1);
 
         Assert.NotNull(savedSessionCoffee);
+		Assert.Equal("Bright acidity and floral aroma", savedSessionCoffee.Notes);
 
         var detailsResponse = await _client.GetAsync($"/api/TastingSessions/{session.Id}");
 
@@ -406,4 +408,181 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
 
         await context.SaveChangesAsync();
     }
+
+	[Fact]
+public async Task ShouldSaveNoteForCoffeeInTastingSession()
+{
+    using var scope = _factory.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+    await EnsureTestUsersExistAsync(context);
+
+    var session = new CuppingSession
+    {
+        Name = $"Note session {Guid.NewGuid()}",
+        Description = "Session for note",
+        CreatedAt = DateTime.Now,
+        UserId = 1
+    };
+
+    context.CuppingSessions.Add(session);
+    await context.SaveChangesAsync();
+
+    context.CuppingSessionCoffees.Add(new CuppingSessionCoffee
+    {
+        CuppingSessionId = session.Id,
+        CoffeeId = 1,
+        CreatedAt = DateTime.Now
+    });
+
+    await context.SaveChangesAsync();
+
+    var request = new
+    {
+        notes = "Bright acidity and floral aroma"
+    };
+
+    var response = await _client.PutAsJsonAsync(
+        $"/api/TastingSessions/{session.Id}/coffees/1/note",
+        request);
+
+    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+    var payload = await response.Content.ReadAsStringAsync();
+    using var document = JsonDocument.Parse(payload);
+    var root = document.RootElement;
+
+    Assert.Equal(1, root.GetProperty("coffeeId").GetInt32());
+    Assert.Equal("Alpha Coffee", root.GetProperty("coffeeName").GetString());
+    Assert.Equal("Bright acidity and floral aroma", root.GetProperty("notes").GetString());
+
+    var savedSessionCoffee = await context.CuppingSessionCoffees
+    	.AsNoTracking()
+    	.SingleAsync(sessionCoffee =>
+        	sessionCoffee.CuppingSessionId == session.Id &&
+        	sessionCoffee.CoffeeId == 1);
+
+    Assert.Equal("Bright acidity and floral aroma", savedSessionCoffee.Notes);
+}
+
+[Fact]
+public async Task ShouldUpdateExistingCoffeeNoteInTastingSession()
+{
+    using var scope = _factory.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+    await EnsureTestUsersExistAsync(context);
+
+    var session = new CuppingSession
+    {
+        Name = $"Edit note session {Guid.NewGuid()}",
+        Description = "Session for editing note",
+        CreatedAt = DateTime.Now,
+        UserId = 1
+    };
+
+    context.CuppingSessions.Add(session);
+    await context.SaveChangesAsync();
+
+    context.CuppingSessionCoffees.Add(new CuppingSessionCoffee
+    {
+        CuppingSessionId = session.Id,
+        CoffeeId = 1,
+        Notes = "Old note",
+        CreatedAt = DateTime.Now
+    });
+
+    await context.SaveChangesAsync();
+
+    var request = new
+    {
+        notes = "Updated note"
+    };
+
+    var response = await _client.PutAsJsonAsync(
+        $"/api/TastingSessions/{session.Id}/coffees/1/note",
+        request);
+
+    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+    var savedSessionCoffee = await context.CuppingSessionCoffees
+    	.AsNoTracking()
+    	.SingleAsync(sessionCoffee =>
+        	sessionCoffee.CuppingSessionId == session.Id &&
+        	sessionCoffee.CoffeeId == 1);
+
+    Assert.Equal("Updated note", savedSessionCoffee.Notes);
+}
+
+[Fact]
+public async Task ShouldReturnNotFoundWhenSavingNoteForCoffeeOutsideTastingSession()
+{
+    using var scope = _factory.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+    await EnsureTestUsersExistAsync(context);
+
+    var session = new CuppingSession
+    {
+        Name = $"Outside coffee note session {Guid.NewGuid()}",
+        Description = "Session without selected coffee",
+        CreatedAt = DateTime.Now,
+        UserId = 1
+    };
+
+    context.CuppingSessions.Add(session);
+    await context.SaveChangesAsync();
+
+    var request = new
+    {
+        notes = "This should fail"
+    };
+
+    var response = await _client.PutAsJsonAsync(
+        $"/api/TastingSessions/{session.Id}/coffees/1/note",
+        request);
+
+    Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+}
+
+[Fact]
+public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserTastingSession()
+{
+    using var scope = _factory.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+    await EnsureTestUsersExistAsync(context);
+
+    var session = new CuppingSession
+    {
+        Name = $"Other user note session {Guid.NewGuid()}",
+        Description = "Other user session",
+        CreatedAt = DateTime.Now,
+        UserId = 2
+    };
+
+    context.CuppingSessions.Add(session);
+    await context.SaveChangesAsync();
+
+    context.CuppingSessionCoffees.Add(new CuppingSessionCoffee
+    {
+        CuppingSessionId = session.Id,
+        CoffeeId = 1,
+        Notes = "Other user note",
+        CreatedAt = DateTime.Now
+    });
+
+    await context.SaveChangesAsync();
+
+    var request = new
+    {
+        notes = "Trying to edit"
+    };
+
+    var response = await _client.PutAsJsonAsync(
+        $"/api/TastingSessions/{session.Id}/coffees/1/note",
+        request);
+
+    Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+}
 }
