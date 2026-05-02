@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Hosting;
 
@@ -61,7 +62,8 @@ public sealed class CurrentUserProvider : ICurrentUserProvider
     {
         var candidates = new[]
         {
-            user.FindFirstValue("sub"),
+            user.FindFirstValue(ClaimTypes.NameIdentifier),
+            user.FindFirstValue(JwtRegisteredClaimNames.Sub),
             user.FindFirstValue("user_id"),
             user.FindFirstValue("uid")
         };
