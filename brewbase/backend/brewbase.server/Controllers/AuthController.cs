@@ -89,13 +89,16 @@ public class AuthController : ControllerBase
     }
     
     
-    //test
     [Authorize]
     [HttpGet("me")]
     public IActionResult Me()
     {
         var userIdRaw = User.FindFirstValue("sub");
-        int? userId = int.TryParse(userIdRaw, out var parsed) ? parsed : null;
+        int? userId = null;
+        if (userIdRaw != null && int.TryParse(userIdRaw, out var parsedId))
+        {
+            userId = parsedId;
+        }
 
         var login = User.FindFirstValue("login");
         var role = User.FindFirstValue("role");
@@ -107,3 +110,4 @@ public class AuthController : ControllerBase
             role
         });
     }
+}
