@@ -44,17 +44,27 @@ public class AuthController : ControllerBase
         return Ok(new { token });
     }
 
+    
+    
     [Authorize]
     [HttpGet("me")]
     public IActionResult Me()
     {
-        var userId = User.FindFirst("uid")?.Value;
-        var login = User.FindFirst("login")?.Value;
+        var userIdRaw = User.FindFirstValue("sub");
+        int? userId = null;
+        if (userIdRaw != null && int.TryParse(userIdRaw, out var parsedId))
+        {
+            userId = parsedId;
+        }
+
+        var login = User.FindFirstValue("login");
+        var role = User.FindFirstValue("role");
 
         return Ok(new
         {
             userId,
-            login
+            login,
+            role
         });
     }
 }
