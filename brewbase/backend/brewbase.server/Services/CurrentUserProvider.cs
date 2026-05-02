@@ -62,8 +62,8 @@ public sealed class CurrentUserProvider : ICurrentUserProvider
         var candidates = new[]
         {
             user.FindFirstValue("sub"),
-            user.FindFirstValue(ClaimTypes.NameIdentifier),
-            user.FindFirstValue("user_id")
+            user.FindFirstValue("user_id"),
+            user.FindFirstValue("uid")
         };
 
         foreach (var value in candidates)
