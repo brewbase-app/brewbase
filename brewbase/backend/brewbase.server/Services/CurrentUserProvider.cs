@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Hosting;
 namespace brewbase.server.Services;
 
 /// <summary>
-/// Resolves the current user: authenticated claims first; dev-only fallbacks
-/// (<see cref="DevUserConfigSection.SectionName"/> and <c>X-Dev-User-Id</c>) apply only in the Development environment.
+/// JWT claims first; in Development only, <see cref="DevUserConfigSection"/> and <c>X-Dev-User-Id</c>.
+/// Do not rely on Development-only fallbacks in production.
 /// </summary>
 public sealed class CurrentUserProvider : ICurrentUserProvider
 {
@@ -61,8 +61,8 @@ public sealed class CurrentUserProvider : ICurrentUserProvider
     {
         var candidates = new[]
         {
-            user.FindFirstValue(ClaimTypes.NameIdentifier),
             user.FindFirstValue("sub"),
+            user.FindFirstValue(ClaimTypes.NameIdentifier),
             user.FindFirstValue("user_id")
         };
 
