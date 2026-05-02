@@ -45,12 +45,12 @@ public class AuthController : ControllerBase
     }
 
     
-    
+    //Testowa metoda do sprawdzania czy token który został wygenerowany zwraca odpowiednie dane
     [Authorize]
     [HttpGet("me")]
     public IActionResult Me()
     {
-        var userIdRaw = User.FindFirstValue("sub");
+        var userIdRaw = User.FindFirstValue(ClaimTypes.NameIdentifier);
         int? userId = null;
         if (userIdRaw != null && int.TryParse(userIdRaw, out var parsedId))
         {
@@ -58,7 +58,7 @@ public class AuthController : ControllerBase
         }
 
         var login = User.FindFirstValue("login");
-        var role = User.FindFirstValue("role");
+        var role = User.FindFirstValue(ClaimTypes.Role);
 
         return Ok(new
         {

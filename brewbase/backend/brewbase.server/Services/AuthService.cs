@@ -41,7 +41,7 @@ public class AuthService : IAuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
             Role = "User",
             ActivityPoints = 0,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.Now,
             IsBlocked = false,
             Label = null
         };
