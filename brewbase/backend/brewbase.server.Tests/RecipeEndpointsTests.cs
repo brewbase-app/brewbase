@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -6,6 +7,8 @@ using System.Text.Json;
 using brewbase.server.Models;
 using brewbase.server.Services;
 using Microsoft.AspNetCore.Hosting;
+using brewbase.server.Tests.Infrastructure;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -14,21 +17,27 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Xunit;
-using System.Linq;
 
 namespace brewbase.server.Tests;
 
-public class RecipeEndpointsTests : IClassFixture<RecipeApiFactory>
+public class RecipeEndpointsTests : IDisposable
 {
     private const int User1 = 1;
     private const int User2 = 2;
     private const int Admin = 3;
 
+    private readonly RecipeApiFactory _factory;
     private readonly HttpClient _client;
 
-    public RecipeEndpointsTests(RecipeApiFactory factory)
+    public RecipeEndpointsTests()
     {
-        _client = factory.CreateClient();
+        _factory = new RecipeApiFactory();
+        _client = _factory.CreateClient();
+    }
+
+    public void Dispose()
+    {
+        _factory.Dispose();
     }
 
     [Fact]
@@ -403,11 +412,13 @@ public class RecipeEndpointsTests : IClassFixture<RecipeApiFactory>
 
 public sealed class RecipeApiFactory : WebApplicationFactory<Program>
 {
-    private readonly SqliteConnection _connection = new("DataSource=:memory:");
+    private SqliteConnection? _sqliteConnection;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        _connection.Open();
+        var connection = new SqliteConnection("DataSource=:memory:");
+        connection.Open();
+        _sqliteConnection = connection;
 
         builder.UseEnvironment(Environments.Development);
 
@@ -425,23 +436,37 @@ public sealed class RecipeApiFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
+            services.AddAuthentication(TestAuthHandler.SchemeName)
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
+
+            services.PostConfigure<AuthenticationOptions>(options =>
+            {
+                options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+                options.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+            });
+
             services.RemoveAll<DbContextOptions<BrewDbContext>>();
             services.RemoveAll<BrewDbContext>();
 
             services.AddDbContext<BrewDbContext>(options =>
             {
-                options.UseSqlite(_connection);
+                options.UseSqlite(connection);
             });
-
-            using var scope = services.BuildServiceProvider().CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
-            context.Database.EnsureCreated();
-
-            if (!context.Recipes.Any())
-            {
-                SeedRecipeData(context);
-            }
         });
+    }
+
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        var host = base.CreateHost(builder);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+        context.Database.EnsureCreated();
+        if (!context.Recipes.Any())
+        {
+            SeedRecipeData(context);
+        }
+
+        return host;
     }
 
     protected override void Dispose(bool disposing)
@@ -449,7 +474,8 @@ public sealed class RecipeApiFactory : WebApplicationFactory<Program>
         base.Dispose(disposing);
         if (disposing)
         {
-            _connection.Dispose();
+            _sqliteConnection?.Dispose();
+            _sqliteConnection = null;
         }
     }
 
