@@ -89,7 +89,12 @@ public class RecipeReadService : IRecipeReadService
                 IsPublic = r.IsPublic,
                 UserId = r.UserId,
                 BrewingMethod = r.BrewingMethod != null ? r.BrewingMethod.Name : null,
-                Coffee = r.Coffee != null ? r.Coffee.Name : null
+                Coffee = r.Coffee != null ? r.Coffee.Name : null,
+                AverageRating = _context.RecipeRatings
+                    .Where(rating => rating.RecipeId == r.Id)
+                    .Average(rating => (double?)rating.Value),
+                RatingCount = _context.RecipeRatings
+                    .Count(rating => rating.RecipeId == r.Id)
             })
             .FirstOrDefaultAsync();
     }

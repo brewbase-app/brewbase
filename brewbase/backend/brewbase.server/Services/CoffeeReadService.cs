@@ -81,7 +81,12 @@ public class CoffeeReadService : ICoffeeReadService
                 Roastery = c.Roastery != null ? c.Roastery.Name : null,
                 ProcessingMethod = c.ProcessingMethod != null ? c.ProcessingMethod.Name : null,
                 Variety = c.Variety != null ? c.Variety.Name : null,
-                CreatedByUserId = c.CreatedByUserId
+                CreatedByUserId = c.CreatedByUserId,
+                AverageRating = _context.CoffeeRatings
+                    .Where(rating => rating.CoffeeId == c.Id)
+                    .Average(rating => (double?)rating.Value),
+                RatingCount = _context.CoffeeRatings
+                    .Count(rating => rating.CoffeeId == c.Id)
             })
             .FirstOrDefaultAsync();
     }
