@@ -380,6 +380,72 @@ public class RecipeEndpointsTests : IDisposable
     }
     
     [Fact]
+    public async Task User2_GetPrivateRecipeWithoutRatings_ReturnsNullAverageRatingAndZeroRatingCount()
+    {
+        var response = await SendRecipeGetAsync("/api/Recipe/3", devUserId: User2);
+
+        response.EnsureSuccessStatusCode();
+
+        var root = await ParseResponseRootAsync(response);
+
+        Assert.Equal(JsonValueKind.Null, root.GetProperty("averageRating").ValueKind);
+        Assert.Equal(0, root.GetProperty("ratingCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task User1_GetRecipeWithRatings_ReturnsAverageRatingAndRatingCount()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var recipe = new Recipe
+        {
+            Title = $"Rated Recipe {Guid.NewGuid()}",
+            Parameters = "{}",
+            Steps = "step",
+            IsPublic = true,
+            UserId = User1,
+            CoffeeId = 1,
+            BrewingMethodId = 1
+        };
+
+        context.Recipes.Add(recipe);
+        await context.SaveChangesAsync();
+
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        context.RecipeRatings.AddRange(
+            new RecipeRating
+            {
+                RecipeId = recipe.Id,
+                UserId = User1,
+                Value = 3,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new RecipeRating
+            {
+                RecipeId = recipe.Id,
+                UserId = User2,
+                Value = 5,
+                CreatedAt = now,
+                UpdatedAt = now
+            }
+        );
+
+        await context.SaveChangesAsync();
+
+        var response = await SendRecipeGetAsync($"/api/Recipe/{recipe.Id}", devUserId: User1);
+
+        response.EnsureSuccessStatusCode();
+
+        var root = await ParseResponseRootAsync(response);
+
+        Assert.Equal(4, root.GetProperty("averageRating").GetDouble());
+        Assert.Equal(2, root.GetProperty("ratingCount").GetInt32());
+    }
+    
+    [Fact]
     public async Task User1_RateExistingRecipe_ReturnsNoContent()
     {
         var body = """
