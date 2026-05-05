@@ -2,15 +2,20 @@ using System.Net;
 using System.Text.Json;
 using brewbase.server.Tests.Infrastructure;
 using Xunit;
+using System.Net.Http.Json;
+using brewbase.server.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace brewbase.server.Tests;
 
 public class CoffeeEndpointsTests : IClassFixture<CoffeeApiFactory>
 {
+    private readonly CoffeeApiFactory _factory;
     private readonly HttpClient _client;
 
     public CoffeeEndpointsTests(CoffeeApiFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -161,5 +166,64 @@ public class CoffeeEndpointsTests : IClassFixture<CoffeeApiFactory>
 
         Assert.Single(coffees.EnumerateArray());
         Assert.Equal("Beta Coffee", coffees[0].GetProperty("name").GetString());
+    }
+    
+    [Fact]
+    public async Task ShouldRateExistingCoffee()
+    {
+        var client = _factory.CreateAuthenticatedClient();
+
+        var response = await client.PostAsJsonAsync("/api/Coffee/1/rating", new { value = 4 });
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var rating = context.CoffeeRatings.Single(r => r.CoffeeId == 1 && r.UserId == 1);
+
+        Assert.Equal(4, rating.Value);
+    }
+
+    [Fact]
+    public async Task ShouldUpdateExistingCoffeeRating()
+    {
+        var client = _factory.CreateAuthenticatedClient();
+
+        var firstResponse = await client.PostAsJsonAsync("/api/Coffee/2/rating", new { value = 2 });
+        var secondResponse = await client.PostAsJsonAsync("/api/Coffee/2/rating", new { value = 5 });
+
+        Assert.Equal(HttpStatusCode.NoContent, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, secondResponse.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var ratings = context.CoffeeRatings
+            .Where(r => r.CoffeeId == 2 && r.UserId == 1)
+            .ToList();
+
+        Assert.Single(ratings);
+        Assert.Equal(5, ratings[0].Value);
+    }
+
+    [Fact]
+    public async Task ShouldReturnNotFoundWhenRatingNonExistingCoffee()
+    {
+        var client = _factory.CreateAuthenticatedClient();
+
+        var response = await client.PostAsJsonAsync("/api/Coffee/999999/rating", new { value = 4 });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldReturnBadRequestWhenCoffeeRatingIsOutsideRange()
+    {
+        var client = _factory.CreateAuthenticatedClient();
+
+        var response = await client.PostAsJsonAsync("/api/Coffee/3/rating", new { value = 6 });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 }
