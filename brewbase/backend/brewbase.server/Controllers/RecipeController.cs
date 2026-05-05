@@ -85,6 +85,57 @@ public class RecipeController : ControllerBase
 
         return Ok(recipe);
     }
+    
+    [Authorize]
+    [HttpPost("{id:int}/rating")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RateRecipe(int id, [FromBody] RateRequestDto request)
+    {
+        var userId = _currentUserProvider.GetUserId();
+
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var recipeExists = await _context.Recipes.AnyAsync(r => r.Id == id);
+
+        if (!recipeExists)
+        {
+            return NotFound(new SimpleErrorResponseDto { Message = "Recipe not found." });
+        }
+
+        var rating = await _context.RecipeRatings
+            .FirstOrDefaultAsync(r => r.RecipeId == id && r.UserId == userId.Value);
+
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        if (rating is null)
+        {
+            rating = new RecipeRating
+            {
+                RecipeId = id,
+                UserId = userId.Value,
+                Value = request.Value,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+
+            _context.RecipeRatings.Add(rating);
+        }
+        else
+        {
+            rating.Value = request.Value;
+            rating.UpdatedAt = now;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
 
     /// <summary>Creates a recipe for the current user. User id comes from context, not the body.</summary>
     [Authorize]
