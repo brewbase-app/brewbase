@@ -378,6 +378,77 @@ public class RecipeEndpointsTests : IDisposable
         Assert.True(recipe.GetProperty("id").GetInt32() > 0);
         Assert.Equal("Created Via Test", recipe.GetProperty("title").GetString());
     }
+    
+    [Fact]
+    public async Task User1_RateExistingRecipe_ReturnsNoContent()
+    {
+        var body = """
+            {"value":4}
+            """;
+
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/rating", User1, body);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var rating = context.RecipeRatings.Single(r => r.RecipeId == 1 && r.UserId == User1);
+
+        Assert.Equal(4, rating.Value);
+    }
+
+    [Fact]
+    public async Task User1_RateExistingRecipeTwice_UpdatesPreviousRating()
+    {
+        var firstBody = """
+            {"value":2}
+            """;
+
+        var secondBody = """
+            {"value":5}
+            """;
+
+        var firstResponse = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/2/rating", User1, firstBody);
+        var secondResponse = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/2/rating", User1, secondBody);
+
+        Assert.Equal(HttpStatusCode.NoContent, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, secondResponse.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var ratings = context.RecipeRatings
+            .Where(r => r.RecipeId == 2 && r.UserId == User1)
+            .ToList();
+
+        Assert.Single(ratings);
+        Assert.Equal(5, ratings[0].Value);
+    }
+
+    [Fact]
+    public async Task User1_RateNonExistingRecipe_ReturnsNotFound()
+    {
+        var body = """
+            {"value":4}
+            """;
+
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/999999/rating", User1, body);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task User1_RateRecipeWithInvalidValue_ReturnsBadRequest()
+    {
+        var body = """
+            {"value":6}
+            """;
+
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/rating", User1, body);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 
     private async Task<HttpResponseMessage> SendRecipeWriteAsync(HttpMethod method, string path, int devUserId, string? jsonBody = null)
     {
