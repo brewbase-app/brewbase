@@ -5,14 +5,14 @@ function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    const navigate = useNavigate(); // 🔥 dodane
+    const navigate = useNavigate(); //  dodane
 
     const handleSubmit = (e) => {
         e.preventDefault();
 
         // testowe logowanie
         if (email === "admin@test.com" && password === "1234") {
-            navigate("/home"); // 🔥 przekierowanie
+            navigate("/home"); //  przekierowanie
         } else {
             alert("Nieprawidłowe dane");
         }
@@ -25,7 +25,7 @@ function Login() {
 
                 <h2 style={styles.subtitle}>Logowanie</h2>
 
-                {/* 🔥 FORM zamiast luźnych inputów */}
+                {/*  FORM zamiast luźnych inputów */}
                 <form onSubmit={handleSubmit}>
                     <input
                         style={styles.input}
