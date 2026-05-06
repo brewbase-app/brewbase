@@ -9,4 +9,8 @@ public interface IQuickNoteService
     Task<List<QuickNoteResponseDto>> GetAllAsync(int userId, string? search);
 
     Task<QuickNoteResponseDto?> GetByIdAsync(int id, int userId);
+
+    Task<QuickNoteResponseDto?> UpdateAsync(int id, int userId, UpdateQuickNoteRequestDto request);
+
+    Task<bool> DeleteAsync(int id, int userId);
 }

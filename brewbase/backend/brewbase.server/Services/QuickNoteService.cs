@@ -71,6 +71,41 @@ public sealed class QuickNoteService : IQuickNoteService
             .FirstOrDefaultAsync();
     }
 
+    public async Task<QuickNoteResponseDto?> UpdateAsync(int id, int userId, UpdateQuickNoteRequestDto request)
+    {
+        var entity = await _context.QuickNotes
+            .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
+
+        if (entity is null)
+        {
+            return null;
+        }
+
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        entity.Content = request.Content;
+        entity.UpdatedAt = now;
+
+        await _context.SaveChangesAsync();
+
+        return ToDto(entity);
+    }
+
+    public async Task<bool> DeleteAsync(int id, int userId)
+    {
+        var entity = await _context.QuickNotes
+            .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
+
+        if (entity is null)
+        {
+            return false;
+        }
+
+        _context.QuickNotes.Remove(entity);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
     private static QuickNoteResponseDto ToDto(QuickNote entity) =>
         new()
         {

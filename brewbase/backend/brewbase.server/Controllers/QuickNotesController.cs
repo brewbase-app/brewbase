@@ -88,4 +88,61 @@ public class QuickNotesController : ControllerBase
 
         return Ok(note);
     }
+
+    /// <summary>Updates a quick note owned by the current user.</summary>
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(typeof(QuickNoteResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateQuickNoteRequestDto request)
+    {
+        var userId = _currentUserProvider.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        request.Content = request.Content.Trim();
+        if (string.IsNullOrWhiteSpace(request.Content))
+        {
+            ModelState.AddModelError(nameof(request.Content), "Content is required.");
+            return ValidationProblem(ModelState);
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var updated = await _quickNoteService.UpdateAsync(id, userId.Value, request);
+        if (updated is null)
+        {
+            return NotFound(new SimpleErrorResponseDto { Message = "Quick note not found." });
+        }
+
+        return Ok(updated);
+    }
+
+    /// <summary>Deletes a quick note owned by the current user.</summary>
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var userId = _currentUserProvider.GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var deleted = await _quickNoteService.DeleteAsync(id, userId.Value);
+        if (!deleted)
+        {
+            return NotFound(new SimpleErrorResponseDto { Message = "Quick note not found." });
+        }
+
+        return NoContent();
+    }
 }
