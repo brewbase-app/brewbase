@@ -6,7 +6,8 @@ public enum TastingSessionWriteStatus
     Unauthorized,
     TastingSessionNotFound,
     CoffeeNotFound,
-    CoffeeAlreadyAdded
+    CoffeeAlreadyAdded,
+    CoffeeNotInSession
 }
 
 public sealed class TastingSessionWriteResult<T>

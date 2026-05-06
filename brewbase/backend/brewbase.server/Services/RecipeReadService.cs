@@ -22,17 +22,17 @@ public class RecipeReadService : IRecipeReadService
         string? sortBy,
         string? sortOrder,
         int? page,
-        int? pageSize)
+        int? pageSize,
+        int currentUserId)
     {
-        var query = _context.Recipes
-            .AsNoTracking()
-            .AsQueryable();
+        var query = WhereVisibleTo(_context.Recipes.AsNoTracking(), currentUserId);
 
         if (coffeeId.HasValue)
         {
             query = query.Where(r => r.CoffeeId == coffeeId.Value);
         }
 
+        // After visibility: filtering by owner id cannot expose others' private recipes.
         if (userId.HasValue)
         {
             query = query.Where(r => r.UserId == userId.Value);
@@ -76,10 +76,9 @@ public class RecipeReadService : IRecipeReadService
             .ToListAsync();
     }
 
-    public async Task<RecipeDetailResponseDto?> GetByIdAsync(int id)
+    public async Task<RecipeDetailResponseDto?> GetByIdAsync(int id, int currentUserId)
     {
-        return await _context.Recipes
-            .AsNoTracking()
+        return await WhereVisibleTo(_context.Recipes.AsNoTracking(), currentUserId)
             .Where(r => r.Id == id)
             .Select(r => new RecipeDetailResponseDto
             {
@@ -93,5 +92,14 @@ public class RecipeReadService : IRecipeReadService
                 Coffee = r.Coffee != null ? r.Coffee.Name : null
             })
             .FirstOrDefaultAsync();
+    }
+
+    /// <summary>
+    /// Public recipes, or private recipes owned by <paramref name="currentUserId"/>.
+    /// Other users' private recipes are excluded (same rule as PUT/DELETE lookups).
+    /// </summary>
+    internal static IQueryable<Recipe> WhereVisibleTo(IQueryable<Recipe> query, int currentUserId)
+    {
+        return query.Where(r => r.IsPublic || r.UserId == currentUserId);
     }
 }

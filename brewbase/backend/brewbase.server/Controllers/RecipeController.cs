@@ -5,6 +5,7 @@ using brewbase.server.Models;
 using brewbase.server.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace brewbase.server.Controllers;
 
@@ -26,7 +27,11 @@ public class RecipeController : ControllerBase
         _currentUserProvider = currentUserProvider;
     }
 
+    /// <summary>Returns recipes visible to the current user.</summary>
+    [Authorize]
     [HttpGet]
+    [ProducesResponseType(typeof(List<RecipeListResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetAll(
         [FromQuery] int? coffeeId,
         [FromQuery] int? userId,
@@ -37,6 +42,12 @@ public class RecipeController : ControllerBase
         [FromQuery] int? page,
         [FromQuery] int? pageSize)
     {
+        var currentUserId = _currentUserProvider.GetUserId();
+        if (currentUserId is null)
+        {
+            return Unauthorized();
+        }
+
         var recipes = await _recipeReadService.GetAllAsync(
             coffeeId,
             userId,
@@ -45,17 +56,27 @@ public class RecipeController : ControllerBase
             sortBy,
             sortOrder,
             page,
-            pageSize);
+            pageSize,
+            currentUserId.Value);
 
         return Ok(recipes);
     }
     
+    /// <summary>Returns a recipe if visible to the current user; otherwise 404.</summary>
+    [Authorize]
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(RecipeDetailResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetById(int id)
     {
-        var recipe = await _recipeReadService.GetByIdAsync(id);
+        var currentUserId = _currentUserProvider.GetUserId();
+        if (currentUserId is null)
+        {
+            return Unauthorized();
+        }
+
+        var recipe = await _recipeReadService.GetByIdAsync(id, currentUserId.Value);
 
         if (recipe == null)
         {
@@ -65,9 +86,8 @@ public class RecipeController : ControllerBase
         return Ok(recipe);
     }
 
-    /// <summary>
-    /// Creates a recipe for the current user. User id is never taken from the request body.
-    /// </summary>
+    /// <summary>Creates a recipe for the current user. User id comes from context, not the body.</summary>
+    [Authorize]
     [HttpPost]
     [ProducesResponseType(typeof(RecipeDetailResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -116,15 +136,19 @@ public class RecipeController : ControllerBase
             .Include(r => r.BrewingMethod)
             .Include(r => r.Coffee)
             .Where(r => r.Id == entity.Id)
-            .FirstAsync();
+            .FirstOrDefaultAsync();
+        if (detailEntity is null)
+        {
+            return NotFound(new SimpleErrorResponseDto { Message = "Recipe not found." });
+        }
+
         var detail = MapToRecipeDetailResponseDto(detailEntity);
 
         return CreatedAtAction(nameof(GetById), new { id = entity.Id }, detail);
     }
 
-    /// <summary>
-    /// Updates a recipe. Only the owner may edit; coffee and brewing method must exist.
-    /// </summary>
+    /// <summary>Owner only. 404 if not visible to the caller; 403 if visible but not owned.</summary>
+    [Authorize]
     [HttpPut("{id}")]
     [ProducesResponseType(typeof(RecipeDetailResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -144,7 +168,8 @@ public class RecipeController : ControllerBase
             return ValidationProblem(ModelState);
         }
 
-        var recipe = await _context.Recipes.FirstOrDefaultAsync(r => r.Id == id);
+        var recipe = await RecipeReadService.WhereVisibleTo(_context.Recipes, userId.Value)
+            .FirstOrDefaultAsync(r => r.Id == id);
         if (recipe is null)
         {
             return NotFound(new SimpleErrorResponseDto { Message = "Recipe not found." });
@@ -180,15 +205,19 @@ public class RecipeController : ControllerBase
             .Include(r => r.BrewingMethod)
             .Include(r => r.Coffee)
             .Where(r => r.Id == id)
-            .FirstAsync();
+            .FirstOrDefaultAsync();
+        if (detailEntity is null)
+        {
+            return NotFound(new SimpleErrorResponseDto { Message = "Recipe not found." });
+        }
+
         var detail = MapToRecipeDetailResponseDto(detailEntity);
 
         return Ok(detail);
     }
 
-    /// <summary>
-    /// Deletes a recipe. Only the owner may delete it.
-    /// </summary>
+    /// <summary>Owner only. 404 if not visible; 403 if visible but not owned.</summary>
+    [Authorize]
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -202,7 +231,8 @@ public class RecipeController : ControllerBase
             return Unauthorized();
         }
 
-        var recipe = await _context.Recipes.FirstOrDefaultAsync(r => r.Id == id);
+        var recipe = await RecipeReadService.WhereVisibleTo(_context.Recipes, userId.Value)
+            .FirstOrDefaultAsync(r => r.Id == id);
         if (recipe is null)
         {
             return NotFound(new SimpleErrorResponseDto { Message = "Recipe not found." });

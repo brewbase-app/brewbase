@@ -98,6 +98,7 @@ builder.Services.AddScoped<IRecipeReadService, RecipeReadService>();
 builder.Services.AddScoped<IBrewingMethodReadService, BrewingMethodReadService>();
 builder.Services.AddScoped<ITastingSessionWriteService, TastingSessionWriteService>();
 builder.Services.AddScoped<ITastingSessionReadService, TastingSessionReadService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 
