@@ -607,6 +607,36 @@ public sealed class RecipeApiFactory : WebApplicationFactory<Program>
         context.BrewingMethods.AddRange(brewingMethod1, brewingMethod2);
         context.Coffees.AddRange(coffee1, coffee2);
         context.Recipes.AddRange(recipe1, recipe2, recipe3);
+
+        var noteOlder = DateTime.SpecifyKind(new DateTime(2024, 1, 1, 12, 0, 0), DateTimeKind.Unspecified);
+        var noteNewer = DateTime.SpecifyKind(new DateTime(2024, 6, 1, 12, 0, 0), DateTimeKind.Unspecified);
+
+        context.QuickNotes.AddRange(
+            new QuickNote
+            {
+                Id = 10,
+                Content = "Other note",
+                UserId = user1.Id,
+                CreatedAt = noteOlder,
+                UpdatedAt = noteOlder
+            },
+            new QuickNote
+            {
+                Id = 11,
+                Content = "Etiopia jaśminowa",
+                UserId = user1.Id,
+                CreatedAt = noteNewer,
+                UpdatedAt = noteNewer
+            },
+            new QuickNote
+            {
+                Id = 12,
+                Content = "User2 secret",
+                UserId = user2.Id,
+                CreatedAt = noteNewer,
+                UpdatedAt = noteNewer
+            });
+
         context.SaveChanges();
     }
 }
