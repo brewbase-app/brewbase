@@ -8,55 +8,35 @@ namespace brewbase.server.Services;
 public sealed class QuickNoteService : IQuickNoteService
 {
     private readonly BrewDbContext _context;
-    private readonly ICurrentUserProvider _currentUserProvider;
 
-    public QuickNoteService(BrewDbContext context, ICurrentUserProvider currentUserProvider)
+    public QuickNoteService(BrewDbContext context)
     {
         _context = context;
-        _currentUserProvider = currentUserProvider;
     }
 
-    public async Task<QuickNoteResponseDto?> CreateAsync(CreateQuickNoteRequestDto request)
+    public async Task<QuickNoteResponseDto> CreateAsync(int userId, CreateQuickNoteRequestDto request)
     {
-        var userId = _currentUserProvider.GetUserId();
-        if (userId is null)
-        {
-            return null;
-        }
-
         var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         var entity = new QuickNote
         {
-            Content = request.Content.Trim(),
+            Content = request.Content,
             CreatedAt = now,
             UpdatedAt = now,
-            UserId = userId.Value
+            UserId = userId
         };
 
         _context.QuickNotes.Add(entity);
         await _context.SaveChangesAsync();
 
-        return new QuickNoteResponseDto
-        {
-            Id = entity.Id,
-            Content = entity.Content,
-            CreatedAt = entity.CreatedAt,
-            UpdatedAt = entity.UpdatedAt
-        };
+        return ToDto(entity);
     }
 
-    public async Task<List<QuickNoteResponseDto>?> GetAllForCurrentUserAsync(string? search)
+    public async Task<List<QuickNoteResponseDto>> GetAllAsync(int userId, string? search)
     {
-        var userId = _currentUserProvider.GetUserId();
-        if (userId is null)
-        {
-            return null;
-        }
-
         var query = _context.QuickNotes
             .AsNoTracking()
-            .Where(n => n.UserId == userId.Value);
+            .Where(n => n.UserId == userId);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -76,17 +56,11 @@ public sealed class QuickNoteService : IQuickNoteService
             .ToListAsync();
     }
 
-    public async Task<QuickNoteResponseDto?> GetByIdForCurrentUserAsync(int id)
+    public async Task<QuickNoteResponseDto?> GetByIdAsync(int id, int userId)
     {
-        var userId = _currentUserProvider.GetUserId();
-        if (userId is null)
-        {
-            return null;
-        }
-
         return await _context.QuickNotes
             .AsNoTracking()
-            .Where(n => n.Id == id && n.UserId == userId.Value)
+            .Where(n => n.Id == id && n.UserId == userId)
             .Select(n => new QuickNoteResponseDto
             {
                 Id = n.Id,
@@ -96,4 +70,13 @@ public sealed class QuickNoteService : IQuickNoteService
             })
             .FirstOrDefaultAsync();
     }
+
+    private static QuickNoteResponseDto ToDto(QuickNote entity) =>
+        new()
+        {
+            Id = entity.Id,
+            Content = entity.Content,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt
+        };
 }

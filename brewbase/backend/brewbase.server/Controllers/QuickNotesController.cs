@@ -29,7 +29,8 @@ public class QuickNotesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Create([FromBody] CreateQuickNoteRequestDto request)
     {
-        if (_currentUserProvider.GetUserId() is null)
+        var userId = _currentUserProvider.GetUserId();
+        if (userId is null)
         {
             return Unauthorized();
         }
@@ -46,12 +47,7 @@ public class QuickNotesController : ControllerBase
             return ValidationProblem(ModelState);
         }
 
-        var created = await _quickNoteService.CreateAsync(request);
-        if (created is null)
-        {
-            return Unauthorized();
-        }
-
+        var created = await _quickNoteService.CreateAsync(userId.Value, request);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
@@ -61,12 +57,13 @@ public class QuickNotesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetAll([FromQuery] string? search)
     {
-        var notes = await _quickNoteService.GetAllForCurrentUserAsync(search);
-        if (notes is null)
+        var userId = _currentUserProvider.GetUserId();
+        if (userId is null)
         {
             return Unauthorized();
         }
 
+        var notes = await _quickNoteService.GetAllAsync(userId.Value, search);
         return Ok(notes);
     }
 
@@ -77,12 +74,13 @@ public class QuickNotesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetById(int id)
     {
-        if (_currentUserProvider.GetUserId() is null)
+        var userId = _currentUserProvider.GetUserId();
+        if (userId is null)
         {
             return Unauthorized();
         }
 
-        var note = await _quickNoteService.GetByIdForCurrentUserAsync(id);
+        var note = await _quickNoteService.GetByIdAsync(id, userId.Value);
         if (note is null)
         {
             return NotFound(new SimpleErrorResponseDto { Message = "Quick note not found." });

@@ -4,9 +4,9 @@ namespace brewbase.server.Services.Interfaces;
 
 public interface IQuickNoteService
 {
-    Task<QuickNoteResponseDto?> CreateAsync(CreateQuickNoteRequestDto request);
+    Task<QuickNoteResponseDto> CreateAsync(int userId, CreateQuickNoteRequestDto request);
 
-    Task<List<QuickNoteResponseDto>?> GetAllForCurrentUserAsync(string? search);
+    Task<List<QuickNoteResponseDto>> GetAllAsync(int userId, string? search);
 
-    Task<QuickNoteResponseDto?> GetByIdForCurrentUserAsync(int id);
+    Task<QuickNoteResponseDto?> GetByIdAsync(int id, int userId);
 }
