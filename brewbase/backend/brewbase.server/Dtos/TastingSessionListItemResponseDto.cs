@@ -7,4 +7,5 @@ public class TastingSessionListItemResponseDto
     public string? Description { get; set; }
     public DateTime CreatedAt { get; set; }
     public int CoffeeCount { get; set; }
+    public DateTime? SessionDate { get; set; }
 }

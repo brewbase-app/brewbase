@@ -11,6 +11,8 @@ public partial class CuppingSession
 
     public string? Description { get; set; }
     
+    public DateTime? SessionDate { get; set; }
+    
     public DateTime CreatedAt { get; set; }
 
     public int UserId { get; set; }
