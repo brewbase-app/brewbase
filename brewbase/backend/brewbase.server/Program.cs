@@ -100,6 +100,7 @@ builder.Services.AddScoped<ITastingSessionWriteService, TastingSessionWriteServi
 builder.Services.AddScoped<ITastingSessionReadService, TastingSessionReadService>();
 builder.Services.AddScoped<IQuickNoteService, QuickNoteService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 
