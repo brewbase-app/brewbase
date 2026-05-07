@@ -1,7 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../styles/RegisterPage.css";
 
 export default function RegisterPage() {
+
+    const navigate = useNavigate();
+
     const [nickname, setNickname] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -14,10 +18,12 @@ export default function RegisterPage() {
     return (
         <div className="register-wrapper">
             <div className="register-card">
+
                 <h1 className="logo">BrewBase</h1>
                 <h2>Załóż konto</h2>
 
                 <form onSubmit={handleSubmit}>
+
                     <input
                         type="text"
                         placeholder="nickname"
@@ -46,12 +52,19 @@ export default function RegisterPage() {
                         onChange={(e) => setRepeatPassword(e.target.value)}
                     />
 
-                    <button type="submit">Załóż konto</button>
+                    <button type="submit">
+                        Załóż konto
+                    </button>
+
                 </form>
 
                 <p className="login-text">
-                    Masz już konto? <span>Zaloguj się.</span>
+                    Masz już konto?{" "}
+                    <span onClick={() => navigate("/login")}>
+                        Zaloguj się.
+                    </span>
                 </p>
+
             </div>
         </div>
     );

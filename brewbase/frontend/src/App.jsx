@@ -16,6 +16,7 @@ import RegisterPage from "./pages/RegisterPage";
 import CuppingList from "./pages/cupping/CuppingList";
 import CreateCupping from "./pages/cupping/CreateCupping";
 import CuppingDetails from "./pages/cupping/CuppingDetails";
+import RecipeDetails from "./pages/RecipeDetails";
 
 function Layout() {
     const location = useLocation();
@@ -49,6 +50,10 @@ function Layout() {
                         path="/recipes/favorites"
                         element={<RecipesList title="Ulubione receptury" />}
                         
+                    />
+                    <Route
+                        path="/recipes/:id"
+                        element={<RecipeDetails />}
                     />
                     <Route path="/cupping" element={<CuppingList />} />
                     <Route path="/cupping/new" element={<CreateCupping />} />
