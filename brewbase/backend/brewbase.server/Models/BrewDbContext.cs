@@ -290,6 +290,11 @@ public partial class BrewDbContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.Description).HasColumnName("description");
+            
+            entity.Property(e => e.SessionDate)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("session_date");
+            
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
                 .HasColumnName("name");
@@ -315,6 +320,13 @@ public partial class BrewDbContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.AromaScore).HasColumnName("aroma_score");
+            entity.Property(e => e.SweetnessScore).HasColumnName("sweetness_score");
+            entity.Property(e => e.AcidityScore).HasColumnName("acidity_score");
+            entity.Property(e => e.BodyScore).HasColumnName("body_score");
+            entity.Property(e => e.FlavorProfileNotes).HasColumnName("flavor_profile_notes");
+            entity.Property(e => e.CleanCup).HasColumnName("clean_cup");
+            entity.Property(e => e.OverallScore).HasColumnName("overall_score");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")

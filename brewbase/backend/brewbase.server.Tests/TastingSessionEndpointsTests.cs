@@ -410,60 +410,122 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
     }
 
 	[Fact]
-public async Task ShouldSaveNoteForCoffeeInTastingSession()
-{
-    using var scope = _factory.Services.CreateScope();
-    var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
-
-    await EnsureTestUsersExistAsync(context);
-
-    var session = new CuppingSession
+    public async Task ShouldSaveNoteForCoffeeInTastingSession()
     {
-        Name = $"Note session {Guid.NewGuid()}",
-        Description = "Session for note",
-        CreatedAt = DateTime.Now,
-        UserId = 1
-    };
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
 
-    context.CuppingSessions.Add(session);
-    await context.SaveChangesAsync();
+        await EnsureTestUsersExistAsync(context);
 
-    context.CuppingSessionCoffees.Add(new CuppingSessionCoffee
+        var session = new CuppingSession
+        {
+            Name = $"Note session {Guid.NewGuid()}",
+            Description = "Session for note",
+            CreatedAt = DateTime.Now,
+            UserId = 1
+        };
+
+        context.CuppingSessions.Add(session);
+        await context.SaveChangesAsync();
+
+        context.CuppingSessionCoffees.Add(new CuppingSessionCoffee
+        {
+            CuppingSessionId = session.Id,
+            CoffeeId = 1,
+            CreatedAt = DateTime.Now
+        });
+
+        await context.SaveChangesAsync();
+
+        var request = new
+        {
+            notes = "Bright acidity and floral aroma"
+        };
+
+        var response = await _client.PutAsJsonAsync(
+            $"/api/TastingSessions/{session.Id}/coffees/1",
+            request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var root = document.RootElement;
+
+        Assert.Equal(1, root.GetProperty("coffeeId").GetInt32());
+        Assert.Equal("Alpha Coffee", root.GetProperty("coffeeName").GetString());
+        Assert.Equal("Bright acidity and floral aroma", root.GetProperty("notes").GetString());
+
+        var savedSessionCoffee = await context.CuppingSessionCoffees
+    	    .AsNoTracking()
+    	    .SingleAsync(sessionCoffee =>
+        	    sessionCoffee.CuppingSessionId == session.Id &&
+        	    sessionCoffee.CoffeeId == 1);
+
+        Assert.Equal("Bright acidity and floral aroma", savedSessionCoffee.Notes);
+    }
+
+    [Fact]
+    public async Task ShouldUpdateCoffeeEvaluationInTastingSession()
     {
-        CuppingSessionId = session.Id,
-        CoffeeId = 1,
-        CreatedAt = DateTime.Now
-    });
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
 
-    await context.SaveChangesAsync();
+        await EnsureTestUsersExistAsync(context);
 
-    var request = new
-    {
-        notes = "Bright acidity and floral aroma"
-    };
+        var session = new CuppingSession
+        {
+            Name = $"Evaluation session {Guid.NewGuid()}",
+            Description = "Session for evaluation",
+            CreatedAt = DateTime.Now,
+            UserId = 1
+        };
 
-    var response = await _client.PutAsJsonAsync(
-        $"/api/TastingSessions/{session.Id}/coffees/1/note",
-        request);
+        context.CuppingSessions.Add(session);
+        await context.SaveChangesAsync();
 
-    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        context.CuppingSessionCoffees.Add(new CuppingSessionCoffee
+        {
+            CuppingSessionId = session.Id,
+            CoffeeId = 1,
+            CreatedAt = DateTime.Now
+        });
 
-    var payload = await response.Content.ReadAsStringAsync();
-    using var document = JsonDocument.Parse(payload);
-    var root = document.RootElement;
+        await context.SaveChangesAsync();
 
-    Assert.Equal(1, root.GetProperty("coffeeId").GetInt32());
-    Assert.Equal("Alpha Coffee", root.GetProperty("coffeeName").GetString());
-    Assert.Equal("Bright acidity and floral aroma", root.GetProperty("notes").GetString());
+        var request = new
+        {
+            notes = "Very balanced coffee",
+            aromaScore = 8,
+            sweetnessScore = 7,
+            acidityScore = 6,
+            bodyScore = 7,
+            flavorProfileNotes = "Citrus, jasmine, honey",
+            cleanCup = true,
+            overallScore = 8
+        };
 
-    var savedSessionCoffee = await context.CuppingSessionCoffees
-    	.AsNoTracking()
-    	.SingleAsync(sessionCoffee =>
-        	sessionCoffee.CuppingSessionId == session.Id &&
-        	sessionCoffee.CoffeeId == 1);
+        var response = await _client.PutAsJsonAsync(
+            $"/api/TastingSessions/{session.Id}/coffees/1",
+            request);
 
-    Assert.Equal("Bright acidity and floral aroma", savedSessionCoffee.Notes);
-}
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var root = document.RootElement;
+
+        Assert.Equal(1, root.GetProperty("coffeeId").GetInt32());
+        Assert.Equal("Alpha Coffee", root.GetProperty("coffeeName").GetString());
+        Assert.Equal("Very balanced coffee", root.GetProperty("notes").GetString());
+        Assert.Equal(8, root.GetProperty("aromaScore").GetInt32());
+        Assert.Equal(7, root.GetProperty("sweetnessScore").GetInt32());
+        Assert.Equal(6, root.GetProperty("acidityScore").GetInt32());
+        Assert.Equal(7, root.GetProperty("bodyScore").GetInt32());
+        Assert.Equal("Citrus, jasmine, honey", root.GetProperty("flavorProfileNotes").GetString());
+        Assert.True(root.GetProperty("cleanCup").GetBoolean());
+        Assert.Equal(8, root.GetProperty("overallScore").GetInt32());
+    }
 
 [Fact]
 public async Task ShouldUpdateExistingCoffeeNoteInTastingSession()
@@ -500,7 +562,7 @@ public async Task ShouldUpdateExistingCoffeeNoteInTastingSession()
     };
 
     var response = await _client.PutAsJsonAsync(
-        $"/api/TastingSessions/{session.Id}/coffees/1/note",
+        $"/api/TastingSessions/{session.Id}/coffees/1",
         request);
 
     Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -539,7 +601,7 @@ public async Task ShouldReturnNotFoundWhenSavingNoteForCoffeeOutsideTastingSessi
     };
 
     var response = await _client.PutAsJsonAsync(
-        $"/api/TastingSessions/{session.Id}/coffees/1/note",
+        $"/api/TastingSessions/{session.Id}/coffees/1",
         request);
 
     Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -580,7 +642,7 @@ public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserTastingSession()
     };
 
     var response = await _client.PutAsJsonAsync(
-        $"/api/TastingSessions/{session.Id}/coffees/1/note",
+        $"/api/TastingSessions/{session.Id}/coffees/1",
         request);
 
     Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
