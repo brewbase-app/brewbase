@@ -1,0 +1,46 @@
+.cupping-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.cupping-box {
+    width: 500px;
+    padding: 40px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    background-color: #f5f5f5;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.cupping-box h1 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.cupping-box input,
+.cupping-box textarea {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+.cupping-box textarea {
+    height: 100px;
+    resize: none;
+}
+
+.cupping-box button {
+    margin-top: 10px;
+    padding: 14px;
+    border-radius: 30px;
+    border: none;
+    background-color: #333;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+}
