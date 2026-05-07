@@ -30,7 +30,12 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
         var tastingSession = new CuppingSession
         {
             Name = request.Name.Trim(),
-            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+            Description = string.IsNullOrWhiteSpace(request.Description)
+                ? null
+                : request.Description.Trim(),
+            SessionDate = request.SessionDate.HasValue
+                ? DateTime.SpecifyKind(request.SessionDate.Value, DateTimeKind.Unspecified)
+                : null,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             UserId = userId.Value
         };
@@ -44,7 +49,8 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
             Name = tastingSession.Name,
             Description = tastingSession.Description,
             CreatedAt = tastingSession.CreatedAt,
-            UserId = tastingSession.UserId
+            UserId = tastingSession.UserId,
+            SessionDate = tastingSession.SessionDate
         };
     }
 	
@@ -110,7 +116,14 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
         {
             CoffeeId = coffee.Id,
             CoffeeName = coffee.Name,
-            Notes = sessionCoffee.Notes
+            Notes = sessionCoffee.Notes,
+            AromaScore = sessionCoffee.AromaScore,
+            SweetnessScore = sessionCoffee.SweetnessScore,
+            AcidityScore = sessionCoffee.AcidityScore,
+            BodyScore = sessionCoffee.BodyScore,
+            FlavorProfileNotes = sessionCoffee.FlavorProfileNotes,
+            CleanCup = sessionCoffee.CleanCup,
+            OverallScore = sessionCoffee.OverallScore
         };
 
         return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
@@ -118,63 +131,72 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
             response);
     }
 	
-	public async Task<TastingSessionWriteResult<TastingSessionCoffeeResponseDto>> UpdateCoffeeNoteAsync(
+	public async Task<TastingSessionWriteResult<TastingSessionCoffeeResponseDto>> UpdateCoffeeAsync(
     int sessionId,
     int coffeeId,
-    UpdateTastingSessionCoffeeNoteRequestDto request)
-	{	
-    	var userId = _currentUserProvider.GetUserId();
+    UpdateTastingSessionCoffeeRequestDto request)
+{
+    var userId = _currentUserProvider.GetUserId();
 
-    	if (userId is null)
-    	{
-        	return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-            	TastingSessionWriteStatus.Unauthorized);
-    	}
+    if (userId is null)
+    {
+        return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+            TastingSessionWriteStatus.Unauthorized);
+    }
 
-    	var sessionExists = await _context.CuppingSessions
-        	.AnyAsync(session => session.Id == sessionId && session.UserId == userId.Value);
+    var sessionExists = await _context.CuppingSessions
+        .AnyAsync(session => session.Id == sessionId && session.UserId == userId.Value);
 
-    	if (!sessionExists)
-    	{
-        	return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-            	TastingSessionWriteStatus.TastingSessionNotFound);
-    	}
+    if (!sessionExists)
+    {
+        return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+            TastingSessionWriteStatus.TastingSessionNotFound);
+    }
 
-    	var sessionCoffee = await _context.CuppingSessionCoffees
-        	.SingleOrDefaultAsync(sessionCoffee =>
-            	sessionCoffee.CuppingSessionId == sessionId &&
-            	sessionCoffee.CoffeeId == coffeeId);
+    var sessionCoffee = await _context.CuppingSessionCoffees
+        .Include(sessionCoffee => sessionCoffee.Coffee)
+        .SingleOrDefaultAsync(sessionCoffee =>
+            sessionCoffee.CuppingSessionId == sessionId &&
+            sessionCoffee.CoffeeId == coffeeId);
 
-    	if (sessionCoffee is null)
-    	{
-        	return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-            	TastingSessionWriteStatus.CoffeeNotInSession);
-    	}
+    if (sessionCoffee is null)
+    {
+        return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+            TastingSessionWriteStatus.CoffeeNotInSession);
+    }
 
-    	var coffee = await _context.Coffees
-        	.Where(coffee => coffee.Id == coffeeId)
-        	.Select(coffee => new
-        	{
-            	coffee.Id,
-            	coffee.Name
-        	})
-        	.SingleAsync();
+    sessionCoffee.Notes = string.IsNullOrWhiteSpace(request.Notes)
+        ? null
+        : request.Notes.Trim();
 
-    	sessionCoffee.Notes = string.IsNullOrWhiteSpace(request.Notes)
-    		? null
-    		: request.Notes.Trim();
+    sessionCoffee.AromaScore = request.AromaScore;
+    sessionCoffee.SweetnessScore = request.SweetnessScore;
+    sessionCoffee.AcidityScore = request.AcidityScore;
+    sessionCoffee.BodyScore = request.BodyScore;
+    sessionCoffee.FlavorProfileNotes = string.IsNullOrWhiteSpace(request.FlavorProfileNotes)
+        ? null
+        : request.FlavorProfileNotes.Trim();
+    sessionCoffee.CleanCup = request.CleanCup;
+    sessionCoffee.OverallScore = request.OverallScore;
 
-    	await _context.SaveChangesAsync();
+    await _context.SaveChangesAsync();
 
-    	var response = new TastingSessionCoffeeResponseDto
-    	{
-        	CoffeeId = coffee.Id,
-        	CoffeeName = coffee.Name,
-        	Notes = sessionCoffee.Notes
-    	};
+    var response = new TastingSessionCoffeeResponseDto
+    {
+        CoffeeId = sessionCoffee.CoffeeId,
+        CoffeeName = sessionCoffee.Coffee.Name,
+        Notes = sessionCoffee.Notes,
+        AromaScore = sessionCoffee.AromaScore,
+        SweetnessScore = sessionCoffee.SweetnessScore,
+        AcidityScore = sessionCoffee.AcidityScore,
+        BodyScore = sessionCoffee.BodyScore,
+        FlavorProfileNotes = sessionCoffee.FlavorProfileNotes,
+        CleanCup = sessionCoffee.CleanCup,
+        OverallScore = sessionCoffee.OverallScore
+    };
 
-    	return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-        	TastingSessionWriteStatus.Success,
-        	response);
-	}
+    return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+        TastingSessionWriteStatus.Success,
+        response);
+}
 }
