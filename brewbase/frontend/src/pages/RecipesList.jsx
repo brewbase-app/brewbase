@@ -1,4 +1,4 @@
-
+import { useNavigate } from "react-router-dom";
 const myRecipes = [
   { id: 1, name: "Receptura 1", date: "01-01-2026" },
   { id: 2, name: "Receptura 2", date: "01-01-2026" },
@@ -11,6 +11,7 @@ const favoriteRecipes = [
 ];
 
 const RecipesList = ({ title }) => {
+    const navigate = useNavigate();
   // wybór danych
   const data =
     title === "Ulubione receptury" ? favoriteRecipes : myRecipes;
@@ -54,7 +55,12 @@ const RecipesList = ({ title }) => {
                 </p>
               </div>
 
-              <button style={buttonStyle}>Szczegóły</button>
+                <button
+                    style={buttonStyle}
+                    onClick={() => navigate(`/recipes/${r.id}`)}
+                >
+                    Szczegóły
+                </button>
             </div>
           ))}
         </div>

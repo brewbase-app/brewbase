@@ -43,14 +43,20 @@ function Login() {
                         onChange={(e) => setPassword(e.target.value)}
                     />
 
-                    <button style={styles.button} type="submit">
-                        Zaloguj się
-                    </button>
+                    <div style={styles.buttonContainer}>
+                        <button style={styles.button} type="submit">
+                            Zaloguj się
+                        </button>
+                    </div>
                 </form>
 
                 <p style={styles.footer}>
                     Nie masz konta?{" "}
-                    <span style={styles.link}>Zarejestruj się.</span>
+                    <span
+                        style={styles.link}
+                        onClick={() => navigate("/register")}
+                    >Zarejestruj się.
+                    </span>
                 </p>
             </div>
         </div>

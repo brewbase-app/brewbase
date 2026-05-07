@@ -37,9 +37,11 @@ function Sidebar() {
                     </NavLink>
                 </li>
 
-                <li className="menu-item">
-                    <FlaskConical size={20} />
-                    <span className="menu-text">Cupping Sessions</span>
+                <li>
+                    <NavLink to="/cupping" className="menu-item">
+                        <FlaskConical size={20} />
+                        <span className="menu-text">Cupping Sessions</span>
+                    </NavLink>
                 </li>
 
                 <li className="menu-item">
