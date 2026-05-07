@@ -378,6 +378,143 @@ public class RecipeEndpointsTests : IDisposable
         Assert.True(recipe.GetProperty("id").GetInt32() > 0);
         Assert.Equal("Created Via Test", recipe.GetProperty("title").GetString());
     }
+    
+    [Fact]
+    public async Task User2_GetPrivateRecipeWithoutRatings_ReturnsNullAverageRatingAndZeroRatingCount()
+    {
+        var response = await SendRecipeGetAsync("/api/Recipe/3", devUserId: User2);
+
+        response.EnsureSuccessStatusCode();
+
+        var root = await ParseResponseRootAsync(response);
+
+        Assert.Equal(JsonValueKind.Null, root.GetProperty("averageRating").ValueKind);
+        Assert.Equal(0, root.GetProperty("ratingCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task User1_GetRecipeWithRatings_ReturnsAverageRatingAndRatingCount()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var recipe = new Recipe
+        {
+            Title = $"Rated Recipe {Guid.NewGuid()}",
+            Parameters = "{}",
+            Steps = "step",
+            IsPublic = true,
+            UserId = User1,
+            CoffeeId = 1,
+            BrewingMethodId = 1
+        };
+
+        context.Recipes.Add(recipe);
+        await context.SaveChangesAsync();
+
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        context.RecipeRatings.AddRange(
+            new RecipeRating
+            {
+                RecipeId = recipe.Id,
+                UserId = User1,
+                Value = 3,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new RecipeRating
+            {
+                RecipeId = recipe.Id,
+                UserId = User2,
+                Value = 5,
+                CreatedAt = now,
+                UpdatedAt = now
+            }
+        );
+
+        await context.SaveChangesAsync();
+
+        var response = await SendRecipeGetAsync($"/api/Recipe/{recipe.Id}", devUserId: User1);
+
+        response.EnsureSuccessStatusCode();
+
+        var root = await ParseResponseRootAsync(response);
+
+        Assert.Equal(4, root.GetProperty("averageRating").GetDouble());
+        Assert.Equal(2, root.GetProperty("ratingCount").GetInt32());
+    }
+    
+    [Fact]
+    public async Task User1_RateExistingRecipe_ReturnsNoContent()
+    {
+        var body = """
+            {"value":4}
+            """;
+
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/rating", User1, body);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var rating = context.RecipeRatings.Single(r => r.RecipeId == 1 && r.UserId == User1);
+
+        Assert.Equal(4, rating.Value);
+    }
+
+    [Fact]
+    public async Task User1_RateExistingRecipeTwice_UpdatesPreviousRating()
+    {
+        var firstBody = """
+            {"value":2}
+            """;
+
+        var secondBody = """
+            {"value":5}
+            """;
+
+        var firstResponse = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/2/rating", User1, firstBody);
+        var secondResponse = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/2/rating", User1, secondBody);
+
+        Assert.Equal(HttpStatusCode.NoContent, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, secondResponse.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var ratings = context.RecipeRatings
+            .Where(r => r.RecipeId == 2 && r.UserId == User1)
+            .ToList();
+
+        Assert.Single(ratings);
+        Assert.Equal(5, ratings[0].Value);
+    }
+
+    [Fact]
+    public async Task User1_RateNonExistingRecipe_ReturnsNotFound()
+    {
+        var body = """
+            {"value":4}
+            """;
+
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/999999/rating", User1, body);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task User1_RateRecipeWithInvalidValue_ReturnsBadRequest()
+    {
+        var body = """
+            {"value":6}
+            """;
+
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/rating", User1, body);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 
     private async Task<HttpResponseMessage> SendRecipeWriteAsync(HttpMethod method, string path, int devUserId, string? jsonBody = null)
     {
