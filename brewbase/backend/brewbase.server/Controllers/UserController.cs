@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using brewbase.server.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using brewbase.server.Services.Interfaces;
 
@@ -25,5 +26,26 @@ public class UserController : ControllerBase
             return Unauthorized();
 
         return Ok(user);
+    }
+    
+    
+    [Authorize]
+    [HttpPut("edit_profile")]
+    public async Task<IActionResult> UpdateProfile(
+        [FromBody] UserProfileRequestDto dto)
+    {
+        try
+        {
+            var updated = await _userService.UpdateUserProfileAsync(dto);
+
+            if (!updated)
+                return Unauthorized();
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return Conflict(ex.Message);
+        }
     }
 }

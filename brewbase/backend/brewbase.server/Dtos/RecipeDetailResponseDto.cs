@@ -17,4 +17,8 @@ public class RecipeDetailResponseDto
     public string? BrewingMethod { get; set; }
 
     public string? Coffee { get; set; }
+    
+    public double? AverageRating { get; set; }
+
+    public int RatingCount { get; set; }
 }
