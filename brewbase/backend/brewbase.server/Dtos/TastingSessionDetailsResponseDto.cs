@@ -7,4 +7,5 @@ public class TastingSessionDetailsResponseDto
     public string? Description { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<TastingSessionCoffeeResponseDto> Coffees { get; set; } = [];
+    public DateTime? SessionDate { get; set; }
 }

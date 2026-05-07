@@ -11,4 +11,6 @@ public sealed class TastingSessionResponseDto
     public DateTime CreatedAt { get; set; }
 
     public int UserId { get; set; }
+    
+    public DateTime? SessionDate { get; set; }
 }

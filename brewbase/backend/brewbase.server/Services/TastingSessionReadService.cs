@@ -25,6 +25,7 @@ public class TastingSessionReadService : ITastingSessionReadService
                 Name = session.Name,
                 Description = session.Description,
                 CreatedAt = session.CreatedAt,
+                SessionDate = session.SessionDate,
                 CoffeeCount = session.CuppingSessionCoffees.Count
             })
             .ToListAsync();
@@ -40,12 +41,20 @@ public class TastingSessionReadService : ITastingSessionReadService
                 Name = session.Name,
                 Description = session.Description,
                 CreatedAt = session.CreatedAt,
+                SessionDate = session.SessionDate,
                 Coffees = session.CuppingSessionCoffees
                     .Select(sessionCoffee => new TastingSessionCoffeeResponseDto
                     {
                         CoffeeId = sessionCoffee.CoffeeId,
                         CoffeeName = sessionCoffee.Coffee.Name,
-                        Notes = sessionCoffee.Notes
+                        Notes = sessionCoffee.Notes,
+                        AromaScore = sessionCoffee.AromaScore,
+                        SweetnessScore = sessionCoffee.SweetnessScore,
+                        AcidityScore = sessionCoffee.AcidityScore,
+                        BodyScore = sessionCoffee.BodyScore,
+                        FlavorProfileNotes = sessionCoffee.FlavorProfileNotes,
+                        CleanCup = sessionCoffee.CleanCup,
+                        OverallScore = sessionCoffee.OverallScore
                     })
                     .ToList()
             })

@@ -101,26 +101,27 @@ public class TastingSessionsController : ControllerBase
             _ => BadRequest()
         };
     }
-
-	[HttpPut("{sessionId:int}/coffees/{coffeeId:int}/note")]
+	
+	[HttpPut("{sessionId:int}/coffees/{coffeeId:int}")]
 	[ProducesResponseType(typeof(TastingSessionCoffeeResponseDto), StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status404NotFound)]
-	public async Task<IActionResult> UpdateCoffeeNote(
-    	int sessionId,
-    	int coffeeId,
-    	[FromBody] UpdateTastingSessionCoffeeNoteRequestDto request)
+	public async Task<IActionResult> UpdateCoffee(
+		int sessionId,
+		int coffeeId,
+		[FromBody] UpdateTastingSessionCoffeeRequestDto request)
 	{
-    	var result = await _tastingSessionWriteService.UpdateCoffeeNoteAsync(sessionId, coffeeId, request);
+		var result = await _tastingSessionWriteService.UpdateCoffeeAsync(sessionId, coffeeId, request);
 
-    	return result.Status switch
-    	{
-        	TastingSessionWriteStatus.Success => Ok(result.Data),
-        	TastingSessionWriteStatus.Unauthorized => Unauthorized(),
-        	TastingSessionWriteStatus.TastingSessionNotFound => NotFound(new SimpleErrorResponseDto { Message = "Tasting session not found." }),
-        	TastingSessionWriteStatus.CoffeeNotInSession => NotFound(new SimpleErrorResponseDto { Message = "Coffee is not added to this tasting session." }),
-        	_ => BadRequest()
-    	};
+		return result.Status switch
+		{
+			TastingSessionWriteStatus.Success => Ok(result.Data),
+			TastingSessionWriteStatus.Unauthorized => Unauthorized(),
+			TastingSessionWriteStatus.TastingSessionNotFound => NotFound(new SimpleErrorResponseDto { Message = "Tasting session not found." }),
+			TastingSessionWriteStatus.CoffeeNotInSession => NotFound(new SimpleErrorResponseDto { Message = "Coffee is not added to this tasting session." }),
+			_ => BadRequest()
+		};
 	}
+	
 }

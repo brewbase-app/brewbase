@@ -5,8 +5,10 @@ namespace brewbase.server.Dtos;
 public sealed class CreateTastingSessionRequestDto
 {
     [Required]
-    [RegularExpression(@".*\S.*", ErrorMessage = "Name is required.")]
-    public string Name { get; set; } = string.Empty;
+    [MaxLength(255)]
+    public string Name { get; set; } = null!;
 
     public string? Description { get; set; }
+
+    public DateTime? SessionDate { get; set; }
 }
