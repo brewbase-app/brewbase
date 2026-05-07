@@ -17,9 +17,12 @@ import CuppingList from "./pages/cupping/CuppingList";
 import CreateCupping from "./pages/cupping/CreateCupping";
 import CuppingDetails from "./pages/cupping/CuppingDetails";
 import RecipeDetails from "./pages/RecipeDetails";
+import ProtectedRoute from "./components/Auth/ProtectedRoute.jsx";
 
 function Layout() {
     const location = useLocation();
+
+    const token = localStorage.getItem("token");
 
     const isAuthPage =
         location.pathname === "/login" ||
@@ -27,7 +30,7 @@ function Layout() {
 
     return (
         <div style={{ display: "flex" }}>
-            {!isAuthPage && <Sidebar />}
+            {!isAuthPage && token && <Sidebar />}
 
             <div style={{ flex: 1 }}>
                 <Routes>
@@ -39,25 +42,43 @@ function Layout() {
                     <Route path="/register" element={<RegisterPage />} />
 
                     {/* app */}
-                    <Route path="/home" element={<Home />} />
-                    <Route path="/recipes" element={<Recipes />} />
-                    <Route path="/recipes/new" element={<RecipesForm />} />
+                    <Route path="/home" element={<ProtectedRoute>
+                        <Home />
+                    </ProtectedRoute>} />
+                    <Route path="/recipes" element={ <ProtectedRoute>
+                        <Recipes />
+                    </ProtectedRoute>} />
+                    <Route path="/recipes/new" element={<ProtectedRoute>
+                        <RecipesForm />
+                    </ProtectedRoute>} />
                     <Route
                         path="/recipes/my"
-                        element={<RecipesList title="Twoje receptury" />}
+                        element={<ProtectedRoute>
+                            <RecipesList title="Twoje receptury" />
+                        </ProtectedRoute>}
                     />
                     <Route
                         path="/recipes/favorites"
-                        element={<RecipesList title="Ulubione receptury" />}
+                        element={<ProtectedRoute>
+                            <RecipesList title="Ulubione receptury" />
+                        </ProtectedRoute>}
                         
                     />
                     <Route
                         path="/recipes/:id"
-                        element={<RecipeDetails />}
+                        element={<ProtectedRoute>
+                            <RecipeDetails />
+                        </ProtectedRoute>}
                     />
-                    <Route path="/cupping" element={<CuppingList />} />
-                    <Route path="/cupping/new" element={<CreateCupping />} />
-                    <Route path="/cupping/:id" element={<CuppingDetails />} />
+                    <Route path="/cupping" element={<ProtectedRoute>
+                        <CuppingList />
+                    </ProtectedRoute>} />
+                    <Route path="/cupping/new" element={ <ProtectedRoute>
+                        <CreateCupping />
+                    </ProtectedRoute>} />
+                    <Route path="/cupping/:id" element={<ProtectedRoute>
+                        <CuppingDetails />
+                    </ProtectedRoute>} />
                     
                 </Routes>
             </div>
