@@ -26,13 +26,15 @@ import CuppingPreview from "./pages/cupping/CuppingPreview";
 function Layout() {
     const location = useLocation();
 
+    const token = localStorage.getItem("token");
+
     const isAuthPage =
         location.pathname === "/login" ||
         location.pathname === "/register";
 
     return (
         <div style={{ display: "flex" }}>
-            {!isAuthPage && <Sidebar />}
+            {!isAuthPage && token && <Sidebar />}
 
             <div style={{ flex: 1 }}>
                 <Routes>

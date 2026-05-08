@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Login() {
-    const [email, setEmail] = useState("");
+    const [login, setLogin] = useState("");
     const [password, setPassword] = useState("");
 
     const navigate = useNavigate(); //  dodane
 
-    const handleSubmit = (e) => {
+    /*const handleSubmit = (e) => {
         e.preventDefault();
 
         // testowe logowanie
@@ -15,6 +15,38 @@ function Login() {
             navigate("/home"); //  przekierowanie
         } else {
             alert("Nieprawidłowe dane");
+        }
+    };*/
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+            const response = await fetch(
+                "https://localhost:44314/api/auth/login",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        login: login,
+                        password: password,
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Nieprawidłowe dane logowania");
+            }
+
+            const data = await response.json();
+
+            localStorage.setItem("token", data.token);
+
+            navigate("/home");
+        } catch (error) {
+            alert(error.message);
         }
     };
 
@@ -30,9 +62,9 @@ function Login() {
                     <input
                         style={styles.input}
                         type="text"
-                        placeholder="e-mail"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="login"
+                        value={login}
+                        onChange={(e) => setLogin(e.target.value)}
                     />
 
                     <input
