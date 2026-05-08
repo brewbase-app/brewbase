@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../../styles/CreateCupping.css";
 
 const CreateCupping = () => {
+    const navigate = useNavigate();
+
     const [form, setForm] = useState({
         name: "",
         date: "",
-        coffees: "",
         description: "",
     });
 
@@ -16,37 +18,46 @@ const CreateCupping = () => {
         });
     };
 
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        console.log("Nowa sesja:", form);
+
+        // później tutaj będzie request do backendu
+        navigate("/cupping/1");
+    };
+
     return (
         <div className="cupping-wrapper">
-            <div className="cupping-box">
+            <form className="cupping-box" onSubmit={handleSubmit}>
                 <h1>Cupping session</h1>
 
                 <input
                     name="name"
                     placeholder="Nazwa"
+                    value={form.name}
                     onChange={handleChange}
                 />
 
                 <input
                     name="date"
                     type="date"
+                    value={form.date}
                     onChange={handleChange}
                 />
-
-                <input
-                    name="coffees"
-                    placeholder="Ilość kaw"
-                    onChange={handleChange}
-                />
+                
 
                 <textarea
                     name="description"
                     placeholder="Opis"
+                    value={form.description}
                     onChange={handleChange}
                 />
 
-                <button>Rozpocznij sesję</button>
-            </div>
+                <button type="submit">
+                    Rozpocznij sesję
+                </button>
+            </form>
         </div>
     );
 };
