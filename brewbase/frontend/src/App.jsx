@@ -23,7 +23,10 @@ import CreateCupping from "./pages/cupping/CreateCupping";
 import CuppingDetails from "./pages/cupping/CuppingDetails";
 import CuppingPreview from "./pages/cupping/CuppingPreview";
 
+import Quicknotes from "./pages/Quicknotes";
+
 function Layout() {
+
     const location = useLocation();
 
     const token = localStorage.getItem("token");
@@ -33,11 +36,15 @@ function Layout() {
         location.pathname === "/register";
 
     return (
+
         <div style={{ display: "flex" }}>
+
             {!isAuthPage && token && <Sidebar />}
 
             <div style={{ flex: 1 }}>
+
                 <Routes>
+
                     {/* start */}
                     <Route
                         path="/"
@@ -115,17 +122,29 @@ function Layout() {
                         path="/cupping/preview/:id"
                         element={<CuppingPreview />}
                     />
+
+                    {/* quick notes */}
+                    <Route
+                        path="/quicknotes"
+                        element={<Quicknotes />}
+                    />
+
                 </Routes>
+
             </div>
+
         </div>
     );
 }
 
 function App() {
+
     return (
+
         <BrowserRouter>
             <Layout />
         </BrowserRouter>
+
     );
 }
 
