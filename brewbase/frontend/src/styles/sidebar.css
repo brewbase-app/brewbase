@@ -9,6 +9,16 @@
     flex-direction: column;
     transition: width 0.3s ease;
     overflow: hidden;
+    z-index:9999;
+}
+.logo{
+    cursor:pointer;
+
+    transition:0.2s ease;
+}
+
+.logo:hover{
+    opacity:0.8;
 }
 
 .sidebar:hover {

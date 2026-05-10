@@ -6,6 +6,10 @@ import {
     Navigate
 } from "react-router-dom";
 
+import {
+    ArrowLeft
+} from "lucide-react";
+import "./App.css";
 import Sidebar from "./components/Sidebar";
 
 import Home from "./pages/Home";
@@ -50,6 +54,11 @@ function Layout() {
         location.pathname === "/login" ||
         location.pathname === "/register";
 
+    const showBackButton =
+        location.pathname !== "/home" &&
+        location.pathname !== "/login" &&
+        location.pathname !== "/register";
+
     return (
 
         <div style={{ display: "flex" }}>
@@ -57,6 +66,21 @@ function Layout() {
             {!isAuthPage && token && <Sidebar />}
 
             <div style={{ flex: 1 }}>
+
+                {showBackButton && (
+
+                    <button
+                        className="global-back-button"
+                        onClick={() => window.history.back()}
+                    >
+
+                        <ArrowLeft size={18} />
+
+                        Wróć
+
+                    </button>
+
+                )}
 
                 <Routes>
 
