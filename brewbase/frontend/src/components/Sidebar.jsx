@@ -54,9 +54,11 @@ function Sidebar() {
                     <span className="menu-text">Ranking</span>
                 </li>
 
-                <li className="menu-item">
-                    <StickyNote size={20} />
-                    <span className="menu-text">Quick Notes</span>
+                <li>
+                    <NavLink to="/quicknotes" className="menu-item">
+                        <StickyNote size={20} />
+                        <span className="menu-text">Quick Notes</span>
+                    </NavLink>
                 </li>
 
                 <li className="menu-item">

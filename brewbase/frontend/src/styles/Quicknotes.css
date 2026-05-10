@@ -1,0 +1,199 @@
+*{
+    font-family:"Inter", sans-serif;
+}
+
+.quicknotes-page{
+    flex:1;
+
+    display:flex;
+
+    background:#f5f5f5;
+
+    min-height:100vh;
+}
+
+.quicknotes-container{
+    display:flex;
+
+    flex:1;
+
+    width:100%;
+}
+
+/* LEFT SECTION */
+
+.quicknotes-editor-section{
+    flex:1;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+
+    padding-top:40px;
+}
+
+.quicknotes-editor-section h1{
+    font-size:46px;
+    font-weight:600;
+
+    letter-spacing:-1px;
+
+    color:#262626;
+
+    margin-bottom:32px;
+}
+
+.quicknotes-textarea{
+    width:70%;
+    max-width:720px;
+
+    height:520px;
+
+    background:#2f2f2f;
+    color:white;
+
+    border:none;
+    border-radius:24px;
+
+    padding:30px;
+
+    font-size:17px;
+    font-weight:400;
+
+    line-height:1.7;
+
+    resize:none;
+    outline:none;
+
+    box-sizing:border-box;
+}
+
+.quicknotes-textarea::placeholder{
+    color:#b8b8b8;
+}
+
+/* RIGHT SECTION */
+
+.quicknotes-sidebar{
+    width:340px;
+
+    background:#464646;
+
+    padding:32px 24px;
+
+    overflow-y:auto;
+}
+
+.quicknotes-sidebar h2{
+    color:white;
+
+    font-size:28px;
+    font-weight:600;
+
+    letter-spacing:-0.5px;
+
+    margin-bottom:22px;
+}
+
+.quicknotes-search{
+    width:100%;
+
+    padding:14px 16px;
+
+    border:none;
+    border-radius:16px;
+
+    background:#f8f8f8;
+
+    font-size:14px;
+    font-weight:400;
+
+    margin-bottom:24px;
+
+    outline:none;
+
+    box-sizing:border-box;
+}
+
+.quicknotes-list{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+}
+
+/* NOTE CARD */
+
+.note-card{
+    background:#383838;
+
+    border-radius:20px;
+
+    padding:16px;
+
+    border:1px solid rgba(255,255,255,0.04);
+
+    color:white;
+
+    transition:0.2s ease;
+
+    cursor:pointer;
+}
+
+.note-card:hover{
+    transform:translateY(-2px);
+}
+
+.note-card-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+
+    gap:10px;
+
+    margin-bottom:10px;
+}
+
+.note-card-header h3{
+    margin:0;
+
+    font-size:16px;
+    font-weight:600;
+
+    line-height:1.4;
+
+    flex:1;
+}
+
+.note-icons{
+    display:flex;
+    gap:8px;
+}
+
+.note-icons svg{
+    color:#cfcfcf;
+
+    cursor:pointer;
+
+    transition:0.2s ease;
+}
+
+.note-icons svg:hover{
+    color:white;
+    transform:scale(1.05);
+}
+
+.note-card p{
+    margin:0 0 14px 0;
+
+    color:#d0d0d0;
+
+    line-height:1.6;
+
+    font-size:13px;
+    font-weight:400;
+}
+
+.note-card span{
+    font-size:11px;
+    color:#a5a5a5;
+}
