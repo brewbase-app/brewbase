@@ -85,9 +85,13 @@ function Layout() {
                     flex: 1,
 
                     marginLeft:
-                        sidebarExpanded
-                            ? "220px"
-                            : "72px",
+                        !isAuthPage
+                            ? (
+                                sidebarExpanded
+                                    ? "220px"
+                                    : "72px"
+                            )
+                            : "0px",
 
                     transition: "0.25s ease",
 
