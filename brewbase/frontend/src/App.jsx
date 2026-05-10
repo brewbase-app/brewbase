@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import {
     BrowserRouter,
     Routes,
@@ -6,24 +8,57 @@ import {
     Navigate
 } from "react-router-dom";
 
+import {
+    ArrowLeft
+} from "lucide-react";
+
+import "./App.css";
+
 import Sidebar from "./components/Sidebar";
 
 import Home from "./pages/Home";
+
+/* RECIPES */
 
 import Recipes from "./pages/Recipes";
 import RecipesForm from "./pages/RecipesForm";
 import RecipesList from "./pages/RecipesList";
 import RecipeDetails from "./pages/RecipeDetails";
 
+/* AUTH */
+
 import Login from "./pages/Login";
 import RegisterPage from "./pages/RegisterPage";
+
+/* CUPPING */
 
 import CuppingList from "./pages/cupping/CuppingList";
 import CreateCupping from "./pages/cupping/CreateCupping";
 import CuppingDetails from "./pages/cupping/CuppingDetails";
 import CuppingPreview from "./pages/cupping/CuppingPreview";
 
+/* QUICK NOTES */
+
 import Quicknotes from "./pages/Quicknotes";
+
+/* RANKING */
+
+import Ranking from "./pages/Ranking";
+
+/* WIKI */
+
+import WikiHome from "./pages/wiki/WikiHome";
+
+import Coffees from "./pages/wiki/Coffees";
+import CoffeeDetails from "./pages/wiki/CoffeeDetails";
+
+import Regions from "./pages/wiki/Regions";
+import RegionDetails from "./pages/wiki/RegionDetails";
+
+import BrewingMethods from "./pages/wiki/BrewingMethods";
+import BrewingMethodDetails from "./pages/wiki/BrewingMethodDetails";
+
+import AddWikiArticle from "./pages/wiki/AddWikiArticle";
 
 function Layout() {
 
@@ -31,27 +66,81 @@ function Layout() {
 
     const token = localStorage.getItem("token");
 
+    const [sidebarExpanded, setSidebarExpanded] =
+        useState(false);
+
     const isAuthPage =
         location.pathname === "/login" ||
         location.pathname === "/register";
+
+    const showBackButton =
+        location.pathname !== "/home" &&
+        location.pathname !== "/login" &&
+        location.pathname !== "/register";
 
     return (
 
         <div style={{ display: "flex" }}>
 
-            {!isAuthPage && token && <Sidebar />}
+            {!isAuthPage && token && (
 
-            <div style={{ flex: 1 }}>
+                <Sidebar
+                    sidebarExpanded={sidebarExpanded}
+                    setSidebarExpanded={setSidebarExpanded}
+                />
+
+            )}
+
+            <div
+                style={{
+                    flex: 1,
+
+                    marginLeft:
+                        !isAuthPage
+                            ? (
+                                sidebarExpanded
+                                    ? "220px"
+                                    : "72px"
+                            )
+                            : "0px",
+
+                    transition:
+                        "margin-left 0.25s ease",
+
+                    position: "relative",
+
+                    minHeight: "100vh",
+
+                    background: "#f5f5f5"
+                }}
+            >
+
+                {showBackButton && (
+
+                    <button
+                        className="global-back-button"
+                        onClick={() => window.history.back()}
+                    >
+
+                        <ArrowLeft size={18} />
+
+                        Wróć
+
+                    </button>
+
+                )}
 
                 <Routes>
 
-                    {/* start */}
+                    {/* START */}
+
                     <Route
                         path="/"
                         element={<Navigate to="/login" />}
                     />
 
-                    {/* auth */}
+                    {/* AUTH */}
+
                     <Route
                         path="/login"
                         element={<Login />}
@@ -62,13 +151,15 @@ function Layout() {
                         element={<RegisterPage />}
                     />
 
-                    {/* home */}
+                    {/* HOME */}
+
                     <Route
                         path="/home"
                         element={<Home />}
                     />
 
-                    {/* recipes */}
+                    {/* RECIPES */}
+
                     <Route
                         path="/recipes"
                         element={<Recipes />}
@@ -102,7 +193,8 @@ function Layout() {
                         element={<RecipeDetails />}
                     />
 
-                    {/* cupping */}
+                    {/* CUPPING */}
+
                     <Route
                         path="/cupping"
                         element={<CuppingList />}
@@ -123,10 +215,68 @@ function Layout() {
                         element={<CuppingPreview />}
                     />
 
-                    {/* quick notes */}
+                    {/* QUICK NOTES */}
+
                     <Route
                         path="/quicknotes"
                         element={<Quicknotes />}
+                    />
+
+                    {/* RANKING */}
+
+                    <Route
+                        path="/ranking"
+                        element={<Ranking />}
+                    />
+
+                    {/* WIKI */}
+
+                    <Route
+                        path="/wiki"
+                        element={<WikiHome />}
+                    />
+
+                    {/* COFFEES */}
+
+                    <Route
+                        path="/wiki/coffees"
+                        element={<Coffees />}
+                    />
+
+                    <Route
+                        path="/wiki/coffees/:id"
+                        element={<CoffeeDetails />}
+                    />
+
+                    {/* REGIONS */}
+
+                    <Route
+                        path="/wiki/regions"
+                        element={<Regions />}
+                    />
+
+                    <Route
+                        path="/wiki/regions/:id"
+                        element={<RegionDetails />}
+                    />
+
+                    {/* BREWING METHODS */}
+
+                    <Route
+                        path="/wiki/methods"
+                        element={<BrewingMethods />}
+                    />
+
+                    <Route
+                        path="/wiki/methods/:id"
+                        element={<BrewingMethodDetails />}
+                    />
+
+                    {/* ADD ARTICLE */}
+
+                    <Route
+                        path="/wiki/add"
+                        element={<AddWikiArticle />}
                     />
 
                 </Routes>
@@ -142,7 +292,9 @@ function App() {
     return (
 
         <BrowserRouter>
+
             <Layout />
+
         </BrowserRouter>
 
     );
