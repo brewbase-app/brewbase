@@ -23,7 +23,7 @@ function Login() {
 
         try {
             const response = await fetch(
-                "/api/Auth/login",
+                "https://localhost:44314/api/Auth/login",
                 {
                     method: "POST",
                     headers: {
