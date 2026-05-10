@@ -1,9 +1,14 @@
 .global-back-button{
+    position:absolute;
+
+    top:-18px;
+    left:-60px;
+
+    z-index:1000;
+
     display:flex;
     align-items:center;
     gap:10px;
-
-    margin:32px 0 0 120px;
 
     border:none;
 
@@ -11,7 +16,7 @@
 
     color:white;
 
-    padding:12px 18px;
+    padding:5px 18px;
 
     border-radius:14px;
 

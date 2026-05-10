@@ -1,3 +1,6 @@
+
+import { useState } from "react";
+
 import {
     BrowserRouter,
     Routes,
@@ -9,7 +12,9 @@ import {
 import {
     ArrowLeft
 } from "lucide-react";
+
 import "./App.css";
+
 import Sidebar from "./components/Sidebar";
 
 import Home from "./pages/Home";
@@ -50,6 +55,9 @@ function Layout() {
 
     const token = localStorage.getItem("token");
 
+    const [sidebarExpanded, setSidebarExpanded] =
+        useState(false);
+
     const isAuthPage =
         location.pathname === "/login" ||
         location.pathname === "/register";
@@ -63,9 +71,31 @@ function Layout() {
 
         <div style={{ display: "flex" }}>
 
-            {!isAuthPage && token && <Sidebar />}
+            {!isAuthPage && token && (
 
-            <div style={{ flex: 1 }}>
+                <Sidebar
+                    sidebarExpanded={sidebarExpanded}
+                    setSidebarExpanded={setSidebarExpanded}
+                />
+
+            )}
+
+            <div
+                style={{
+                    flex: 1,
+
+                    marginLeft:
+                        sidebarExpanded
+                            ? "220px"
+                            : "72px",
+
+                    transition: "0.25s ease",
+
+                    position: "relative",
+
+                    
+                }}
+            >
 
                 {showBackButton && (
 
@@ -84,7 +114,8 @@ function Layout() {
 
                 <Routes>
 
-                    {/* start */}
+                    {/* START */}
+
                     <Route
                         path="/"
                         element={<Navigate to="/login" />}
@@ -166,7 +197,8 @@ function Layout() {
                         element={<CuppingPreview />}
                     />
 
-                    {/* quick notes */}
+                    {/* QUICK NOTES */}
+
                     <Route
                         path="/quicknotes"
                         element={<Quicknotes />}

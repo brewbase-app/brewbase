@@ -16,13 +16,26 @@ import {
     Settings
 } from "lucide-react";
 
-function Sidebar() {
+function Sidebar({
+                     sidebarExpanded,
+                     setSidebarExpanded
+                 }) {
 
     const navigate = useNavigate();
 
     return (
 
-        <div className="sidebar">
+        <div
+            className={`sidebar ${
+                sidebarExpanded ? "expanded" : ""
+            }`}
+            onMouseEnter={() =>
+                setSidebarExpanded(true)
+            }
+            onMouseLeave={() =>
+                setSidebarExpanded(false)
+            }
+        >
 
             <div
                 className="logo"
