@@ -54,13 +54,20 @@ function Sidebar({
 
             <ul className="menu">
 
-                <li className="menu-item">
+                <li>
 
-                    <Home size={20} />
+                    <NavLink
+                        to="/home"
+                        className="menu-item"
+                    >
 
-                    <span className="menu-text">
-                        Dashboard
-                    </span>
+                        <Home size={20} />
+
+                        <span className="menu-text">
+            Dashboard
+        </span>
+
+                    </NavLink>
 
                 </li>
 
@@ -125,13 +132,20 @@ function Sidebar({
 
                 </li>
 
-                <li className="menu-item">
+                <li>
 
-                    <Trophy size={20} />
+                    <NavLink
+                        to="/ranking"
+                        className="menu-item"
+                    >
 
-                    <span className="menu-text">
-                        Ranking
-                    </span>
+                        <Trophy size={20} />
+
+                        <span className="menu-text">
+            Ranking
+        </span>
+
+                    </NavLink>
 
                 </li>
 

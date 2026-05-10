@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 
 import {
@@ -19,20 +18,32 @@ import Sidebar from "./components/Sidebar";
 
 import Home from "./pages/Home";
 
+/* RECIPES */
+
 import Recipes from "./pages/Recipes";
 import RecipesForm from "./pages/RecipesForm";
 import RecipesList from "./pages/RecipesList";
 import RecipeDetails from "./pages/RecipeDetails";
 
+/* AUTH */
+
 import Login from "./pages/Login";
 import RegisterPage from "./pages/RegisterPage";
+
+/* CUPPING */
 
 import CuppingList from "./pages/cupping/CuppingList";
 import CreateCupping from "./pages/cupping/CreateCupping";
 import CuppingDetails from "./pages/cupping/CuppingDetails";
 import CuppingPreview from "./pages/cupping/CuppingPreview";
 
+/* QUICK NOTES */
+
 import Quicknotes from "./pages/Quicknotes";
+
+/* RANKING */
+
+import Ranking from "./pages/Ranking";
 
 /* WIKI */
 
@@ -93,11 +104,14 @@ function Layout() {
                             )
                             : "0px",
 
-                    transition: "0.25s ease",
+                    transition:
+                        "margin-left 0.25s ease",
 
                     position: "relative",
 
-                    
+                    minHeight: "100vh",
+
+                    background: "#f5f5f5"
                 }}
             >
 
@@ -206,6 +220,13 @@ function Layout() {
                     <Route
                         path="/quicknotes"
                         element={<Quicknotes />}
+                    />
+
+                    {/* RANKING */}
+
+                    <Route
+                        path="/ranking"
+                        element={<Ranking />}
                     />
 
                     {/* WIKI */}
