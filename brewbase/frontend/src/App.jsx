@@ -25,6 +25,21 @@ import CuppingPreview from "./pages/cupping/CuppingPreview";
 
 import Quicknotes from "./pages/Quicknotes";
 
+/* WIKI */
+
+import WikiHome from "./pages/wiki/WikiHome";
+
+import Coffees from "./pages/wiki/Coffees";
+import CoffeeDetails from "./pages/wiki/CoffeeDetails";
+
+import Regions from "./pages/wiki/Regions";
+import RegionDetails from "./pages/wiki/RegionDetails";
+
+import BrewingMethods from "./pages/wiki/BrewingMethods";
+import BrewingMethodDetails from "./pages/wiki/BrewingMethodDetails";
+
+import AddWikiArticle from "./pages/wiki/AddWikiArticle";
+
 function Layout() {
 
     const location = useLocation();
@@ -45,13 +60,15 @@ function Layout() {
 
                 <Routes>
 
-                    {/* start */}
+                    {/* START */}
+
                     <Route
                         path="/"
                         element={<Navigate to="/login" />}
                     />
 
-                    {/* auth */}
+                    {/* AUTH */}
+
                     <Route
                         path="/login"
                         element={<Login />}
@@ -62,13 +79,15 @@ function Layout() {
                         element={<RegisterPage />}
                     />
 
-                    {/* home */}
+                    {/* HOME */}
+
                     <Route
                         path="/home"
                         element={<Home />}
                     />
 
-                    {/* recipes */}
+                    {/* RECIPES */}
+
                     <Route
                         path="/recipes"
                         element={<Recipes />}
@@ -102,7 +121,8 @@ function Layout() {
                         element={<RecipeDetails />}
                     />
 
-                    {/* cupping */}
+                    {/* CUPPING */}
+
                     <Route
                         path="/cupping"
                         element={<CuppingList />}
@@ -123,10 +143,61 @@ function Layout() {
                         element={<CuppingPreview />}
                     />
 
-                    {/* quick notes */}
+                    {/* QUICK NOTES */}
+
                     <Route
                         path="/quicknotes"
                         element={<Quicknotes />}
+                    />
+
+                    {/* WIKI */}
+
+                    <Route
+                        path="/wiki"
+                        element={<WikiHome />}
+                    />
+
+                    {/* COFFEES */}
+
+                    <Route
+                        path="/wiki/coffees"
+                        element={<Coffees />}
+                    />
+
+                    <Route
+                        path="/wiki/coffees/:id"
+                        element={<CoffeeDetails />}
+                    />
+
+                    {/* REGIONS */}
+
+                    <Route
+                        path="/wiki/regions"
+                        element={<Regions />}
+                    />
+
+                    <Route
+                        path="/wiki/regions/:id"
+                        element={<RegionDetails />}
+                    />
+
+                    {/* BREWING METHODS */}
+
+                    <Route
+                        path="/wiki/methods"
+                        element={<BrewingMethods />}
+                    />
+
+                    <Route
+                        path="/wiki/methods/:id"
+                        element={<BrewingMethodDetails />}
+                    />
+
+                    {/* ADD ARTICLE */}
+
+                    <Route
+                        path="/wiki/add"
+                        element={<AddWikiArticle />}
                     />
 
                 </Routes>
@@ -142,7 +213,9 @@ function App() {
     return (
 
         <BrowserRouter>
+
             <Layout />
+
         </BrowserRouter>
 
     );

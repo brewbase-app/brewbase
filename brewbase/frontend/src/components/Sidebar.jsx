@@ -44,9 +44,11 @@ function Sidebar() {
                     </NavLink>
                 </li>
 
-                <li className="menu-item">
-                    <Book size={20} />
-                    <span className="menu-text">Wikipedia</span>
+                <li>
+                    <NavLink to="/wiki" className="menu-item">
+                        <Book size={20} />
+                        <span className="menu-text">Wikipedia</span>
+                    </NavLink>
                 </li>
 
                 <li className="menu-item">
