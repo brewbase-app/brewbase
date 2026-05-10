@@ -11,8 +11,41 @@ export default function RegisterPage() {
     const [password, setPassword] = useState("");
     const [repeatPassword, setRepeatPassword] = useState("");
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (password !== repeatPassword) {
+            alert("Hasła nie są takie same");
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                "https://localhost:44314/api/auth/register",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        login: nickname,
+                        email: email,
+                        password: password,
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText);
+            }
+
+            alert("Konto zostało utworzone");
+
+            navigate("/login");
+        } catch (error) {
+            alert(error.message);
+        }
     };
 
     return (
