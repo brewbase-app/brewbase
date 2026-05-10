@@ -60,8 +60,7 @@ function Layout() {
 
                 <Routes>
 
-                    {/* START */}
-
+                    {/* start */}
                     <Route
                         path="/"
                         element={<Navigate to="/login" />}
@@ -143,8 +142,7 @@ function Layout() {
                         element={<CuppingPreview />}
                     />
 
-                    {/* QUICK NOTES */}
-
+                    {/* quick notes */}
                     <Route
                         path="/quicknotes"
                         element={<Quicknotes />}
