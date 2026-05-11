@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 
 import {
@@ -8,13 +9,12 @@ import {
     Navigate
 } from "react-router-dom";
 
-import {
-    ArrowLeft
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import "./App.css";
 
 import Sidebar from "./components/Sidebar";
+import ProtectedRoute from "./components/Auth/ProtectedRoute";
 
 import Home from "./pages/Home";
 
@@ -44,6 +44,10 @@ import Quicknotes from "./pages/Quicknotes";
 /* RANKING */
 
 import Ranking from "./pages/Ranking";
+
+/* PROFILE */
+
+import ProfilePage from "./pages/ProfilePage";
 
 /* WIKI */
 
@@ -151,133 +155,151 @@ function Layout() {
                         element={<RegisterPage />}
                     />
 
-                    {/* HOME */}
+                    {/* PROTECTED ROUTES */}
 
-                    <Route
-                        path="/home"
-                        element={<Home />}
-                    />
+                    <Route element={<ProtectedRoute />}>
 
-                    {/* RECIPES */}
+                        {/* HOME */}
 
-                    <Route
-                        path="/recipes"
-                        element={<Recipes />}
-                    />
+                        <Route
+                            path="/home"
+                            element={<Home />}
+                        />
 
-                    <Route
-                        path="/recipes/new"
-                        element={<RecipesForm />}
-                    />
+                        {/* RECIPES */}
 
-                    <Route
-                        path="/recipes/my"
-                        element={
-                            <RecipesList
-                                title="Twoje receptury"
-                            />
-                        }
-                    />
+                        <Route
+                            path="/recipes"
+                            element={<Recipes />}
+                        />
 
-                    <Route
-                        path="/recipes/favorites"
-                        element={
-                            <RecipesList
-                                title="Ulubione receptury"
-                            />
-                        }
-                    />
+                        <Route
+                            path="/recipes/new"
+                            element={<RecipesForm />}
+                        />
 
-                    <Route
-                        path="/recipes/:id"
-                        element={<RecipeDetails />}
-                    />
+                        <Route
+                            path="/recipes/my"
+                            element={
+                                <RecipesList
+                                    title="Twoje receptury"
+                                />
+                            }
+                        />
 
-                    {/* CUPPING */}
+                        <Route
+                            path="/recipes/favorites"
+                            element={
+                                <RecipesList
+                                    title="Ulubione receptury"
+                                />
+                            }
+                        />
 
-                    <Route
-                        path="/cupping"
-                        element={<CuppingList />}
-                    />
+                        <Route
+                            path="/recipes/:id"
+                            element={<RecipeDetails />}
+                        />
 
-                    <Route
-                        path="/cupping/new"
-                        element={<CreateCupping />}
-                    />
+                        {/* CUPPING */}
 
-                    <Route
-                        path="/cupping/:id"
-                        element={<CuppingDetails />}
-                    />
+                        <Route
+                            path="/cupping"
+                            element={<CuppingList />}
+                        />
 
-                    <Route
-                        path="/cupping/preview/:id"
-                        element={<CuppingPreview />}
-                    />
+                        <Route
+                            path="/cupping/new"
+                            element={<CreateCupping />}
+                        />
 
-                    {/* QUICK NOTES */}
+                        <Route
+                            path="/cupping/:id"
+                            element={<CuppingDetails />}
+                        />
 
-                    <Route
-                        path="/quicknotes"
-                        element={<Quicknotes />}
-                    />
+                        <Route
+                            path="/cupping/preview/:id"
+                            element={<CuppingPreview />}
+                        />
 
-                    {/* RANKING */}
+                        {/* QUICK NOTES */}
 
-                    <Route
-                        path="/ranking"
-                        element={<Ranking />}
-                    />
+                        <Route
+                            path="/quicknotes"
+                            element={<Quicknotes />}
+                        />
 
-                    {/* WIKI */}
+                        {/* RANKING */}
 
-                    <Route
-                        path="/wiki"
-                        element={<WikiHome />}
-                    />
+                        <Route
+                            path="/ranking"
+                            element={<Ranking />}
+                        />
 
-                    {/* COFFEES */}
+                        {/* PROFILE */}
 
-                    <Route
-                        path="/wiki/coffees"
-                        element={<Coffees />}
-                    />
+                        <Route
+                            path="/profile"
+                            element={<ProfilePage />}
+                        />
 
-                    <Route
-                        path="/wiki/coffees/:id"
-                        element={<CoffeeDetails />}
-                    />
+                        <Route
+                            path="/profile/:username"
+                            element={<ProfilePage />}
+                        />
 
-                    {/* REGIONS */}
+                        {/* WIKI */}
 
-                    <Route
-                        path="/wiki/regions"
-                        element={<Regions />}
-                    />
+                        <Route
+                            path="/wiki"
+                            element={<WikiHome />}
+                        />
 
-                    <Route
-                        path="/wiki/regions/:id"
-                        element={<RegionDetails />}
-                    />
+                        {/* COFFEES */}
 
-                    {/* BREWING METHODS */}
+                        <Route
+                            path="/wiki/coffees"
+                            element={<Coffees />}
+                        />
 
-                    <Route
-                        path="/wiki/methods"
-                        element={<BrewingMethods />}
-                    />
+                        <Route
+                            path="/wiki/coffees/:id"
+                            element={<CoffeeDetails />}
+                        />
 
-                    <Route
-                        path="/wiki/methods/:id"
-                        element={<BrewingMethodDetails />}
-                    />
+                        {/* REGIONS */}
 
-                    {/* ADD ARTICLE */}
+                        <Route
+                            path="/wiki/regions"
+                            element={<Regions />}
+                        />
 
-                    <Route
-                        path="/wiki/add"
-                        element={<AddWikiArticle />}
-                    />
+                        <Route
+                            path="/wiki/regions/:id"
+                            element={<RegionDetails />}
+                        />
+
+                        {/* BREWING METHODS */}
+
+                        <Route
+                            path="/wiki/methods"
+                            element={<BrewingMethods />}
+                        />
+
+                        <Route
+                            path="/wiki/methods/:id"
+                            element={<BrewingMethodDetails />}
+                        />
+
+                        {/* ADD ARTICLE */}
+
+                        <Route
+                            path="/wiki/add"
+                            element={<AddWikiArticle />}
+                        />
+
+                    </Route>
 
                 </Routes>
 
@@ -301,3 +323,4 @@ function App() {
 }
 
 export default App;
+

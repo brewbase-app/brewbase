@@ -1,92 +1,286 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-const myRecipes = [
-  { id: 1, name: "Receptura 1", date: "01-01-2026" },
-  { id: 2, name: "Receptura 2", date: "01-01-2026" },
-  { id: 3, name: "Receptura 3", date: "01-01-2026" },
-];
-
-const favoriteRecipes = [
-  { id: 4, name: "Espresso idealne", date: "02-01-2026" },
-  { id: 5, name: "V60 poranek", date: "03-01-2026" },
-];
+import {
+    Heart,
+    Clock3,
+    ChevronRight,
+    FileText,
+    Globe,
+    Lock,
+    Trash2
+} from "lucide-react";
 
 const RecipesList = ({ title }) => {
     const navigate = useNavigate();
-  // wybór danych
-  const data =
-    title === "Ulubione receptury" ? favoriteRecipes : myRecipes;
 
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        paddingTop: "60px",
-        width: "100%",
-      }}
-    >
-      <div style={{ width: "700px" }}>
-        <h1
-          style={{
-            textAlign: "center",
-            fontSize: "40px",
-            marginBottom: "40px",
-            fontFamily: "serif",
-          }}
-        >
-          {title}
-        </h1>
+    const [recipes, setRecipes] = useState(
+        JSON.parse(localStorage.getItem("recipes")) || []
+    );
 
+    let data = [];
+
+    if (title === "Ulubione receptury") {
+        data = recipes.filter((r) => r.isFavorite);
+    } else {
+        data = recipes;
+    }
+
+    const handleDelete = (id) => {
+        const confirmed = window.confirm(
+            "Czy na pewno chcesz usunąć tę recepturę?"
+        );
+
+        if (!confirmed) return;
+
+        const updatedRecipes = recipes.filter(
+            (r) => r.id !== id
+        );
+
+        setRecipes(updatedRecipes);
+
+        localStorage.setItem(
+            "recipes",
+            JSON.stringify(updatedRecipes)
+        );
+    };
+
+    return (
         <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-          }}
+            style={{
+                width: "100%",
+                minHeight: "100vh",
+                backgroundColor: "#f3f3f3",
+                padding: "55px 60px",
+                boxSizing: "border-box"
+            }}
         >
-          {data.map((r) => (
-            <div key={r.id} style={cardStyle}>
-              <div>
-                <p>
-                  Nazwa: <b>{r.name}</b>
-                </p>
-                <p style={{ fontSize: "12px", color: "#555" }}>
-                  Data: {r.date}
-                </p>
-              </div>
-
-                <button
-                    style={buttonStyle}
-                    onClick={() => navigate(`/recipes/${r.id}`)}
+            {/* HEADER */}
+            <div style={{ marginBottom: "38px" }}>
+                <h1
+                    style={{
+                        fontSize: "58px",
+                        fontWeight: "700",
+                        color: "#1f1f1f",
+                        marginBottom: "8px",
+                        lineHeight: "1"
+                    }}
                 >
-                    Szczegóły
-                </button>
+                    {title}
+                </h1>
+
+                <p
+                    style={{
+                        fontSize: "16px",
+                        color: "#6f6f6f"
+                    }}
+                >
+                    {title === "Ulubione receptury"
+                        ? "Twoje zapisane i ulubione przepisy."
+                        : "Wszystkie stworzone przez Ciebie receptury."}
+                </p>
             </div>
-          ))}
+
+            {/* EMPTY STATE */}
+            {data.length === 0 && (
+                <div
+                    style={{
+                        backgroundColor: "#fafafa",
+                        borderRadius: "28px",
+                        border: "1px solid #e6e6e6",
+                        padding: "50px",
+                        maxWidth: "950px",
+                        color: "#707070",
+                        fontSize: "16px"
+                    }}
+                >
+                    Brak receptur.
+                </div>
+            )}
+
+            {/* LIST */}
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "18px",
+                    maxWidth: "950px"
+                }}
+            >
+                {data.map((r) => (
+                    <div
+                        key={r.id}
+                        style={{
+                            backgroundColor: "#fafafa",
+                            borderRadius: "26px",
+                            padding: "24px 28px",
+                            border: "1px solid #e6e6e6",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            boxShadow:
+                                "0 2px 10px rgba(0,0,0,0.03)"
+                        }}
+                    >
+                        {/* LEFT */}
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "22px"
+                            }}
+                        >
+                            <div
+                                style={{
+                                    width: "58px",
+                                    height: "58px",
+                                    borderRadius: "18px",
+                                    backgroundColor: "#efefef",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: "#2a2a2a",
+                                    flexShrink: 0
+                                }}
+                            >
+                                {title === "Ulubione receptury" ? (
+                                    <Heart size={22} />
+                                ) : (
+                                    <FileText size={22} />
+                                )}
+                            </div>
+
+                            <div>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "10px",
+                                        marginBottom: "8px",
+                                        flexWrap: "wrap"
+                                    }}
+                                >
+                                    <h2
+                                        style={{
+                                            fontSize: "22px",
+                                            fontWeight: "700",
+                                            color: "#1f1f1f",
+                                            margin: 0
+                                        }}
+                                    >
+                                        {r.title}
+                                    </h2>
+
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "6px",
+                                            backgroundColor:
+                                                "#ebebeb",
+                                            padding: "6px 10px",
+                                            borderRadius: "12px",
+                                            fontSize: "12px",
+                                            color: "#555"
+                                        }}
+                                    >
+                                        {r.status === "PUBLISHED" ? (
+                                            <>
+                                                <Globe size={12} />
+                                                Publiczna
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Lock size={12} />
+                                                Robocza
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "8px",
+                                        color: "#707070",
+                                        fontSize: "14px"
+                                    }}
+                                >
+                                    <Clock3 size={14} />
+
+                                    <span>
+                                        {new Date(
+                                            r.createdAt
+                                        ).toLocaleDateString()}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* RIGHT */}
+                        <div
+                            style={{
+                                display: "flex",
+                                gap: "10px",
+                                alignItems: "center"
+                            }}
+                        >
+                            <button
+                                style={detailsButtonStyle}
+                                onClick={() =>
+                                    navigate(`/recipes/${r.id}`)
+                                }
+                            >
+                                Szczegóły
+                                <ChevronRight size={18} />
+                            </button>
+
+                            {title !==
+                                "Ulubione receptury" && (
+                                    <button
+                                        style={deleteButtonStyle}
+                                        onClick={() =>
+                                            handleDelete(r.id)
+                                        }
+                                    >
+                                        <Trash2 size={16} />
+                                        Usuń
+                                    </button>
+                                )}
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
-const cardStyle = {
-  backgroundColor: "#e5e5e5",
-  borderRadius: "20px",
-  padding: "20px",
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  border: "1px solid #999",
+const detailsButtonStyle = {
+    backgroundColor: "#1f1f1f",
+    color: "white",
+    padding: "12px 18px",
+    borderRadius: "18px",
+    border: "none",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    fontSize: "14px",
+    fontWeight: "600"
 };
 
-const buttonStyle = {
-  backgroundColor: "#2f2f2f",
-  color: "white",
-  padding: "8px 20px",
-  borderRadius: "20px",
-  border: "none",
-  cursor: "pointer",
+const deleteButtonStyle = {
+    backgroundColor: "#efefef",
+    color: "#555",
+    padding: "12px 16px",
+    borderRadius: "18px",
+    border: "1px solid #dddddd",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    fontSize: "14px",
+    fontWeight: "600"
 };
 
 export default RecipesList;
-
