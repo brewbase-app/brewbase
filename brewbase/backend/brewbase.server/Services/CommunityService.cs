@@ -97,4 +97,29 @@ public class CommunityService : ICommunityService
             FollowingCount = followingCount
         };
     }
+    
+    public async Task<PublicUserProfileResponseDto?> GetPublicProfileAsync(int userId)
+    {
+        var user = await _context.AppUsers
+            .Where(u => u.Id == userId)
+            .Select(u => new PublicUserProfileResponseDto
+            {
+                UserId = u.Id,
+                Login = u.Login,
+                Label = u.Label,
+                ActivityPoints = u.ActivityPoints,
+
+                FollowersCount = _context.Follows
+                    .Count(f => f.FollowedId == u.Id),
+
+                FollowingCount = _context.Follows
+                    .Count(f => f.FollowerId == u.Id),
+
+                RecipesCount = _context.Recipes
+                    .Count(r => r.UserId == u.Id)
+            })
+            .FirstOrDefaultAsync();
+
+        return user;
+    }
 }

@@ -61,5 +61,16 @@ public class CommunityController : ControllerBase
         return Ok();
     }
     
-    
+    [HttpGet("profile/{userId}")]
+    public async Task<ActionResult<PublicUserProfileResponseDto>>
+        GetPublicProfile(int userId)
+    {
+        var profile = await _communityService
+            .GetPublicProfileAsync(userId);
+
+        if (profile == null)
+            return NotFound();
+
+        return Ok(profile);
+    }
 }

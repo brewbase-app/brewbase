@@ -9,4 +9,5 @@ public interface ICommunityService
     Task<bool> UnfollowUserAsync(int followedUserId);
     
     Task<FollowStatsResponseDto?> GetFollowStatsAsync();
+    Task<PublicUserProfileResponseDto?> GetPublicProfileAsync(int userId);
 }
