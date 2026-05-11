@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+import { apiRequest } from "../api/apiClient";
+
 import "../styles/RegisterPage.css";
 
 export default function RegisterPage() {
@@ -20,31 +23,24 @@ export default function RegisterPage() {
         }
 
         try {
-            const response = await fetch(
-                "https://localhost:44314/api/auth/register",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        login: nickname,
-                        email: email,
-                        password: password,
-                    }),
-                }
-            );
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText);
-            }
+            await apiRequest("/api/Auth/register", {
+                method: "POST",
+                body: JSON.stringify({
+                    login: nickname,
+                    email: email,
+                    password: password,
+                }),
+            });
 
             alert("Konto zostało utworzone");
 
             navigate("/login");
         } catch (error) {
-            alert(error.message);
+            alert(
+                error instanceof Error
+                    ? error.message
+                    : "Nie udało się połączyć z serwerem"
+            );
         }
     };
 
