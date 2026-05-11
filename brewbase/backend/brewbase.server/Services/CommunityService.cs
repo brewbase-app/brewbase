@@ -18,6 +18,7 @@ public class CommunityService : ICommunityService
         _currentUserProvider = currentUserProvider;
     }
 
+    //Follow user
     public async Task<bool> FollowUserAsync(int followedUserId)
     {
         var currentUserId = _currentUserProvider.GetUserId();
@@ -56,6 +57,7 @@ public class CommunityService : ICommunityService
         return true;
     }
 
+    //UnFollow
     public async Task<bool> UnfollowUserAsync(int followedUserId)
     {
         var currentUserId = _currentUserProvider.GetUserId();
@@ -78,6 +80,7 @@ public class CommunityService : ICommunityService
         return true;
     }
     
+    //Stats numbers
     public async Task<FollowStatsResponseDto?> GetFollowStatsAsync()
     {
         var currentUserId = _currentUserProvider.GetUserId();
@@ -98,6 +101,7 @@ public class CommunityService : ICommunityService
         };
     }
     
+    //Public profile, get info about user
     public async Task<PublicUserProfileResponseDto?> GetPublicProfileAsync(int userId)
     {
         var user = await _context.AppUsers
@@ -122,4 +126,25 @@ public class CommunityService : ICommunityService
 
         return user;
     }
+    
+    //following lists
+    public async Task<List<FollowUserListResponseDto>> GetFollowingAsync()
+    {
+        var currentUserId = _currentUserProvider.GetUserId();
+
+        if (currentUserId == null)
+            return [];
+
+        return await _context.Follows
+            .Where(f => f.FollowerId == currentUserId.Value)
+            .Select(f => new FollowUserListResponseDto
+            {
+                UserId = f.Followed.Id,
+                Login = f.Followed.Login,
+                Label = f.Followed.Label
+            })
+            .ToListAsync();
+    }
+    
+
 }

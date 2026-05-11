@@ -10,4 +10,7 @@ public interface ICommunityService
     
     Task<FollowStatsResponseDto?> GetFollowStatsAsync();
     Task<PublicUserProfileResponseDto?> GetPublicProfileAsync(int userId);
+    
+    Task<List<FollowUserListResponseDto>> GetFollowingAsync();
+    
 }
