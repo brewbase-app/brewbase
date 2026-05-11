@@ -54,6 +54,7 @@ function Sidebar({
 
             <ul className="menu">
 
+                {/* DASHBOARD */}
                 <li>
 
                     <NavLink
@@ -64,23 +65,32 @@ function Sidebar({
                         <Home size={20} />
 
                         <span className="menu-text">
-            Dashboard
-        </span>
+                            Dashboard
+                        </span>
 
                     </NavLink>
 
                 </li>
 
-                <li className="menu-item">
+                {/* PROFILE */}
+                <li>
 
-                    <User size={20} />
+                    <NavLink
+                        to="/profile"
+                        className="menu-item"
+                    >
 
-                    <span className="menu-text">
-                        Profil
-                    </span>
+                        <User size={20} />
+
+                        <span className="menu-text">
+                            Profil
+                        </span>
+
+                    </NavLink>
 
                 </li>
 
+                {/* RECIPES */}
                 <li>
 
                     <NavLink
@@ -98,6 +108,7 @@ function Sidebar({
 
                 </li>
 
+                {/* CUPPING */}
                 <li>
 
                     <NavLink
@@ -115,6 +126,7 @@ function Sidebar({
 
                 </li>
 
+                {/* WIKI */}
                 <li>
 
                     <NavLink
@@ -132,6 +144,7 @@ function Sidebar({
 
                 </li>
 
+                {/* RANKING */}
                 <li>
 
                     <NavLink
@@ -142,13 +155,14 @@ function Sidebar({
                         <Trophy size={20} />
 
                         <span className="menu-text">
-            Ranking
-        </span>
+                            Ranking
+                        </span>
 
                     </NavLink>
 
                 </li>
 
+                {/* QUICK NOTES */}
                 <li>
 
                     <NavLink
@@ -166,13 +180,21 @@ function Sidebar({
 
                 </li>
 
-                <li className="menu-item">
+                {/* ADMIN */}
+                <li>
 
-                    <Settings size={20} />
+                    <NavLink
+                        to="/admin"
+                        className="menu-item"
+                    >
 
-                    <span className="menu-text">
-                        Panel Administratora
-                    </span>
+                        <Settings size={20} />
+
+                        <span className="menu-text">
+                            Panel Administratora
+                        </span>
+
+                    </NavLink>
 
                 </li>
 
