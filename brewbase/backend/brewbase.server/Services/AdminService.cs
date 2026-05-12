@@ -45,4 +45,34 @@ public class AdminService : IAdminService
 
         return true;
     }
+    
+    public async Task<bool> BlockUserAsync(int userId)
+    {
+        var user = await _context.AppUsers
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+            return false;
+
+        user.IsBlocked = true;
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<bool> UnblockUserAsync(int userId)
+    {
+        var user = await _context.AppUsers
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+            return false;
+
+        user.IsBlocked = false;
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
 }

@@ -44,4 +44,28 @@ public class AdminController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+    
+    [HttpPatch("block-user/{userId}")]
+    public async Task<IActionResult> BlockUser(int userId)
+    {
+        var result = await _adminService
+            .BlockUserAsync(userId);
+
+        if (!result)
+            return NotFound();
+
+        return Ok();
+    }
+    
+    [HttpPatch("unblock-user/{userId}")]
+    public async Task<IActionResult> UnblockUser(int userId)
+    {
+        var result = await _adminService
+            .UnblockUserAsync(userId);
+
+        if (!result)
+            return NotFound();
+
+        return Ok();
+    }
 }

@@ -8,4 +8,9 @@ public interface IAdminService
 {
     Task<List<AdminUserListResponseDto>> GetUsersAsync();
     Task<bool> UpdateUserRoleAsync(int userId, string role);
+    
+    Task<bool> BlockUserAsync(int userId);
+
+    Task<bool> UnblockUserAsync(int userId);
+    
 }
