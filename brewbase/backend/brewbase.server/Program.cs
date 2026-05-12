@@ -57,7 +57,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("frontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins(
+                "http://localhost:5173",
+                "http://127.0.0.1:5173")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -111,6 +113,7 @@ builder.Services.AddScoped<ITastingSessionReadService, TastingSessionReadService
 builder.Services.AddScoped<IQuickNoteService, QuickNoteService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<ICommunityService, CommunityService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 

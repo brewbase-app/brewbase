@@ -6,6 +6,7 @@ import {
     Routes,
     Route,
     useLocation,
+    useNavigate,
     Navigate
 } from "react-router-dom";
 
@@ -70,6 +71,7 @@ import RoasteryDetails from "./pages/wiki/RoasteryDetails";
 function Layout() {
 
     const location = useLocation();
+    const navigate = useNavigate();
 
     const token = localStorage.getItem("token");
 
@@ -84,6 +86,15 @@ function Layout() {
         location.pathname !== "/home" &&
         location.pathname !== "/login" &&
         location.pathname !== "/register";
+
+    const handleBackClick = () => {
+        if (location.pathname.startsWith("/cupping/preview/")) {
+            navigate("/cupping/new");
+            return;
+        }
+
+        window.history.back();
+    };
 
     return (
 
@@ -126,7 +137,7 @@ function Layout() {
 
                     <button
                         className="global-back-button"
-                        onClick={() => window.history.back()}
+                        onClick={handleBackClick}
                     >
 
                         <ArrowLeft size={18} />
