@@ -13,4 +13,10 @@ public interface IAdminService
 
     Task<bool> UnblockUserAsync(int userId);
     
+    Task<bool> ApproveArticleAsync(int articleId);
+
+    Task<bool> RejectArticleAsync(int articleId, ModerateArticleRequestDto dto);
+    
+    Task<List<PendingArticleResponseDto>> GetPendingArticlesAsync();
+    
 }

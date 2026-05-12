@@ -68,4 +68,39 @@ public class AdminController : ControllerBase
 
         return Ok();
     }
+    
+    [HttpPatch("articles/{id}/approve")]
+    public async Task<IActionResult> ApproveArticle(int id)
+    {
+        var result = await _adminService
+            .ApproveArticleAsync(id);
+
+        if (!result)
+            return NotFound();
+
+        return Ok();
+    }
+    
+    [HttpPatch("articles/{id}/reject")]
+    public async Task<IActionResult> RejectArticle(
+        int id,
+        ModerateArticleRequestDto dto)
+    {
+        var result = await _adminService
+            .RejectArticleAsync(id, dto);
+
+        if (!result)
+            return NotFound();
+
+        return Ok();
+    }
+    
+    [HttpGet("articles/pending")]
+    public async Task<ActionResult<List<PendingArticleResponseDto>>> GetPendingArticles()
+    {
+        var articles = await _adminService
+            .GetPendingArticlesAsync();
+
+        return Ok(articles);
+    }
 }
