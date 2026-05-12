@@ -81,7 +81,7 @@ const CuppingPreview = () => {
 
             {session.coffees.map((coffee, index) => (
                 <div
-                    key={coffee.coffeeId}
+                    key={coffee.sessionCoffeeId}
                     className="preview-card"
                 >
                     <h2>

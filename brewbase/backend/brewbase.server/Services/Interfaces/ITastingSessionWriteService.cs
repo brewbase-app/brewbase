@@ -12,6 +12,11 @@ public interface ITastingSessionWriteService
 
 	Task<TastingSessionWriteResult<TastingSessionCoffeeResponseDto>> UpdateCoffeeAsync(
 		int sessionId,
-		int coffeeId,
+		int sessionCoffeeId,
 		UpdateTastingSessionCoffeeRequestDto request);
+	
+	Task<TastingSessionWriteResult<TastingSessionCoffeeResponseDto>> UpdateCoffeeNoteAsync(
+		int sessionId,
+		int sessionCoffeeId,
+		UpdateTastingSessionCoffeeNoteRequestDto request);
 }

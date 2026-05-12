@@ -22,8 +22,8 @@ export function addCoffeeToTastingSession(sessionId, data) {
     });
 }
 
-export function updateTastingSessionCoffee(sessionId, coffeeId, data) {
-    return apiRequest(`/api/TastingSessions/${sessionId}/coffees/${coffeeId}`, {
+export function updateTastingSessionCoffee(sessionId, sessionCoffeeId, data) {
+    return apiRequest(`/api/TastingSessions/${sessionId}/coffees/${sessionCoffeeId}`, {
         method: "PUT",
         body: JSON.stringify(data),
     });
