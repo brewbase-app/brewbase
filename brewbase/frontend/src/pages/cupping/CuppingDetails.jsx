@@ -6,10 +6,13 @@ import {
     updateTastingSessionCoffee,
 } from "../../api/tastingSessionsApi";
 import "../../styles/CuppingDetails.css";
+import { getCoffees } from "../../api/coffeeApi";
 
 const createEmptyCupping = () => ({
     rowId: `new-${Date.now()}-${Math.random()}`,
-    coffeeId: "",
+    sessionCoffeeId: null,
+    selectedCoffeeId: "",
+    customCoffeeName: "",
     coffeeName: "",
     aromaScore: "",
     sweetnessScore: "",
@@ -22,11 +25,28 @@ const createEmptyCupping = () => ({
     isNew: true,
 });
 
+const normalizeCoffeeList = (data) => {
+    if (Array.isArray(data)) {
+        return data;
+    }
+
+    if (Array.isArray(data.items)) {
+        return data.items;
+    }
+
+    if (Array.isArray(data.data)) {
+        return data.data;
+    }
+
+    return [];
+};
+
 const CuppingDetails = () => {
     const navigate = useNavigate();
     const { id } = useParams();
 
     const [session, setSession] = useState(null);
+    const [availableCoffees, setAvailableCoffees] = useState([]);
     const [cuppings, setCuppings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -35,14 +55,20 @@ const CuppingDetails = () => {
     useEffect(() => {
         const loadSession = async () => {
             try {
-                const data = await getTastingSessionDetails(id);
+                const [sessionData, coffeesData] = await Promise.all([
+                    getTastingSessionDetails(id),
+                    getCoffees(),
+                ]);
 
-                setSession(data);
+                setSession(sessionData);
+                setAvailableCoffees(normalizeCoffeeList(coffeesData));
 
                 setCuppings(
-                    data.coffees.map((coffee) => ({
-                        rowId: String(coffee.coffeeId),
-                        coffeeId: coffee.coffeeId,
+                    sessionData.coffees.map((coffee) => ({
+                        rowId: String(coffee.id),
+                        sessionCoffeeId: coffee.id,
+                        selectedCoffeeId: coffee.coffeeId ?? "",
+                        customCoffeeName: coffee.coffeeId ? "" : coffee.coffeeName,
                         coffeeName: coffee.coffeeName,
                         aromaScore: coffee.aromaScore ?? "",
                         sweetnessScore: coffee.sweetnessScore ?? "",
@@ -84,6 +110,34 @@ const CuppingDetails = () => {
         );
     };
 
+    const handleSelectedCoffeeChange = (rowId, value) => {
+        setCuppings((prev) =>
+            prev.map((cup) =>
+                cup.rowId === rowId
+                    ? {
+                        ...cup,
+                        selectedCoffeeId: value,
+                        customCoffeeName: value ? "" : cup.customCoffeeName,
+                    }
+                    : cup
+            )
+        );
+    };
+
+    const handleCustomCoffeeNameChange = (rowId, value) => {
+        setCuppings((prev) =>
+            prev.map((cup) =>
+                cup.rowId === rowId
+                    ? {
+                        ...cup,
+                        customCoffeeName: value,
+                        selectedCoffeeId: value.trim() ? "" : cup.selectedCoffeeId,
+                    }
+                    : cup
+            )
+        );
+    };
+
     const toNullableNumber = (value) => {
         if (value === "" || value === null || value === undefined) {
             return null;
@@ -113,8 +167,11 @@ const CuppingDetails = () => {
     };
 
     const validateCup = (cup) => {
-        if (!cup.coffeeId) {
-            throw new Error("Uzupełnij ID kawy.");
+        const hasSelectedCoffee = cup.coffeeId !== "";
+        const hasCustomCoffee = cup.customCoffeeName && cup.customCoffeeName.trim();
+
+        if (!hasSelectedCoffee && !hasCustomCoffee) {
+            throw new Error("Wybierz kawę z listy albo wpisz własną nazwę kawy.");
         }
 
         const scoreFields = [
@@ -140,6 +197,20 @@ const CuppingDetails = () => {
         }
     };
 
+    const buildAddPayload = (cup) => {
+        if (cup.selectedCoffeeId) {
+            return {
+                coffeeId: Number(cup.selectedCoffeeId),
+                notes: toNullableText(cup.notes),
+            };
+        }
+
+        return {
+            coffeeName: cup.customCoffeeName.trim(),
+            notes: toNullableText(cup.notes),
+        };
+    };
+
     const buildUpdatePayload = (cup) => ({
         notes: toNullableText(cup.notes),
         aromaScore: toNullableNumber(cup.aromaScore),
@@ -160,18 +231,34 @@ const CuppingDetails = () => {
             for (const cup of cuppings) {
                 validateCup(cup);
 
-                const coffeeId = Number(cup.coffeeId);
+                let sessionCoffeeId = cup.sessionCoffeeId;
 
                 if (cup.isNew) {
-                    await addCoffeeToTastingSession(id, {
-                        coffeeId: coffeeId,
-                        notes: toNullableText(cup.notes),
-                    });
+                    const createdCoffee = await addCoffeeToTastingSession(
+                        id,
+                        buildAddPayload(cup)
+                    );
+
+                    sessionCoffeeId = createdCoffee.sessionCoffeeId;
+
+                    setCuppings((prev) =>
+                        prev.map((item) =>
+                            item.rowId === cup.rowId
+                                ? {
+                                    ...item,
+                                    sessionCoffeeId: createdCoffee.sessionCoffeeId,
+                                    coffeeId: createdCoffee.coffeeId ?? "",
+                                    coffeeName: createdCoffee.coffeeName,
+                                    isNew: false,
+                                }
+                                : item
+                        )
+                    );
                 }
 
                 await updateTastingSessionCoffee(
                     id,
-                    coffeeId,
+                    sessionCoffeeId,
                     buildUpdatePayload(cup)
                 );
             }
@@ -218,20 +305,51 @@ const CuppingDetails = () => {
                         Degustacja {index + 1}
                     </h2>
 
-                    <input
-                        className="coffee-input"
-                        type="number"
-                        placeholder="wprowadź ID kawy"
-                        value={cup.coffeeId}
-                        disabled={!cup.isNew}
-                        onChange={(e) =>
-                            handleChange(
-                                cup.rowId,
-                                "coffeeId",
-                                e.target.value
-                            )
-                        }
-                    />
+                    {cup.isNew ? (
+                        <>
+                            <select
+                                className="coffee-input"
+                                value={cup.selectedCoffeeId}
+                                onChange={(e) =>
+                                    handleSelectedCoffeeChange(
+                                        cup.rowId,
+                                        e.target.value
+                                    )
+                                }
+                            >
+                                <option value="">
+                                    Wybierz kawę z bazy
+                                </option>
+
+                                {availableCoffees.map((coffee) => (
+                                    <option
+                                        key={coffee.id}
+                                        value={coffee.id}
+                                    >
+                                        {coffee.name}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <input
+                                className="coffee-input"
+                                type="text"
+                                placeholder="albo wpisz własną kawę"
+                                value={cup.customCoffeeName}
+                                disabled={!!cup.selectedCoffeeId}
+                                onChange={(e) =>
+                                    handleCustomCoffeeNameChange(
+                                        cup.rowId,
+                                        e.target.value
+                                    )
+                                }
+                            />
+                        </>
+                    ) : (
+                        <p>
+                            Kawa: {cup.coffeeName}
+                        </p>
+                    )}
 
                     {cup.coffeeName && (
                         <p>

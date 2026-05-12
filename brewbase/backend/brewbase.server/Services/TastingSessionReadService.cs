@@ -45,16 +45,19 @@ public class TastingSessionReadService : ITastingSessionReadService
                 Coffees = session.CuppingSessionCoffees
                     .Select(sessionCoffee => new TastingSessionCoffeeResponseDto
                     {
-                        CoffeeId = sessionCoffee.CoffeeId,
-                        CoffeeName = sessionCoffee.Coffee.Name,
-                        Notes = sessionCoffee.Notes,
-                        AromaScore = sessionCoffee.AromaScore,
-                        SweetnessScore = sessionCoffee.SweetnessScore,
-                        AcidityScore = sessionCoffee.AcidityScore,
-                        BodyScore = sessionCoffee.BodyScore,
-                        FlavorProfileNotes = sessionCoffee.FlavorProfileNotes,
-                        CleanCup = sessionCoffee.CleanCup,
-                        OverallScore = sessionCoffee.OverallScore
+						SessionCoffeeId = sessionCoffee.Id,
+						CoffeeId = sessionCoffee.CoffeeId,
+						CoffeeName = sessionCoffee.Coffee != null
+    						? sessionCoffee.Coffee.Name
+    						: sessionCoffee.CustomCoffeeName!,
+						Notes = sessionCoffee.Notes,
+						AromaScore = sessionCoffee.AromaScore,
+						SweetnessScore = sessionCoffee.SweetnessScore,
+						AcidityScore = sessionCoffee.AcidityScore,
+						BodyScore = sessionCoffee.BodyScore,
+						FlavorProfileNotes = sessionCoffee.FlavorProfileNotes,
+						CleanCup = sessionCoffee.CleanCup,
+						OverallScore = sessionCoffee.OverallScore
                     })
                     .ToList()
             })

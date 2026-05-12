@@ -24,11 +24,13 @@ public partial class CuppingSessionCoffee
 
     public DateTime CreatedAt { get; set; }
 
-    public int CoffeeId { get; set; }
+    public int? CoffeeId { get; set; }
+    
+    public string? CustomCoffeeName { get; set; }
 
     public int CuppingSessionId { get; set; }
 
-    public virtual Coffee Coffee { get; set; } = null!;
+    public virtual Coffee? Coffee { get; set; }
 
     public virtual CuppingSession CuppingSession { get; set; } = null!;
 }

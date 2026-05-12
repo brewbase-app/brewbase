@@ -316,7 +316,13 @@ public partial class BrewDbContext : DbContext
 
             entity.HasIndex(e => e.CuppingSessionId, "idx_cupping_session_coffee_cupping_session_id");
 
-            entity.HasIndex(e => new { e.CuppingSessionId, e.CoffeeId }, "uq_session_coffee").IsUnique();
+            entity.HasIndex(e => new { e.CuppingSessionId, e.CoffeeId }, "uq_session_coffee")
+                .IsUnique()
+                .HasFilter("coffee_id IS NOT NULL");
+            
+            entity.HasCheckConstraint(
+                "ck_cupping_session_coffee_source",
+                "coffee_id IS NOT NULL OR custom_coffee_name IS NOT NULL");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Notes).HasColumnName("notes");
@@ -332,6 +338,9 @@ public partial class BrewDbContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.CoffeeId).HasColumnName("coffee_id");
+            entity.Property(e => e.CustomCoffeeName)
+                .HasMaxLength(255)
+                .HasColumnName("custom_coffee_name");
             entity.Property(e => e.CuppingSessionId).HasColumnName("cupping_session_id");
 
             entity.HasOne(d => d.Coffee).WithMany(p => p.CuppingSessionCoffees)
