@@ -1,3 +1,6 @@
+
+import { useState } from "react";
+
 import {
     Link,
     useParams
@@ -20,10 +23,20 @@ import "../styles/profile.css";
 
 function ProfilePage() {
 
+    // LOCAL STORAGE USER
+
+    const savedUser =
+        JSON.parse(
+            localStorage.getItem("brewbaseUser")
+        ) || {
+            username: "kontotestowe",
+            email: "konto@brewbase.com",
+        };
+
     // LOGGED USER
 
     const currentLoggedUser =
-        "kontotestowe";
+        savedUser.username;
 
     // URL PARAM
 
@@ -34,11 +47,16 @@ function ProfilePage() {
     const viewedUsername =
         username || currentLoggedUser;
 
+    // MODAL
+
+    const [openModal, setOpenModal] =
+        useState(null);
+
     // USERS
 
     const users = [
         {
-            username: "kontotestowe",
+            username: savedUser.username,
             ranking: 27,
             points: 1248,
             recipes: 34,
@@ -90,6 +108,19 @@ function ProfilePage() {
             followers: 213,
             following: 61,
         },
+    ];
+
+    // FOLLOWERS / FOLLOWING
+
+    const followersList = [
+        "dailybrew",
+        "coffeenerd",
+        "brew_king"
+    ];
+
+    const followingList = [
+        "coffee.flow",
+        "javaholic"
     ];
 
     // PROFILE DATA
@@ -179,13 +210,16 @@ function ProfilePage() {
                             {isOwnProfile ? (
 
                                 <>
-                                    <button className="edit-profile-btn">
+                                    <Link
+                                        to="/profile/edit"
+                                        className="edit-profile-btn"
+                                    >
 
                                         <Pencil size={16} />
 
                                         Edytuj profil
 
-                                    </button>
+                                    </Link>
 
                                     <button className="settings-btn">
 
@@ -274,6 +308,8 @@ function ProfilePage() {
 
                     <div className="stats-grid">
 
+                        {/* RECIPES */}
+
                         <div className="stat-card">
 
                             <div className="stat-icon">
@@ -295,8 +331,25 @@ function ProfilePage() {
                             </div>
 
                         </div>
+                        
 
-                        <div className="stat-card">
+                        {/* FOLLOWERS */}
+
+                        <button
+                            type="button"
+                            className={
+                                isOwnProfile
+                                    ? "stat-card clickable"
+                                    : "stat-card"
+                            }
+
+                            onClick={() => {
+
+                                if (isOwnProfile) {
+                                    setOpenModal("followers");
+                                }
+                            }}
+                        >
 
                             <div className="stat-icon">
 
@@ -316,9 +369,25 @@ function ProfilePage() {
 
                             </div>
 
-                        </div>
+                        </button>
 
-                        <div className="stat-card">
+                        {/* FOLLOWING */}
+
+                        <button
+                            type="button"
+                            className={
+                                isOwnProfile
+                                    ? "stat-card clickable"
+                                    : "stat-card"
+                            }
+
+                            onClick={() => {
+
+                                if (isOwnProfile) {
+                                    setOpenModal("following");
+                                }
+                            }}
+                        >
 
                             <div className="stat-icon">
 
@@ -338,7 +407,7 @@ function ProfilePage() {
 
                             </div>
 
-                        </div>
+                        </button>
 
                     </div>
 
@@ -513,9 +582,80 @@ function ProfilePage() {
 
             </div>
 
+            {/* MODAL */}
+
+            {openModal && (
+
+                <div
+                    className="followers-modal-overlay"
+                    onClick={() =>
+                        setOpenModal(null)
+                    }
+                >
+
+                    <div
+                        className="followers-modal"
+                        onClick={(e) =>
+                            e.stopPropagation()
+                        }
+                    >
+
+                        <div className="followers-modal-header">
+
+                            <h2>
+
+                                {openModal === "followers"
+                                    ? "Obserwujący"
+                                    : "Obserwowani"}
+
+                            </h2>
+
+                            <button
+                                onClick={() =>
+                                    setOpenModal(null)
+                                }
+                            >
+
+                                ✕
+
+                            </button>
+
+                        </div>
+
+                        <div className="followers-list">
+
+                            {(openModal === "followers"
+                                ? followersList
+                                : followingList
+                            ).map((user) => (
+
+                                <Link
+                                    key={user}
+                                    to={`/profile/${user}`}
+                                    className="followers-user"
+                                    onClick={() =>
+                                        setOpenModal(null)
+                                    }
+                                >
+
+                                    @{user}
+
+                                </Link>
+
+                            ))}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            )}
+
         </div>
 
     );
 }
 
 export default ProfilePage;
+

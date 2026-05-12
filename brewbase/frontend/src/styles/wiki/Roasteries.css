@@ -1,0 +1,189 @@
+*{
+    font-family:"Inter", sans-serif;
+}
+
+.roasteries-page{
+    flex:1;
+
+    min-height:100vh;
+
+    background:#f5f5f5;
+
+    padding:40px 90px;
+
+    box-sizing:border-box;
+}
+
+/* HEADER */
+
+.roasteries-header{
+    margin-bottom:42px;
+}
+
+.roasteries-header h1{
+    margin:0 0 12px 0;
+
+    font-size:64px;
+    font-weight:700;
+
+    letter-spacing:-2px;
+
+    color:#1f1f1f;
+}
+
+.roasteries-header p{
+    margin:0 0 30px 0;
+
+    font-size:18px;
+
+    color:#666;
+}
+
+/* SEARCH */
+
+.roasteries-search-container{
+    width:100%;
+    max-width:520px;
+
+    background:white;
+
+    border:1px solid #ececec;
+
+    border-radius:18px;
+
+    padding:14px 18px;
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    box-shadow:
+            0 2px 10px rgba(0,0,0,0.03);
+}
+
+.roasteries-search-container svg{
+    color:#777;
+}
+
+.roasteries-search{
+    flex:1;
+
+    border:none;
+    outline:none;
+
+    background:transparent;
+
+    font-size:15px;
+
+    color:#1f1f1f;
+}
+
+/* GRID */
+
+.roasteries-grid{
+    display:grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(320px, 1fr));
+
+    gap:24px;
+}
+
+/* CARD */
+
+.roastery-card{
+    background:white;
+
+    border-radius:30px;
+
+    padding:28px;
+
+    border:1px solid #ececec;
+
+    box-shadow:
+            0 2px 10px rgba(0,0,0,0.03);
+
+    cursor:pointer;
+
+    transition:0.25s ease;
+}
+
+.roastery-card:hover{
+    transform:translateY(-4px);
+
+    border-color:#dddddd;
+}
+
+/* TOP */
+
+.roastery-card-top{
+    display:flex;
+
+    justify-content:space-between;
+
+    margin-bottom:32px;
+}
+
+.roastery-icon{
+    width:52px;
+    height:52px;
+
+    border-radius:18px;
+
+    background:#1f1f1f;
+
+    color:white;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+/* CONTENT */
+
+.roastery-content h2{
+    margin:0 0 14px 0;
+
+    font-size:28px;
+    font-weight:700;
+
+    letter-spacing:-1px;
+
+    color:#1f1f1f;
+}
+
+.roastery-location{
+    display:flex;
+    align-items:center;
+
+    gap:8px;
+
+    margin-bottom:20px;
+
+    color:#666;
+
+    font-size:14px;
+}
+
+.roastery-tags{
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:12px;
+}
+
+.roastery-tags span{
+    background:#f7f7f7;
+
+    border:1px solid #ececec;
+
+    border-radius:999px;
+
+    padding:10px 14px;
+
+    font-size:13px;
+    font-weight:500;
+
+    color:#444;
+}
