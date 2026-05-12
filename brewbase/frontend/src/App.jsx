@@ -48,6 +48,7 @@ import Ranking from "./pages/Ranking";
 /* PROFILE */
 
 import ProfilePage from "./pages/ProfilePage";
+import EditProfilePage from "./pages/EditProfilePage";
 
 /* WIKI */
 
@@ -63,6 +64,8 @@ import BrewingMethods from "./pages/wiki/BrewingMethods";
 import BrewingMethodDetails from "./pages/wiki/BrewingMethodDetails";
 
 import AddWikiArticle from "./pages/wiki/AddWikiArticle";
+import Roasteries from "./pages/wiki/Roasteries";
+import RoasteryDetails from "./pages/wiki/RoasteryDetails";
 
 function Layout() {
 
@@ -248,6 +251,10 @@ function Layout() {
                             path="/profile/:username"
                             element={<ProfilePage />}
                         />
+                        <Route
+                            path="/profile/edit"
+                            element={<EditProfilePage />}
+                        />
 
                         {/* WIKI */}
 
@@ -297,6 +304,15 @@ function Layout() {
                         <Route
                             path="/wiki/add"
                             element={<AddWikiArticle />}
+                        />
+                        <Route
+                            path="/wiki/roasteries"
+                            element={<Roasteries />}
+                        />
+
+                        <Route
+                            path="/wiki/roasteries/:id"
+                            element={<RoasteryDetails />}
                         />
 
                     </Route>

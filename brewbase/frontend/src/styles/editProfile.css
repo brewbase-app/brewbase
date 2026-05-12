@@ -1,0 +1,240 @@
+/* PAGE */
+
+.edit-profile-page {
+    min-height: 100vh;
+    background: #f5f5f5;
+
+    padding: 24px 28px;
+}
+
+/* LAYOUT */
+
+.edit-profile-layout {
+    max-width: 920px;
+    margin: 0 auto;
+}
+
+/* HEADER */
+
+.edit-profile-header {
+    margin-bottom: 28px;
+}
+
+.edit-profile-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+
+    color: #8a8a8a;
+
+    margin-bottom: 10px;
+}
+
+.edit-profile-header h1 {
+    font-size: 42px;
+    font-weight: 800;
+
+    color: #111;
+}
+
+/* FORM */
+
+.edit-profile-form {
+    display: flex;
+    flex-direction: column;
+
+    gap: 22px;
+}
+
+/* CARD */
+
+.settings-card {
+    background: white;
+
+    border: 1px solid #ececec;
+
+    border-radius: 24px;
+
+    padding: 24px;
+}
+
+/* CARD HEADER */
+
+.settings-card-header {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 24px;
+}
+
+.settings-card-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+
+    color: #111;
+}
+
+/* FORM GROUP */
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+
+    gap: 10px;
+
+    margin-bottom: 20px;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+
+    color: #444;
+}
+
+/* INPUT */
+
+.input-wrapper {
+    height: 52px;
+
+    border: 1px solid #e5e5e5;
+
+    border-radius: 16px;
+
+    background: #fafafa;
+
+    padding: 0 16px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    transition: 0.2s;
+}
+
+.input-wrapper:focus-within {
+    border-color: #111;
+    background: white;
+}
+
+.input-wrapper svg {
+    color: #777;
+
+    flex-shrink: 0;
+}
+
+.input-wrapper input {
+    width: 100%;
+
+    border: none;
+    outline: none;
+
+    background: transparent;
+
+    font-size: 14px;
+
+    color: #111;
+}
+
+/* ERRORS */
+
+.form-error {
+    font-size: 13px;
+    font-weight: 500;
+
+    color: #c0392b;
+}
+
+/* PREFERENCES */
+
+.preferences-placeholder {
+    display: flex;
+    flex-direction: column;
+
+    gap: 18px;
+}
+
+.preferences-placeholder p {
+    font-size: 14px;
+    line-height: 1.6;
+
+    color: #666;
+}
+
+/* TAGS */
+
+.placeholder-tags {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 10px;
+}
+
+.placeholder-tags span {
+    padding: 10px 14px;
+
+    border-radius: 999px;
+
+    background: #f3f3f3;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    color: #333;
+}
+
+/* SAVE BUTTON */
+
+.save-button {
+    height: 52px;
+
+    border: none;
+
+    border-radius: 18px;
+
+    background: #111;
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+
+    margin-top: 6px;
+}
+
+.save-button:hover {
+    background: #000;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 768px) {
+
+    .edit-profile-page {
+        padding: 18px;
+    }
+
+    .edit-profile-header h1 {
+        font-size: 34px;
+    }
+
+    .settings-card {
+        padding: 20px;
+    }
+}

@@ -7,7 +7,8 @@ import {
     Globe,
     FlaskConical,
     Search,
-    Plus
+    Plus,
+    Flame
 } from "lucide-react";
 
 function WikiHome() {
@@ -15,6 +16,7 @@ function WikiHome() {
     const navigate = useNavigate();
 
     const categories = [
+
         {
             title: "Kawy",
             description:
@@ -37,6 +39,14 @@ function WikiHome() {
                 "Poznaj techniki parzenia i przepisy.",
             icon: <FlaskConical size={34} />,
             route: "/wiki/methods"
+        },
+
+        {
+            title: "Palarnie",
+            description:
+                "Poznaj najlepsze palarnie specialty coffee.",
+            icon: <Flame size={34} />,
+            route: "/wiki/roasteries"
         }
     ];
 
@@ -50,10 +60,13 @@ function WikiHome() {
 
                     <div>
 
-                        <h1>Encyklopedia Kawy</h1>
+                        <h1>
+                            Encyklopedia Kawy
+                        </h1>
 
                         <p>
-                            Poznaj kawy, regiony i wiedzę o metodach parzenia.
+                            Poznaj kawy, regiony
+                            i wiedzę o metodach parzenia.
                         </p>
 
                     </div>
@@ -92,16 +105,24 @@ function WikiHome() {
                     <div
                         key={category.title}
                         className="wiki-card"
-                        onClick={() => navigate(category.route)}
+                        onClick={() =>
+                            navigate(category.route)
+                        }
                     >
 
                         <div className="wiki-card-icon">
+
                             {category.icon}
+
                         </div>
 
-                        <h2>{category.title}</h2>
+                        <h2>
+                            {category.title}
+                        </h2>
 
-                        <p>{category.description}</p>
+                        <p>
+                            {category.description}
+                        </p>
 
                     </div>
 

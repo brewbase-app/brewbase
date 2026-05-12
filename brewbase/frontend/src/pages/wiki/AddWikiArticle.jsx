@@ -73,6 +73,10 @@ function AddWikiArticle() {
                                     Metody parzenia
                                 </option>
 
+                                <option value="roastery">
+                                    Palarnie
+                                </option>
+
                             </select>
 
                             <ChevronDown size={18} />
@@ -304,30 +308,6 @@ function AddWikiArticle() {
 
                             </div>
 
-                            <div className="form-group">
-
-                                <label>
-                                    Charakterystyka regionu
-                                </label>
-
-                                <textarea
-                                    placeholder="Opisz charakterystykę regionu..."
-                                />
-
-                            </div>
-
-                            <div className="form-group">
-
-                                <label>
-                                    Klimat i terroir
-                                </label>
-
-                                <textarea
-                                    placeholder="Opisz klimat, gleby i warunki upraw..."
-                                />
-
-                            </div>
-
                         </>
 
                     )}
@@ -351,7 +331,6 @@ function AddWikiArticle() {
                                     onChange={(e) =>
                                         setTitle(e.target.value)
                                     }
-                                    required
                                 />
 
                             </div>
@@ -364,7 +343,7 @@ function AddWikiArticle() {
 
                                 <div className="select-wrapper">
 
-                                    <select required>
+                                    <select>
 
                                         <option value="">
                                             Wybierz typ metody
@@ -393,27 +372,109 @@ function AddWikiArticle() {
                             <div className="form-group">
 
                                 <label>
-                                    Poziom trudności
+                                    Opis metody parzenia
+                                </label>
+
+                                <textarea
+                                    placeholder="Dodaj opis metody..."
+                                    value={content}
+                                    onChange={(e) =>
+                                        setContent(e.target.value)
+                                    }
+                                />
+
+                            </div>
+
+                        </>
+
+                    )}
+
+                    {/* ROASTERIES */}
+
+                    {category === "roastery" && (
+
+                        <>
+
+                            <div className="form-group">
+
+                                <label>
+                                    Nazwa palarni
+                                </label>
+
+                                <input
+                                    type="text"
+                                    placeholder="Np. Coffee Collective"
+                                    value={title}
+                                    onChange={(e) =>
+                                        setTitle(e.target.value)
+                                    }
+                                />
+
+                            </div>
+
+                            <div className="form-group">
+
+                                <label>
+                                    Miasto
+                                </label>
+
+                                <input
+                                    type="text"
+                                    placeholder="Np. Kopenhaga"
+                                />
+
+                            </div>
+
+                            <div className="form-group">
+
+                                <label>
+                                    Kraj
+                                </label>
+
+                                <input
+                                    type="text"
+                                    placeholder="Np. Dania"
+                                />
+
+                            </div>
+
+                            <div className="form-group">
+
+                                <label>
+                                    Rok założenia
+                                </label>
+
+                                <input
+                                    type="text"
+                                    placeholder="Np. 2007"
+                                />
+
+                            </div>
+
+                            <div className="form-group">
+
+                                <label>
+                                    Styl palenia
                                 </label>
 
                                 <div className="select-wrapper">
 
-                                    <select required>
+                                    <select>
 
                                         <option value="">
-                                            Wybierz poziom trudności
+                                            Wybierz styl palenia
                                         </option>
 
-                                        <option value="Łatwy">
-                                            Łatwy
+                                        <option value="Light Roast">
+                                            Light Roast
                                         </option>
 
-                                        <option value="Średni">
-                                            Średni
+                                        <option value="Omni Roast">
+                                            Omni Roast
                                         </option>
 
-                                        <option value="Zaawansowany">
-                                            Zaawansowany
+                                        <option value="Espresso Roast">
+                                            Espresso Roast
                                         </option>
 
                                     </select>
@@ -427,13 +488,12 @@ function AddWikiArticle() {
                             <div className="form-group">
 
                                 <label>
-                                    Czas parzenia
+                                    Specjalizacja
                                 </label>
 
                                 <input
                                     type="text"
-                                    placeholder="Np. 2:30–3:00"
-                                    required
+                                    placeholder="Np. Filter Coffee, Single Origin"
                                 />
 
                             </div>
@@ -441,13 +501,12 @@ function AddWikiArticle() {
                             <div className="form-group">
 
                                 <label>
-                                    Grind size
+                                    Regiony sourcingu
                                 </label>
 
                                 <input
                                     type="text"
-                                    placeholder="Np. Medium-fine"
-                                    required
+                                    placeholder="Np. Etiopia, Kenia, Kolumbia"
                                 />
 
                             </div>
@@ -455,70 +514,15 @@ function AddWikiArticle() {
                             <div className="form-group">
 
                                 <label>
-                                    Ratio
-                                </label>
-
-                                <input
-                                    type="text"
-                                    placeholder="Np. 1:16"
-                                    required
-                                />
-
-                            </div>
-
-                            <div className="form-group">
-
-                                <label>
-                                    Temperatura wody
-                                </label>
-
-                                <input
-                                    type="text"
-                                    placeholder="Np. 92–96°C"
-                                    required
-                                />
-
-                            </div>
-
-                            <div className="form-group">
-
-                                <label>
-                                    Opis metody parzenia
+                                    Opis palarni
                                 </label>
 
                                 <textarea
-                                    placeholder="Dodaj opis metody..."
+                                    placeholder="Dodaj opis palarni..."
                                     value={content}
                                     onChange={(e) =>
                                         setContent(e.target.value)
                                     }
-                                    required
-                                />
-
-                            </div>
-
-                            <div className="form-group">
-
-                                <label>
-                                    Charakterystyka parzenia
-                                </label>
-
-                                <textarea
-                                    placeholder="Opisz charakterystykę parzenia..."
-                                    required
-                                />
-
-                            </div>
-
-                            <div className="form-group">
-
-                                <label>
-                                    Rekomendowany sposób parzenia
-                                </label>
-
-                                <textarea
-                                    placeholder="Opisz rekomendowany sposób przygotowania..."
-                                    required
                                 />
 
                             </div>
@@ -526,6 +530,7 @@ function AddWikiArticle() {
                         </>
 
                     )}
+
                     {/* IMAGES + ACTIONS */}
 
                     {category && (
