@@ -55,8 +55,8 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
     }
 	
 	public async Task<TastingSessionWriteResult<TastingSessionCoffeeResponseDto>> AddCoffeeAsync(
-        int sessionId,
-        AddCoffeeToTastingSessionRequestDto request)
+    int sessionId,
+    AddCoffeeToTastingSessionRequestDto request)
     {
         var userId = _currentUserProvider.GetUserId();
 
@@ -75,37 +75,47 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
                 TastingSessionWriteStatus.TastingSessionNotFound);
         }
 
-        var coffee = await _context.Coffees
-            .Where(coffee => coffee.Id == request.CoffeeId)
-            .Select(coffee => new
-            {
-                coffee.Id,
-                coffee.Name
-            })
-            .SingleOrDefaultAsync();
+        var coffeeName = string.IsNullOrWhiteSpace(request.CoffeeName)
+            ? null
+            : request.CoffeeName.Trim();
 
-        if (coffee is null)
+        if (request.CoffeeId is null && coffeeName is null)
         {
             return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-                TastingSessionWriteStatus.CoffeeNotFound);
+                TastingSessionWriteStatus.InvalidCoffeeData);
         }
 
-        var coffeeAlreadyAdded = await _context.CuppingSessionCoffees
-            .AnyAsync(sessionCoffee =>
-                sessionCoffee.CuppingSessionId == sessionId &&
-                sessionCoffee.CoffeeId == request.CoffeeId);
+        Coffee? coffee = null;
 
-        if (coffeeAlreadyAdded)
+        if (request.CoffeeId is not null)
         {
-            return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-                TastingSessionWriteStatus.CoffeeAlreadyAdded);
+            coffee = await _context.Coffees
+                .SingleOrDefaultAsync(coffee => coffee.Id == request.CoffeeId.Value);
+
+            if (coffee is null)
+            {
+                return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+                    TastingSessionWriteStatus.CoffeeNotFound);
+            }
+
+            var coffeeAlreadyAdded = await _context.CuppingSessionCoffees
+                .AnyAsync(sessionCoffee =>
+                    sessionCoffee.CuppingSessionId == sessionId &&
+                    sessionCoffee.CoffeeId == request.CoffeeId.Value);
+
+            if (coffeeAlreadyAdded)
+            {
+                return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+                    TastingSessionWriteStatus.CoffeeAlreadyAdded);
+            }
         }
 
         var sessionCoffee = new CuppingSessionCoffee
         {
             CuppingSessionId = sessionId,
             CoffeeId = request.CoffeeId,
-			Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+            CustomCoffeeName = request.CoffeeId is null ? coffeeName : null,
+            Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
 
@@ -114,8 +124,9 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
         var response = new TastingSessionCoffeeResponseDto
         {
-            CoffeeId = coffee.Id,
-            CoffeeName = coffee.Name,
+            SessionCoffeeId = sessionCoffee.Id,
+            CoffeeId = sessionCoffee.CoffeeId,
+            CoffeeName = coffee?.Name ?? sessionCoffee.CustomCoffeeName!,
             Notes = sessionCoffee.Notes,
             AromaScore = sessionCoffee.AromaScore,
             SweetnessScore = sessionCoffee.SweetnessScore,
@@ -133,8 +144,78 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 	
 	public async Task<TastingSessionWriteResult<TastingSessionCoffeeResponseDto>> UpdateCoffeeAsync(
     int sessionId,
-    int coffeeId,
+    int sessionCoffeeId,
     UpdateTastingSessionCoffeeRequestDto request)
+    {
+        var userId = _currentUserProvider.GetUserId();
+
+        if (userId is null)
+        {
+            return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+                TastingSessionWriteStatus.Unauthorized);
+        }
+
+        var sessionExists = await _context.CuppingSessions
+            .AnyAsync(session => session.Id == sessionId && session.UserId == userId.Value);
+
+        if (!sessionExists)
+        {
+            return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+                TastingSessionWriteStatus.TastingSessionNotFound);
+        }
+
+        var sessionCoffee = await _context.CuppingSessionCoffees
+            .Include(sessionCoffee => sessionCoffee.Coffee)
+            .SingleOrDefaultAsync(sessionCoffee =>
+                sessionCoffee.CuppingSessionId == sessionId &&
+                sessionCoffee.Id == sessionCoffeeId);
+
+        if (sessionCoffee is null)
+        {
+            return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+                TastingSessionWriteStatus.CoffeeNotInSession);
+        }
+
+        sessionCoffee.Notes = string.IsNullOrWhiteSpace(request.Notes)
+            ? null
+            : request.Notes.Trim();
+
+        sessionCoffee.AromaScore = request.AromaScore;
+        sessionCoffee.SweetnessScore = request.SweetnessScore;
+        sessionCoffee.AcidityScore = request.AcidityScore;
+        sessionCoffee.BodyScore = request.BodyScore;
+        sessionCoffee.FlavorProfileNotes = string.IsNullOrWhiteSpace(request.FlavorProfileNotes)
+            ? null
+            : request.FlavorProfileNotes.Trim();
+        sessionCoffee.CleanCup = request.CleanCup;
+        sessionCoffee.OverallScore = request.OverallScore;
+
+        await _context.SaveChangesAsync();
+
+        var response = new TastingSessionCoffeeResponseDto
+        {
+            SessionCoffeeId = sessionCoffee.Id,
+            CoffeeId = sessionCoffee.CoffeeId,
+            CoffeeName = sessionCoffee.Coffee?.Name ?? sessionCoffee.CustomCoffeeName!,
+            Notes = sessionCoffee.Notes,
+            AromaScore = sessionCoffee.AromaScore,
+            SweetnessScore = sessionCoffee.SweetnessScore,
+            AcidityScore = sessionCoffee.AcidityScore,
+            BodyScore = sessionCoffee.BodyScore,
+            FlavorProfileNotes = sessionCoffee.FlavorProfileNotes,
+            CleanCup = sessionCoffee.CleanCup,
+            OverallScore = sessionCoffee.OverallScore
+        };
+
+        return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
+            TastingSessionWriteStatus.Success,
+            response);
+    }
+    
+    public async Task<TastingSessionWriteResult<TastingSessionCoffeeResponseDto>> UpdateCoffeeNoteAsync(
+    int sessionId,
+    int sessionCoffeeId,
+    UpdateTastingSessionCoffeeNoteRequestDto request)
 {
     var userId = _currentUserProvider.GetUserId();
 
@@ -157,7 +238,7 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
         .Include(sessionCoffee => sessionCoffee.Coffee)
         .SingleOrDefaultAsync(sessionCoffee =>
             sessionCoffee.CuppingSessionId == sessionId &&
-            sessionCoffee.CoffeeId == coffeeId);
+            sessionCoffee.Id == sessionCoffeeId);
 
     if (sessionCoffee is null)
     {
@@ -169,22 +250,13 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
         ? null
         : request.Notes.Trim();
 
-    sessionCoffee.AromaScore = request.AromaScore;
-    sessionCoffee.SweetnessScore = request.SweetnessScore;
-    sessionCoffee.AcidityScore = request.AcidityScore;
-    sessionCoffee.BodyScore = request.BodyScore;
-    sessionCoffee.FlavorProfileNotes = string.IsNullOrWhiteSpace(request.FlavorProfileNotes)
-        ? null
-        : request.FlavorProfileNotes.Trim();
-    sessionCoffee.CleanCup = request.CleanCup;
-    sessionCoffee.OverallScore = request.OverallScore;
-
     await _context.SaveChangesAsync();
 
     var response = new TastingSessionCoffeeResponseDto
     {
+        SessionCoffeeId = sessionCoffee.Id,
         CoffeeId = sessionCoffee.CoffeeId,
-        CoffeeName = sessionCoffee.Coffee.Name,
+        CoffeeName = sessionCoffee.Coffee?.Name ?? sessionCoffee.CustomCoffeeName!,
         Notes = sessionCoffee.Notes,
         AromaScore = sessionCoffee.AromaScore,
         SweetnessScore = sessionCoffee.SweetnessScore,

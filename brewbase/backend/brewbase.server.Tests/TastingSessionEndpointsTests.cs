@@ -428,13 +428,14 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
         context.CuppingSessions.Add(session);
         await context.SaveChangesAsync();
 
-        context.CuppingSessionCoffees.Add(new CuppingSessionCoffee
+        var sessionCoffee = new CuppingSessionCoffee
         {
             CuppingSessionId = session.Id,
             CoffeeId = 1,
             CreatedAt = DateTime.Now
-        });
+        };
 
+        context.CuppingSessionCoffees.Add(sessionCoffee);
         await context.SaveChangesAsync();
 
         var request = new
@@ -443,9 +444,9 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
         };
 
         var response = await _client.PutAsJsonAsync(
-            $"/api/TastingSessions/{session.Id}/coffees/1",
+            $"/api/TastingSessions/{session.Id}/coffees/{sessionCoffee.Id}/note",
             request);
-
+        
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var payload = await response.Content.ReadAsStringAsync();
@@ -484,13 +485,14 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
         context.CuppingSessions.Add(session);
         await context.SaveChangesAsync();
 
-        context.CuppingSessionCoffees.Add(new CuppingSessionCoffee
+        var sessionCoffee = new CuppingSessionCoffee
         {
             CuppingSessionId = session.Id,
             CoffeeId = 1,
             CreatedAt = DateTime.Now
-        });
+        };
 
+        context.CuppingSessionCoffees.Add(sessionCoffee);
         await context.SaveChangesAsync();
 
         var request = new
@@ -506,7 +508,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
         };
 
         var response = await _client.PutAsJsonAsync(
-            $"/api/TastingSessions/{session.Id}/coffees/1",
+            $"/api/TastingSessions/{session.Id}/coffees/{sessionCoffee.Id}",
             request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -546,23 +548,24 @@ public async Task ShouldUpdateExistingCoffeeNoteInTastingSession()
     context.CuppingSessions.Add(session);
     await context.SaveChangesAsync();
 
-    context.CuppingSessionCoffees.Add(new CuppingSessionCoffee
+    var sessionCoffee = new CuppingSessionCoffee
     {
         CuppingSessionId = session.Id,
         CoffeeId = 1,
         Notes = "Old note",
         CreatedAt = DateTime.Now
-    });
+    };
 
+    context.CuppingSessionCoffees.Add(sessionCoffee);
     await context.SaveChangesAsync();
-
+    
     var request = new
     {
         notes = "Updated note"
     };
 
     var response = await _client.PutAsJsonAsync(
-        $"/api/TastingSessions/{session.Id}/coffees/1",
+        $"/api/TastingSessions/{session.Id}/coffees/{sessionCoffee.Id}/note",
         request);
 
     Assert.Equal(HttpStatusCode.OK, response.StatusCode);
