@@ -107,6 +107,7 @@ builder.Services.AddDbContext<BrewDbContext>(opt =>
 
 builder.Services.AddScoped<ICoffeeReadService, CoffeeReadService>();
 builder.Services.AddScoped<IRecipeReadService, RecipeReadService>();
+builder.Services.AddScoped<IRankingReadService, RankingReadService>();
 builder.Services.AddScoped<IBrewingMethodReadService, BrewingMethodReadService>();
 builder.Services.AddScoped<ITastingSessionWriteService, TastingSessionWriteService>();
 builder.Services.AddScoped<ITastingSessionReadService, TastingSessionReadService>();
