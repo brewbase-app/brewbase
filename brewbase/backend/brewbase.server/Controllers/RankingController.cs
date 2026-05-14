@@ -23,4 +23,14 @@ public class RankingController : ControllerBase
 
         return Ok(ranking);
     }
+    
+    [HttpGet("users")]
+    [ProducesResponseType(typeof(List<UserRankingResponseDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetUserRanking([FromQuery] int limit = 10)
+    {
+        var ranking = await _rankingReadService.GetUserRankingAsync(limit);
+
+        return Ok(ranking);
+    }
+    
 }
