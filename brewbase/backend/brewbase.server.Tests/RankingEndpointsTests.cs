@@ -354,4 +354,273 @@ public class RankingEndpointsTests : IDisposable
         using var document = JsonDocument.Parse(payload);
         return document.RootElement.Clone();
     }
+    
+    [Fact]
+    public async Task ShouldCalculateUserActivityScoreCorrectly()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var user = await CreateRankingUserAsync(context, "score-user");
+        var followerOne = await CreateRankingUserAsync(context, "follower-one");
+        var followerTwo = await CreateRankingUserAsync(context, "follower-two");
+
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        var userRecipe = await CreateRecipeAsync(context, user.Id, true);
+        var ratedRecipe = await CreateRecipeAsync(context, followerOne.Id, true);
+
+        context.CoffeeRatings.AddRange(
+            new CoffeeRating
+            {
+                UserId = user.Id,
+                CoffeeId = 1,
+                Value = 5,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new CoffeeRating
+            {
+                UserId = user.Id,
+                CoffeeId = 2,
+                Value = 4,
+                CreatedAt = now,
+                UpdatedAt = now
+            }
+        );
+
+        context.RecipeRatings.Add(new RecipeRating
+        {
+            UserId = user.Id,
+            RecipeId = ratedRecipe.Id,
+            Value = 5,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        context.QuickNotes.Add(new QuickNote
+        {
+            UserId = user.Id,
+            Content = "Ranking test note",
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        var session = new CuppingSession
+        {
+            UserId = user.Id,
+            Name = $"Ranking session {Guid.NewGuid()}",
+            Description = "Ranking session description",
+            CreatedAt = now
+        };
+
+        context.CuppingSessions.Add(session);
+        await context.SaveChangesAsync();
+
+        context.CuppingSessionCoffees.AddRange(
+            new CuppingSessionCoffee
+            {
+                CuppingSessionId = session.Id,
+                CoffeeId = 1,
+                CreatedAt = now
+            },
+            new CuppingSessionCoffee
+            {
+                CuppingSessionId = session.Id,
+                CoffeeId = 2,
+                CreatedAt = now
+            }
+        );
+
+        context.Follows.AddRange(
+            new Follow
+            {
+                FollowerId = followerOne.Id,
+                FollowedId = user.Id,
+                CreatedAt = now
+            },
+            new Follow
+            {
+                FollowerId = followerTwo.Id,
+                FollowedId = user.Id,
+                CreatedAt = now
+            }
+        );
+
+        context.UserRecipeFavorites.AddRange(
+            new UserRecipeFavorite
+            {
+                UserId = followerOne.Id,
+                RecipeId = userRecipe.Id,
+                CreatedAt = now
+            },
+            new UserRecipeFavorite
+            {
+                UserId = followerTwo.Id,
+                RecipeId = userRecipe.Id,
+                CreatedAt = now
+            }
+        );
+
+        context.Articles.Add(new Article
+        {
+            UserId = user.Id,
+            Title = $"Approved article {Guid.NewGuid()}",
+            Content = "Article content",
+            Status = "APPROVED",
+            CreatedAt = now,
+            UpdatedAt = now,
+            PublishedAt = now
+        });
+
+        await context.SaveChangesAsync();
+
+        var response = await _client.GetAsync("/api/Ranking/users");
+
+        response.EnsureSuccessStatusCode();
+
+        var root = await ParseResponseRootAsync(response);
+        var ranking = root.EnumerateArray().ToList();
+        var rankedUser = ranking.Single(item => item.GetProperty("userId").GetInt32() == user.Id);
+
+        Assert.Equal(63, rankedUser.GetProperty("activityScore").GetInt32());
+        Assert.Equal(1, rankedUser.GetProperty("publicRecipeCount").GetInt32());
+        Assert.Equal(2, rankedUser.GetProperty("coffeeRatingCount").GetInt32());
+        Assert.Equal(1, rankedUser.GetProperty("recipeRatingCount").GetInt32());
+        Assert.Equal(1, rankedUser.GetProperty("quickNoteCount").GetInt32());
+        Assert.Equal(1, rankedUser.GetProperty("cuppingSessionCount").GetInt32());
+        Assert.Equal(2, rankedUser.GetProperty("cuppingSessionCoffeeCount").GetInt32());
+        Assert.Equal(2, rankedUser.GetProperty("followersCount").GetInt32());
+        Assert.Equal(2, rankedUser.GetProperty("receivedRecipeFavoriteCount").GetInt32());
+        Assert.Equal(1, rankedUser.GetProperty("publishedArticleCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task ShouldOrderUsersByActivityScoreAndExcludeInactiveAndBlockedUsers()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var highScoreUser = await CreateRankingUserAsync(context, "high-score-user");
+        var lowScoreUser = await CreateRankingUserAsync(context, "low-score-user");
+        var inactiveUser = await CreateRankingUserAsync(context, "inactive-user");
+        var blockedUser = await CreateRankingUserAsync(context, "blocked-user", true);
+
+        await AddPublicRecipesAsync(context, highScoreUser.Id, 5);
+        await AddPublicRecipesAsync(context, lowScoreUser.Id, 1);
+        await AddPublicRecipesAsync(context, blockedUser.Id, 10);
+
+        var response = await _client.GetAsync("/api/Ranking/users");
+
+        response.EnsureSuccessStatusCode();
+
+        var root = await ParseResponseRootAsync(response);
+        var ranking = root.EnumerateArray().ToList();
+
+        var highScoreIndex = ranking.FindIndex(item => item.GetProperty("userId").GetInt32() == highScoreUser.Id);
+        var lowScoreIndex = ranking.FindIndex(item => item.GetProperty("userId").GetInt32() == lowScoreUser.Id);
+
+        Assert.True(highScoreIndex >= 0);
+        Assert.True(lowScoreIndex >= 0);
+        Assert.True(highScoreIndex < lowScoreIndex);
+
+        Assert.DoesNotContain(ranking, item => item.GetProperty("userId").GetInt32() == inactiveUser.Id);
+        Assert.DoesNotContain(ranking, item => item.GetProperty("userId").GetInt32() == blockedUser.Id);
+    }
+
+    [Fact]
+    public async Task ShouldRespectUserRankingLimit()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var firstUser = await CreateRankingUserAsync(context, "limit-first-user");
+        var secondUser = await CreateRankingUserAsync(context, "limit-second-user");
+        var thirdUser = await CreateRankingUserAsync(context, "limit-third-user");
+
+        await AddPublicRecipesAsync(context, firstUser.Id, 10);
+        await AddPublicRecipesAsync(context, secondUser.Id, 9);
+        await AddPublicRecipesAsync(context, thirdUser.Id, 8);
+
+        var response = await _client.GetAsync("/api/Ranking/users?limit=2");
+
+        response.EnsureSuccessStatusCode();
+
+        var root = await ParseResponseRootAsync(response);
+        var ranking = root.EnumerateArray().ToList();
+
+        Assert.Equal(2, ranking.Count);
+        Assert.Equal(1, ranking[0].GetProperty("position").GetInt32());
+        Assert.Equal(2, ranking[1].GetProperty("position").GetInt32());
+        Assert.Equal(firstUser.Id, ranking[0].GetProperty("userId").GetInt32());
+        Assert.Equal(secondUser.Id, ranking[1].GetProperty("userId").GetInt32());
+    }
+
+    private static async Task<AppUser> CreateRankingUserAsync(
+        BrewDbContext context,
+        string loginPrefix,
+        bool isBlocked = false)
+    {
+        var uniqueValue = Guid.NewGuid().ToString("N");
+
+        var user = new AppUser
+        {
+            Login = $"{loginPrefix}-{uniqueValue}",
+            Email = $"{loginPrefix}-{uniqueValue}@brewbase.local",
+            PasswordHash = "test-hash",
+            Role = "User",
+            IsBlocked = isBlocked,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+
+        context.AppUsers.Add(user);
+        await context.SaveChangesAsync();
+
+        return user;
+    }
+
+    private static async Task<Recipe> CreateRecipeAsync(
+        BrewDbContext context,
+        int userId,
+        bool isPublic)
+    {
+        var recipe = new Recipe
+        {
+            Title = $"Ranking recipe {Guid.NewGuid()}",
+            Parameters = "{}",
+            Steps = "step",
+            IsPublic = isPublic,
+            UserId = userId,
+            CoffeeId = 1,
+            BrewingMethodId = 1
+        };
+
+        context.Recipes.Add(recipe);
+        await context.SaveChangesAsync();
+
+        return recipe;
+    }
+
+    private static async Task AddPublicRecipesAsync(
+        BrewDbContext context,
+        int userId,
+        int count)
+    {
+        for (var index = 0; index < count; index++)
+        {
+            context.Recipes.Add(new Recipe
+            {
+                Title = $"Ranking recipe {Guid.NewGuid()}",
+                Parameters = "{}",
+                Steps = "step",
+                IsPublic = true,
+                UserId = userId,
+                CoffeeId = 1,
+                BrewingMethodId = 1
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
+    
 }
