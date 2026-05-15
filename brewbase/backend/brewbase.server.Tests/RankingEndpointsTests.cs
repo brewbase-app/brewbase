@@ -623,4 +623,271 @@ public class RankingEndpointsTests : IDisposable
         await context.SaveChangesAsync();
     }
     
+    [Fact]
+    public async Task ShouldReturnRecipeRankingOrderedByAverageRatingAndRatingCount()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var owner = await CreateRankingUserAsync(context, "recipe-ranking-owner");
+        var firstRater = await CreateRankingUserAsync(context, "recipe-ranking-rater-one");
+        var secondRater = await CreateRankingUserAsync(context, "recipe-ranking-rater-two");
+
+        var firstRecipe = await CreateRecipeAsync(context, owner.Id, true);
+        var secondRecipe = await CreateRecipeAsync(context, owner.Id, true);
+        var thirdRecipe = await CreateRecipeAsync(context, owner.Id, true);
+
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        context.RecipeRatings.AddRange(
+            new RecipeRating
+            {
+                RecipeId = firstRecipe.Id,
+                UserId = firstRater.Id,
+                Value = 5,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new RecipeRating
+            {
+                RecipeId = secondRecipe.Id,
+                UserId = firstRater.Id,
+                Value = 4,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new RecipeRating
+            {
+                RecipeId = secondRecipe.Id,
+                UserId = secondRater.Id,
+                Value = 5,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new RecipeRating
+            {
+                RecipeId = thirdRecipe.Id,
+                UserId = firstRater.Id,
+                Value = 5,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new RecipeRating
+            {
+                RecipeId = thirdRecipe.Id,
+                UserId = secondRater.Id,
+                Value = 5,
+                CreatedAt = now,
+                UpdatedAt = now
+            }
+        );
+
+        await context.SaveChangesAsync();
+
+        var response = await _client.GetAsync("/api/Ranking/recipes");
+
+        response.EnsureSuccessStatusCode();
+
+        var root = await ParseResponseRootAsync(response);
+        var ranking = root.EnumerateArray().ToList();
+
+        var thirdRankedRecipe = ranking.Single(item => item.GetProperty("recipeId").GetInt32() == thirdRecipe.Id);
+        var firstRankedRecipe = ranking.Single(item => item.GetProperty("recipeId").GetInt32() == firstRecipe.Id);
+        var secondRankedRecipe = ranking.Single(item => item.GetProperty("recipeId").GetInt32() == secondRecipe.Id);
+
+        Assert.True(thirdRankedRecipe.GetProperty("position").GetInt32() < firstRankedRecipe.GetProperty("position").GetInt32());
+        Assert.True(firstRankedRecipe.GetProperty("position").GetInt32() < secondRankedRecipe.GetProperty("position").GetInt32());
+
+        Assert.Equal(5, thirdRankedRecipe.GetProperty("averageRating").GetDouble());
+        Assert.Equal(2, thirdRankedRecipe.GetProperty("ratingCount").GetInt32());
+
+        Assert.Equal(5, firstRankedRecipe.GetProperty("averageRating").GetDouble());
+        Assert.Equal(1, firstRankedRecipe.GetProperty("ratingCount").GetInt32());
+
+        Assert.Equal(4.5, secondRankedRecipe.GetProperty("averageRating").GetDouble());
+        Assert.Equal(2, secondRankedRecipe.GetProperty("ratingCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task ShouldExcludePrivateRecipesFromRecipeRanking()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var owner = await CreateRankingUserAsync(context, "private-recipe-owner");
+        var rater = await CreateRankingUserAsync(context, "private-recipe-rater");
+
+        var publicRecipe = await CreateRecipeAsync(context, owner.Id, true);
+        var privateRecipe = await CreateRecipeAsync(context, owner.Id, false);
+
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        context.RecipeRatings.AddRange(
+            new RecipeRating
+            {
+                RecipeId = publicRecipe.Id,
+                UserId = rater.Id,
+                Value = 4,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new RecipeRating
+            {
+                RecipeId = privateRecipe.Id,
+                UserId = rater.Id,
+                Value = 5,
+                CreatedAt = now,
+                UpdatedAt = now
+            }
+        );
+
+        await context.SaveChangesAsync();
+
+        var response = await _client.GetAsync("/api/Ranking/recipes");
+
+        response.EnsureSuccessStatusCode();
+
+        var root = await ParseResponseRootAsync(response);
+        var ranking = root.EnumerateArray().ToList();
+
+        Assert.Contains(ranking, item => item.GetProperty("recipeId").GetInt32() == publicRecipe.Id);
+        Assert.DoesNotContain(ranking, item => item.GetProperty("recipeId").GetInt32() == privateRecipe.Id);
+    }
+
+    [Fact]
+    public async Task ShouldRespectRecipeRankingLimit()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var owner = await CreateRankingUserAsync(context, "recipe-limit-owner");
+        var rater = await CreateRankingUserAsync(context, "recipe-limit-rater");
+
+        var firstRecipe = await CreateRecipeAsync(context, owner.Id, true);
+        var secondRecipe = await CreateRecipeAsync(context, owner.Id, true);
+        var thirdRecipe = await CreateRecipeAsync(context, owner.Id, true);
+
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        context.RecipeRatings.AddRange(
+            new RecipeRating
+            {
+                RecipeId = firstRecipe.Id,
+                UserId = rater.Id,
+                Value = 5,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new RecipeRating
+            {
+                RecipeId = secondRecipe.Id,
+                UserId = rater.Id,
+                Value = 4,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new RecipeRating
+            {
+                RecipeId = thirdRecipe.Id,
+                UserId = rater.Id,
+                Value = 3,
+                CreatedAt = now,
+                UpdatedAt = now
+            }
+        );
+
+        await context.SaveChangesAsync();
+
+        var response = await _client.GetAsync("/api/Ranking/recipes?limit=2");
+
+        response.EnsureSuccessStatusCode();
+
+        var root = await ParseResponseRootAsync(response);
+        var ranking = root.EnumerateArray().ToList();
+
+        Assert.Equal(2, ranking.Count);
+        Assert.Equal(1, ranking[0].GetProperty("position").GetInt32());
+        Assert.Equal(2, ranking[1].GetProperty("position").GetInt32());
+        Assert.Equal(firstRecipe.Id, ranking[0].GetProperty("recipeId").GetInt32());
+        Assert.Equal(secondRecipe.Id, ranking[1].GetProperty("recipeId").GetInt32());
+    }
+
+    [Fact]
+    public async Task ShouldUseSaveCountAsRecipeRankingTieBreaker()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var owner = await CreateRankingUserAsync(context, "recipe-save-owner");
+        var rater = await CreateRankingUserAsync(context, "recipe-save-rater");
+        var firstUser = await CreateRankingUserAsync(context, "recipe-save-user-one");
+        var secondUser = await CreateRankingUserAsync(context, "recipe-save-user-two");
+
+        var firstRecipe = await CreateRecipeAsync(context, owner.Id, true);
+        var secondRecipe = await CreateRecipeAsync(context, owner.Id, true);
+
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        context.RecipeRatings.AddRange(
+            new RecipeRating
+            {
+                RecipeId = firstRecipe.Id,
+                UserId = rater.Id,
+                Value = 5,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new RecipeRating
+            {
+                RecipeId = secondRecipe.Id,
+                UserId = rater.Id,
+                Value = 5,
+                CreatedAt = now,
+                UpdatedAt = now
+            }
+        );
+
+        context.UserRecipeFavorites.AddRange(
+            new UserRecipeFavorite
+            {
+                RecipeId = firstRecipe.Id,
+                UserId = firstUser.Id,
+                CreatedAt = now
+            },
+            new UserRecipeFavorite
+            {
+                RecipeId = secondRecipe.Id,
+                UserId = firstUser.Id,
+                CreatedAt = now
+            },
+            new UserRecipeFavorite
+            {
+                RecipeId = secondRecipe.Id,
+                UserId = secondUser.Id,
+                CreatedAt = now
+            }
+        );
+
+        await context.SaveChangesAsync();
+
+        var response = await _client.GetAsync("/api/Ranking/recipes");
+
+        response.EnsureSuccessStatusCode();
+
+        var root = await ParseResponseRootAsync(response);
+        var ranking = root.EnumerateArray().ToList();
+
+        var firstRecipePosition = ranking
+            .Single(item => item.GetProperty("recipeId").GetInt32() == firstRecipe.Id)
+            .GetProperty("position")
+            .GetInt32();
+
+        var secondRecipePosition = ranking
+            .Single(item => item.GetProperty("recipeId").GetInt32() == secondRecipe.Id)
+            .GetProperty("position")
+            .GetInt32();
+
+        Assert.True(secondRecipePosition < firstRecipePosition);
+    }
+    
 }

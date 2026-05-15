@@ -7,3 +7,7 @@ export function getCoffeeRanking() {
 export function getUserRanking() {
     return apiRequest("/api/Ranking/users");
 }
+
+export function getRecipeRanking() {
+    return apiRequest("/api/Ranking/recipes");
+}

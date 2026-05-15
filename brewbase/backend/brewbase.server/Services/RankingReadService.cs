@@ -113,4 +113,40 @@ public class RankingReadService : IRankingReadService
         return ranking;
     }
     
+    public async Task<List<RecipeRankingResponseDto>> GetRecipeRankingAsync(int limit)
+    {
+        var safeLimit = Math.Clamp(limit, 1, 50);
+
+        var ranking = await _context.Recipes
+            .AsNoTracking()
+            .Where(recipe => recipe.IsPublic)
+            .Select(recipe => new RecipeRankingResponseDto
+            {
+                RecipeId = recipe.Id,
+                Title = recipe.Title,
+                Coffee = recipe.Coffee.Name,
+                BrewingMethod = recipe.BrewingMethod.Name,
+                UserId = recipe.UserId,
+                UserLogin = recipe.User.Login,
+                AverageRating = recipe.RecipeRatings
+                    .Average(rating => (double?)rating.Value) ?? 0,
+                RatingCount = recipe.RecipeRatings.Count,
+                SaveCount = recipe.UserRecipeFavorites.Count
+            })
+            .Where(recipe => recipe.RatingCount > 0)
+            .OrderByDescending(recipe => recipe.AverageRating)
+            .ThenByDescending(recipe => recipe.RatingCount)
+            .ThenByDescending(recipe => recipe.SaveCount)
+            .ThenBy(recipe => recipe.Title)
+            .Take(safeLimit)
+            .ToListAsync();
+
+        for (var index = 0; index < ranking.Count; index++)
+        {
+            ranking[index].Position = index + 1;
+        }
+
+        return ranking;
+    }
+    
 }
