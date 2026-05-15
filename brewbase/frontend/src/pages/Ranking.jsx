@@ -13,23 +13,32 @@ import {
     Trophy
 } from "lucide-react";
 
-import { getCoffeeRanking } from "../api/rankingApi";
+import {
+    getCoffeeRanking,
+    getUserRanking
+} from "../api/rankingApi";
 
 import "../styles/Ranking.css";
 
 function Ranking() {
     const [activeTab, setActiveTab] = useState("coffees");
+
     const [coffeeRanking, setCoffeeRanking] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState("");
+    const [userRanking, setUserRanking] = useState([]);
+
+    const [isCoffeeLoading, setIsCoffeeLoading] = useState(true);
+    const [isUserLoading, setIsUserLoading] = useState(true);
+
+    const [coffeeError, setCoffeeError] = useState("");
+    const [userError, setUserError] = useState("");
 
     const navigate = useNavigate();
 
     useEffect(() => {
         const loadCoffeeRanking = async () => {
             try {
-                setIsLoading(true);
-                setError("");
+                setIsCoffeeLoading(true);
+                setCoffeeError("");
 
                 const data = await getCoffeeRanking();
 
@@ -39,7 +48,6 @@ function Ranking() {
                     name: coffee.name,
                     rating: coffee.averageRating ?? 0,
                     ratingCount: coffee.ratingCount ?? 0,
-                    recipeUsedCount: coffee.recipeUsedCount ?? 0,
                     subtitle: [
                         coffee.region,
                         coffee.processingMethod,
@@ -52,18 +60,51 @@ function Ranking() {
 
                 setCoffeeRanking(mappedRanking);
             } catch {
-                setError("Nie udało się pobrać rankingu kaw.");
+                setCoffeeError("Nie udało się pobrać rankingu kaw.");
             } finally {
-                setIsLoading(false);
+                setIsCoffeeLoading(false);
+            }
+        };
+
+        const loadUserRanking = async () => {
+            try {
+                setIsUserLoading(true);
+                setUserError("");
+
+                const data = await getUserRanking();
+
+                const mappedRanking = data.map((user) => ({
+                    id: user.userId,
+                    login: user.login,
+                    position: user.position,
+                    name: user.login,
+                    score: user.activityScore ?? 0,
+                    subtitle: [
+                        `${user.publicRecipeCount ?? 0} receptur`,
+                        `${user.followersCount ?? 0} obserwujących`,
+                        `${user.cuppingSessionCount ?? 0} sesji`
+                    ].join(" • ")
+                }));
+
+                setUserRanking(mappedRanking);
+            } catch {
+                setUserError("Nie udało się pobrać rankingu użytkowników.");
+            } finally {
+                setIsUserLoading(false);
             }
         };
 
         loadCoffeeRanking();
+        loadUserRanking();
     }, []);
 
-    const handleNavigate = (itemId) => {
+    const handleNavigate = (item) => {
         if (activeTab === "coffees") {
-            navigate(`/wiki/coffees/${itemId}`);
+            navigate(`/wiki/coffees/${item.id}`);
+        }
+
+        if (activeTab === "users") {
+            navigate(`/profile/${item.login}`);
         }
     };
 
@@ -79,7 +120,17 @@ function Ranking() {
         );
     };
 
-    const renderCoffeeRating = (item) => {
+    const renderScore = (item) => {
+        if (activeTab === "users") {
+            return (
+                <div className="top-rating">
+                    <span>
+                        {item.score} pkt
+                    </span>
+                </div>
+            );
+        }
+
         return (
             <div className="top-rating">
                 <Star size={16} fill="currentColor" />
@@ -95,89 +146,68 @@ function Ranking() {
         );
     };
 
-    const renderPodium = () => {
+    const renderPodium = (data) => {
         return (
             <div className="top-ranking-podium">
-                {coffeeRanking[1] && (
+                {data[1] && (
                     <div
                         className="top-card second-place"
-                        onClick={() => handleNavigate(coffeeRanking[1].id)}
+                        onClick={() => handleNavigate(data[1])}
                     >
                         <div className="top-badge">
                             #2
                         </div>
 
-                        <h2>{coffeeRanking[1].name}</h2>
+                        <h2>{data[1].name}</h2>
 
-                        <p>{coffeeRanking[1].subtitle}</p>
+                        <p>{data[1].subtitle}</p>
 
-                        {renderCoffeeRating(coffeeRanking[1])}
+                        {renderScore(data[1])}
                     </div>
                 )}
 
-                {coffeeRanking[0] && (
+                {data[0] && (
                     <div
                         className="top-card first-place"
-                        onClick={() => handleNavigate(coffeeRanking[0].id)}
+                        onClick={() => handleNavigate(data[0])}
                     >
                         <div className="top-badge">
                             <Trophy size={16} />
                             #1
                         </div>
 
-                        <h2>{coffeeRanking[0].name}</h2>
+                        <h2>{data[0].name}</h2>
 
-                        <p>{coffeeRanking[0].subtitle}</p>
+                        <p>{data[0].subtitle}</p>
 
-                        {renderCoffeeRating(coffeeRanking[0])}
+                        {renderScore(data[0])}
                     </div>
                 )}
 
-                {coffeeRanking[2] && (
+                {data[2] && (
                     <div
                         className="top-card third-place"
-                        onClick={() => handleNavigate(coffeeRanking[2].id)}
+                        onClick={() => handleNavigate(data[2])}
                     >
                         <div className="top-badge">
                             #3
                         </div>
 
-                        <h2>{coffeeRanking[2].name}</h2>
+                        <h2>{data[2].name}</h2>
 
-                        <p>{coffeeRanking[2].subtitle}</p>
+                        <p>{data[2].subtitle}</p>
 
-                        {renderCoffeeRating(coffeeRanking[2])}
+                        {renderScore(data[2])}
                     </div>
                 )}
             </div>
         );
     };
 
-    const renderCoffeeRanking = () => {
-        if (isLoading) {
-            return renderPlaceholder(
-                "Ładowanie rankingu...",
-                "Pobieramy aktualne dane rankingu kaw."
-            );
-        }
-
-        if (error) {
-            return renderPlaceholder(
-                "Wystąpił błąd",
-                error
-            );
-        }
-
-        if (coffeeRanking.length === 0) {
-            return renderPlaceholder(
-                "Brak danych rankingowych",
-                "Ranking kaw pojawi się po wystawieniu pierwszych ocen."
-            );
-        }
-
+    const renderLeaderboard = (data) => {
         return (
             <>
-                {renderPodium()}
+                {renderPodium(data)}
 
                 <div className="leaderboard">
                     <div className="leaderboard-header">
@@ -185,11 +215,11 @@ function Ranking() {
                     </div>
 
                     <div className="leaderboard-list">
-                        {coffeeRanking.map((item) => (
+                        {data.map((item) => (
                             <div
                                 className="leaderboard-item"
                                 key={item.id}
-                                onClick={() => handleNavigate(item.id)}
+                                onClick={() => handleNavigate(item)}
                             >
                                 <div className="leaderboard-position">
                                     #{item.position}
@@ -202,13 +232,21 @@ function Ranking() {
                                 </div>
 
                                 <div className="leaderboard-score">
-                                    <Star size={16} fill="currentColor" />
+                                    {activeTab === "users" ? (
+                                        <>
+                                            {item.score} pkt
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Star size={16} fill="currentColor" />
 
-                                    {item.rating.toFixed(1)}
+                                            {item.rating.toFixed(1)}
 
-                                    <small>
-                                        ({item.ratingCount} ocen)
-                                    </small>
+                                            <small>
+                                                ({item.ratingCount} ocen)
+                                            </small>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -216,6 +254,56 @@ function Ranking() {
                 </div>
             </>
         );
+    };
+
+    const renderCoffeeRanking = () => {
+        if (isCoffeeLoading) {
+            return renderPlaceholder(
+                "Ładowanie rankingu...",
+                "Pobieramy aktualne dane rankingu kaw."
+            );
+        }
+
+        if (coffeeError) {
+            return renderPlaceholder(
+                "Wystąpił błąd",
+                coffeeError
+            );
+        }
+
+        if (coffeeRanking.length === 0) {
+            return renderPlaceholder(
+                "Brak danych rankingowych",
+                "Ranking kaw pojawi się po wystawieniu pierwszych ocen."
+            );
+        }
+
+        return renderLeaderboard(coffeeRanking);
+    };
+
+    const renderUserRanking = () => {
+        if (isUserLoading) {
+            return renderPlaceholder(
+                "Ładowanie rankingu...",
+                "Pobieramy aktualne dane rankingu użytkowników."
+            );
+        }
+
+        if (userError) {
+            return renderPlaceholder(
+                "Wystąpił błąd",
+                userError
+            );
+        }
+
+        if (userRanking.length === 0) {
+            return renderPlaceholder(
+                "Brak danych rankingowych",
+                "Ranking użytkowników pojawi się po pierwszych aktywnościach."
+            );
+        }
+
+        return renderLeaderboard(userRanking);
     };
 
     return (
@@ -262,11 +350,7 @@ function Ranking() {
                     "Ta część zostanie podpięta po implementacji backendowego rankingu receptur."
                 )}
 
-            {activeTab === "users" &&
-                renderPlaceholder(
-                    "Ranking użytkowników będzie dostępny później",
-                    "Ta część zostanie podpięta po implementacji backendowego rankingu użytkowników."
-                )}
+            {activeTab === "users" && renderUserRanking()}
         </div>
     );
 }
