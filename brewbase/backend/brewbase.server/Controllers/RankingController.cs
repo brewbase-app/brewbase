@@ -9,10 +9,14 @@ namespace brewbase.server.Controllers;
 public class RankingController : ControllerBase
 {
     private readonly IRankingReadService _rankingReadService;
+    private readonly IRankingRefreshService _rankingRefreshService;
 
-    public RankingController(IRankingReadService rankingReadService)
+    public RankingController(
+        IRankingReadService rankingReadService,
+        IRankingRefreshService rankingRefreshService)
     {
         _rankingReadService = rankingReadService;
+        _rankingRefreshService = rankingRefreshService;
     }
 
     [HttpGet("coffees")]
@@ -40,6 +44,15 @@ public class RankingController : ControllerBase
         var ranking = await _rankingReadService.GetRecipeRankingAsync(limit);
 
         return Ok(ranking);
+    }
+    
+    [HttpPost("refresh")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RefreshRankings()
+    {
+        await _rankingRefreshService.RefreshAllRankingsAsync();
+
+        return NoContent();
     }
     
 }
