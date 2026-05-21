@@ -33,4 +33,13 @@ public class RankingController : ControllerBase
         return Ok(ranking);
     }
     
+    [HttpGet("recipes")]
+    [ProducesResponseType(typeof(List<RecipeRankingResponseDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetRecipeRanking([FromQuery] int limit = 10)
+    {
+        var ranking = await _rankingReadService.GetRecipeRankingAsync(limit);
+
+        return Ok(ranking);
+    }
+    
 }

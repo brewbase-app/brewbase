@@ -15,7 +15,8 @@ import {
 
 import {
     getCoffeeRanking,
-    getUserRanking
+    getUserRanking,
+    getRecipeRanking
 } from "../api/rankingApi";
 
 import "../styles/Ranking.css";
@@ -25,12 +26,15 @@ function Ranking() {
 
     const [coffeeRanking, setCoffeeRanking] = useState([]);
     const [userRanking, setUserRanking] = useState([]);
+    const [recipeRanking, setRecipeRanking] = useState([]);
 
     const [isCoffeeLoading, setIsCoffeeLoading] = useState(true);
     const [isUserLoading, setIsUserLoading] = useState(true);
+    const [isRecipeLoading, setIsRecipeLoading] = useState(true);
 
     const [coffeeError, setCoffeeError] = useState("");
     const [userError, setUserError] = useState("");
+    const [recipeError, setRecipeError] = useState("");
 
     const navigate = useNavigate();
 
@@ -94,13 +98,50 @@ function Ranking() {
             }
         };
 
+        const loadRecipeRanking = async () => {
+            try {
+                setIsRecipeLoading(true);
+                setRecipeError("");
+
+                const data = await getRecipeRanking();
+
+                const mappedRanking = data.map((recipe) => ({
+                    id: recipe.recipeId,
+                    position: recipe.position,
+                    name: recipe.title,
+                    rating: recipe.averageRating ?? 0,
+                    ratingCount: recipe.ratingCount ?? 0,
+                    saveCount: recipe.saveCount ?? 0,
+                    subtitle: [
+                        recipe.coffee,
+                        recipe.brewingMethod,
+                        recipe.userLogin ? `@${recipe.userLogin}` : null,
+                        `${recipe.saveCount ?? 0} zapisów`
+                    ]
+                        .filter(Boolean)
+                        .join(" • ")
+                }));
+
+                setRecipeRanking(mappedRanking);
+            } catch {
+                setRecipeError("Nie udało się pobrać rankingu receptur.");
+            } finally {
+                setIsRecipeLoading(false);
+            }
+        };
+
         loadCoffeeRanking();
         loadUserRanking();
+        loadRecipeRanking();
     }, []);
 
     const handleNavigate = (item) => {
         if (activeTab === "coffees") {
             navigate(`/wiki/coffees/${item.id}`);
+        }
+
+        if (activeTab === "recipes") {
+            navigate(`/recipes/${item.id}`);
         }
 
         if (activeTab === "users") {
@@ -281,6 +322,31 @@ function Ranking() {
         return renderLeaderboard(coffeeRanking);
     };
 
+    const renderRecipeRanking = () => {
+        if (isRecipeLoading) {
+            return renderPlaceholder(
+                "Ładowanie rankingu...",
+                "Pobieramy aktualne dane rankingu receptur."
+            );
+        }
+
+        if (recipeError) {
+            return renderPlaceholder(
+                "Wystąpił błąd",
+                recipeError
+            );
+        }
+
+        if (recipeRanking.length === 0) {
+            return renderPlaceholder(
+                "Brak danych rankingowych",
+                "Ranking receptur pojawi się po wystawieniu pierwszych ocen publicznym recepturom."
+            );
+        }
+
+        return renderLeaderboard(recipeRanking);
+    };
+
     const renderUserRanking = () => {
         if (isUserLoading) {
             return renderPlaceholder(
@@ -344,11 +410,7 @@ function Ranking() {
 
             {activeTab === "coffees" && renderCoffeeRanking()}
 
-            {activeTab === "recipes" &&
-                renderPlaceholder(
-                    "Ranking receptur będzie dostępny później",
-                    "Ta część zostanie podpięta po implementacji backendowego rankingu receptur."
-                )}
+            {activeTab === "recipes" && renderRecipeRanking()}
 
             {activeTab === "users" && renderUserRanking()}
         </div>
