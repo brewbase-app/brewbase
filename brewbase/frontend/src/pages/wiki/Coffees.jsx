@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import "../../styles/wiki/Coffees.css";
 
@@ -14,106 +14,78 @@ import {
     toggleFavoriteCoffee
 } from "../../utils/favorites";
 
-function Coffees() {
+import {
+    getCoffees
+} from "../../api/coffeeApi";
 
+function Coffees() {
     const navigate = useNavigate();
 
-    const coffees = [
+    const [coffees, setCoffees] = useState([]);
+    const [search, setSearch] = useState("");
+    const [selectedRegion, setSelectedRegion] = useState("");
+    const [selectedProcessing, setSelectedProcessing] = useState("");
+    const [selectedVariety, setSelectedVariety] = useState("");
+    const [favorites, setFavorites] = useState(getFavoriteCoffees());
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState("");
 
-        {
-            id: 1,
-            name: "Geisha",
-            region: "Etiopia",
-            variety: "Geisha",
-            processingMethod: "Washed",
-            roastery: "Coffee Lab"
-        },
+    useEffect(() => {
+        const loadCoffees = async () => {
+            try {
+                setIsLoading(true);
+                setError("");
 
-        {
-            id: 2,
-            name: "Bourbon",
-            region: "Brazylia",
-            variety: "Bourbon",
-            processingMethod: "Natural",
-            roastery: "Story Coffee"
-        },
+                const data = await getCoffees();
 
-        {
-            id: 3,
-            name: "SL28",
-            region: "Kenia",
-            variety: "SL28",
-            processingMethod: "Honey",
-            roastery: "Audun Coffee"
-        },
+                setCoffees(Array.isArray(data) ? data : []);
+            } catch {
+                setError("Nie udało się pobrać kaw.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-        {
-            id: 4,
-            name: "Typica",
-            region: "Kolumbia",
-            variety: "Typica",
-            processingMethod: "Washed",
-            roastery: "Coffee Plant"
-        }
-    ];
-
-    /* dynamic filters */
+        loadCoffees();
+    }, []);
 
     const regions = [
         ...new Set(
-            coffees.map((coffee) => coffee.region)
+            coffees
+                .map((coffee) => coffee.region)
+                .filter(Boolean)
         )
     ];
 
     const processingMethods = [
         ...new Set(
-            coffees.map(
-                (coffee) => coffee.processingMethod
-            )
+            coffees
+                .map((coffee) => coffee.processingMethod)
+                .filter(Boolean)
         )
     ];
 
     const varieties = [
         ...new Set(
-            coffees.map((coffee) => coffee.variety)
+            coffees
+                .map((coffee) => coffee.variety)
+                .filter(Boolean)
         )
     ];
 
-    /* state */
-
-    const [search, setSearch] = useState("");
-
-    const [selectedRegion, setSelectedRegion] =
-        useState("");
-
-    const [selectedProcessing, setSelectedProcessing] =
-        useState("");
-
-    const [selectedVariety, setSelectedVariety] =
-        useState("");
-
-    const [favorites, setFavorites] = useState(
-        getFavoriteCoffees()
-    );
-
-    /* favorites */
-
     const handleFavorite = (coffeeId) => {
-
-        const updated =
-            toggleFavoriteCoffee(coffeeId);
+        const updated = toggleFavoriteCoffee(coffeeId);
 
         setFavorites(updated);
     };
 
-    /* filtering */
-
     const filteredCoffees = coffees.filter((coffee) => {
+        const query = search.toLowerCase();
 
         const matchesSearch =
-            coffee.name
+            (coffee.name ?? "")
                 .toLowerCase()
-                .includes(search.toLowerCase());
+                .includes(query);
 
         const matchesRegion =
             selectedRegion === "" ||
@@ -135,12 +107,25 @@ function Coffees() {
         );
     });
 
+    if (isLoading) {
+        return (
+            <div className="coffees-page">
+                <h1>Ładowanie kaw...</h1>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="coffees-page">
+                <h1>{error}</h1>
+            </div>
+        );
+    }
+
     return (
-
         <div className="coffees-page">
-
             <div className="coffees-header">
-
                 <h1>Kawy</h1>
 
                 <p>
@@ -148,7 +133,6 @@ function Coffees() {
                 </p>
 
                 <div className="coffees-search-container">
-
                     <Search size={18} />
 
                     <input
@@ -156,220 +140,159 @@ function Coffees() {
                         placeholder="Szukaj kaw..."
                         className="coffees-search"
                         value={search}
-                        onChange={(e) =>
-                            setSearch(e.target.value)
+                        onChange={(event) =>
+                            setSearch(event.target.value)
                         }
                     />
-
                 </div>
-
             </div>
 
             <div className="coffees-content">
-
-                {/* FILTERS */}
-
                 <div className="coffees-filters">
-
                     <h3>Filtry</h3>
 
-                    {/* REGION */}
-
                     <div className="filter-group">
-
                         <label>
                             Region
                         </label>
 
                         <select
                             value={selectedRegion}
-                            onChange={(e) =>
-                                setSelectedRegion(
-                                    e.target.value
-                                )
+                            onChange={(event) =>
+                                setSelectedRegion(event.target.value)
                             }
                         >
-
                             <option value="">
                                 Wszystkie
                             </option>
 
                             {regions.map((region) => (
-
                                 <option
                                     key={region}
                                     value={region}
                                 >
                                     {region}
                                 </option>
-
                             ))}
-
                         </select>
-
                     </div>
 
-                    {/* PROCESSING */}
-
                     <div className="filter-group">
-
                         <label>
                             Processing
                         </label>
 
                         <select
                             value={selectedProcessing}
-                            onChange={(e) =>
-                                setSelectedProcessing(
-                                    e.target.value
-                                )
+                            onChange={(event) =>
+                                setSelectedProcessing(event.target.value)
                             }
                         >
-
                             <option value="">
                                 Wszystkie
                             </option>
 
                             {processingMethods.map((method) => (
-
                                 <option
                                     key={method}
                                     value={method}
                                 >
                                     {method}
                                 </option>
-
                             ))}
-
                         </select>
-
                     </div>
 
-                    {/* VARIETY */}
-
                     <div className="filter-group">
-
                         <label>
                             Variety
                         </label>
 
                         <select
                             value={selectedVariety}
-                            onChange={(e) =>
-                                setSelectedVariety(
-                                    e.target.value
-                                )
+                            onChange={(event) =>
+                                setSelectedVariety(event.target.value)
                             }
                         >
-
                             <option value="">
                                 Wszystkie
                             </option>
 
                             {varieties.map((variety) => (
-
                                 <option
                                     key={variety}
                                     value={variety}
                                 >
                                     {variety}
                                 </option>
-
                             ))}
-
                         </select>
-
                     </div>
-
                 </div>
 
-                {/* COFFEES */}
-
                 <div className="coffees-grid">
-
                     {filteredCoffees.map((coffee) => (
-
                         <div
                             className="coffee-card"
                             key={coffee.id}
                             onClick={() =>
-                                navigate(
-                                    `/wiki/coffees/${coffee.id}`
-                                )
+                                navigate(`/wiki/coffees/${coffee.id}`)
                             }
                         >
-
                             <div className="coffee-image" />
 
                             <div className="coffee-card-content">
-
                                 <div className="coffee-top">
-
                                     <h2>
                                         {coffee.name}
                                     </h2>
 
                                     <button
                                         className="favorite-button"
-                                        onClick={(e) => {
+                                        onClick={(event) => {
+                                            event.stopPropagation();
 
-                                            e.stopPropagation();
-
-                                            handleFavorite(
-                                                coffee.id
-                                            );
+                                            handleFavorite(coffee.id);
                                         }}
                                     >
-
                                         <Heart
                                             size={18}
                                             fill={
-                                                favorites.includes(
-                                                    coffee.id
-                                                )
+                                                favorites.includes(coffee.id)
                                                     ? "currentColor"
                                                     : "none"
                                             }
                                         />
-
                                     </button>
-
                                 </div>
 
                                 <p>
-                                    {coffee.region}
+                                    {coffee.region ?? "Brak regionu"}
                                 </p>
 
                                 <div className="coffee-tags">
+                                    {coffee.variety && (
+                                        <span>
+                                            {coffee.variety}
+                                        </span>
+                                    )}
 
-                                    <span>
-                                        {coffee.variety}
-                                    </span>
-
-                                    <span>
-                                        {
-                                            coffee.processingMethod
-                                        }
-                                    </span>
-
+                                    {coffee.processingMethod && (
+                                        <span>
+                                            {coffee.processingMethod}
+                                        </span>
+                                    )}
                                 </div>
 
                                 <small>
-                                    {coffee.roastery}
+                                    {coffee.roastery ?? "Brak palarni"}
                                 </small>
-
                             </div>
-
                         </div>
-
                     ))}
-
                 </div>
-
             </div>
-
         </div>
-
     );
 }
 

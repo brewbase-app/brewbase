@@ -1,4 +1,7 @@
-import { useState } from "react";
+import {
+    useEffect,
+    useState
+} from "react";
 
 import { useNavigate } from "react-router-dom";
 
@@ -10,484 +13,408 @@ import {
     Trophy
 } from "lucide-react";
 
+import {
+    getCoffeeRanking,
+    getUserRanking,
+    getRecipeRanking
+} from "../api/rankingApi";
+
 import "../styles/Ranking.css";
 
 function Ranking() {
+    const [activeTab, setActiveTab] = useState("coffees");
 
-    const [activeTab, setActiveTab] =
-        useState("coffees");
+    const [coffeeRanking, setCoffeeRanking] = useState([]);
+    const [userRanking, setUserRanking] = useState([]);
+    const [recipeRanking, setRecipeRanking] = useState([]);
+
+    const [isCoffeeLoading, setIsCoffeeLoading] = useState(true);
+    const [isUserLoading, setIsUserLoading] = useState(true);
+    const [isRecipeLoading, setIsRecipeLoading] = useState(true);
+
+    const [coffeeError, setCoffeeError] = useState("");
+    const [userError, setUserError] = useState("");
+    const [recipeError, setRecipeError] = useState("");
 
     const navigate = useNavigate();
 
-    /* MOCK DATA */
+    useEffect(() => {
+        const loadCoffeeRanking = async () => {
+            try {
+                setIsCoffeeLoading(true);
+                setCoffeeError("");
 
-    const rankingData = {
+                const data = await getCoffeeRanking();
 
-        coffees: [
+                const mappedRanking = data.map((coffee) => ({
+                    id: coffee.coffeeId,
+                    position: coffee.position,
+                    name: coffee.name,
+                    rating: coffee.averageRating ?? 0,
+                    ratingCount: coffee.ratingCount ?? 0,
+                    subtitle: [
+                        coffee.region,
+                        coffee.processingMethod,
+                        coffee.variety,
+                        coffee.roastery
+                    ]
+                        .filter(Boolean)
+                        .join(" • ")
+                }));
 
-            {
-                id: 1,
-                name: "Geisha Panama",
-                rating: 4.9,
-                ratingCount: 248,
-                subtitle: "Etiopia • Washed"
-            },
-
-            {
-                id: 2,
-                name: "Kenya AA",
-                rating: 4.7,
-                ratingCount: 192,
-                subtitle: "Kenia • SL28"
-            },
-
-            {
-                id: 3,
-                name: "Brazil Cerrado",
-                rating: 4.5,
-                ratingCount: 140,
-                subtitle: "Brazylia • Natural"
+                setCoffeeRanking(mappedRanking);
+            } catch {
+                setCoffeeError("Nie udało się pobrać rankingu kaw.");
+            } finally {
+                setIsCoffeeLoading(false);
             }
-        ],
+        };
 
-        recipes: [
+        const loadUserRanking = async () => {
+            try {
+                setIsUserLoading(true);
+                setUserError("");
 
-            {
-                id: 1,
-                name: "V60 Light Roast",
-                rating: 4.8,
-                ratingCount: 178,
-                subtitle: "by coffeelover"
-            },
+                const data = await getUserRanking();
 
-            {
-                id: 2,
-                name: "Classic Espresso",
-                rating: 4.6,
-                ratingCount: 112,
-                subtitle: "by brewmaster"
-            },
+                const mappedRanking = data.map((user) => ({
+                    id: user.userId,
+                    login: user.login,
+                    position: user.position,
+                    name: user.login,
+                    score: user.activityScore ?? 0,
+                    subtitle: [
+                        `${user.publicRecipeCount ?? 0} receptur`,
+                        `${user.followersCount ?? 0} obserwujących`,
+                        `${user.cuppingSessionCount ?? 0} sesji`
+                    ].join(" • ")
+                }));
 
-            {
-                id: 3,
-                name: "Origami Bloom",
-                rating: 4.5,
-                ratingCount: 96,
-                subtitle: "by dripperking"
+                setUserRanking(mappedRanking);
+            } catch {
+                setUserError("Nie udało się pobrać rankingu użytkowników.");
+            } finally {
+                setIsUserLoading(false);
             }
-        ],
+        };
 
-        users: [
+        const loadRecipeRanking = async () => {
+            try {
+                setIsRecipeLoading(true);
+                setRecipeError("");
 
-            {
-                id: 1,
-                name: "CoffeeLover",
-                score: 3210,
-                subtitle: "32 receptury"
-            },
+                const data = await getRecipeRanking();
 
-            {
-                id: 2,
-                name: "BaristaTom",
-                score: 2840,
-                subtitle: "28 receptur"
-            },
+                const mappedRanking = data.map((recipe) => ({
+                    id: recipe.recipeId,
+                    position: recipe.position,
+                    name: recipe.title,
+                    rating: recipe.averageRating ?? 0,
+                    ratingCount: recipe.ratingCount ?? 0,
+                    saveCount: recipe.saveCount ?? 0,
+                    subtitle: [
+                        recipe.coffee,
+                        recipe.brewingMethod,
+                        recipe.userLogin ? `@${recipe.userLogin}` : null,
+                        `${recipe.saveCount ?? 0} zapisów`
+                    ]
+                        .filter(Boolean)
+                        .join(" • ")
+                }));
 
-            {
-                id: 3,
-                name: "AsiaBeans",
-                score: 2480,
-                subtitle: "21 receptur"
+                setRecipeRanking(mappedRanking);
+            } catch {
+                setRecipeError("Nie udało się pobrać rankingu receptur.");
+            } finally {
+                setIsRecipeLoading(false);
             }
-        ]
-    };
+        };
 
-    const currentData =
-        rankingData[activeTab];
+        loadCoffeeRanking();
+        loadUserRanking();
+        loadRecipeRanking();
+    }, []);
 
-    /* NAVIGATION */
-
-    const handleNavigate = (itemId) => {
-
+    const handleNavigate = (item) => {
         if (activeTab === "coffees") {
-
-            navigate(`/wiki/coffees/${itemId}`);
+            navigate(`/wiki/coffees/${item.id}`);
         }
 
         if (activeTab === "recipes") {
-
-            navigate(`/recipes/${itemId}`);
+            navigate(`/recipes/${item.id}`);
         }
 
         if (activeTab === "users") {
-
-            navigate(`/profile/${itemId}`);
+            navigate(`/profile/${item.login}`);
         }
     };
 
-    return (
+    const renderPlaceholder = (title, description) => {
+        return (
+            <div className="leaderboard">
+                <div className="leaderboard-header">
+                    <h3>{title}</h3>
+                </div>
 
-        <div className="ranking-page">
-
-            {/* HEADER */}
-
-            <div className="ranking-header">
-
-                <h1>
-                    Rankingi
-                </h1>
-
-                <p>
-                    Sprawdź najwyżej oceniane
-                    kawy, receptury i użytkowników.
-                </p>
-
+                <p>{description}</p>
             </div>
+        );
+    };
 
-            {/* TABS */}
+    const renderScore = (item) => {
+        if (activeTab === "users") {
+            return (
+                <div className="top-rating">
+                    <span>
+                        {item.score} pkt
+                    </span>
+                </div>
+            );
+        }
 
-            <div className="ranking-tabs">
+        return (
+            <div className="top-rating">
+                <Star size={16} fill="currentColor" />
 
-                <button
-                    className={
-                        activeTab === "coffees"
-                            ? "active"
-                            : ""
-                    }
-                    onClick={() =>
-                        setActiveTab("coffees")
-                    }
-                >
+                <span>
+                    {item.rating.toFixed(1)}
+                </span>
 
-                    <Coffee size={18} />
-
-                    Kawy
-
-                </button>
-
-                <button
-                    className={
-                        activeTab === "recipes"
-                            ? "active"
-                            : ""
-                    }
-                    onClick={() =>
-                        setActiveTab("recipes")
-                    }
-                >
-
-                    <BookOpen size={18} />
-
-                    Receptury
-
-                </button>
-
-                <button
-                    className={
-                        activeTab === "users"
-                            ? "active"
-                            : ""
-                    }
-                    onClick={() =>
-                        setActiveTab("users")
-                    }
-                >
-
-                    <Users size={18} />
-
-                    Użytkownicy
-
-                </button>
-
+                <small>
+                    ({item.ratingCount} ocen)
+                </small>
             </div>
+        );
+    };
 
-            {/* PODIUM */}
-
+    const renderPodium = (data) => {
+        return (
             <div className="top-ranking-podium">
-
-                {/* SECOND */}
-
-                {currentData[1] && (
-
+                {data[1] && (
                     <div
                         className="top-card second-place"
-                        onClick={() =>
-                            handleNavigate(
-                                currentData[1].id
-                            )
-                        }
+                        onClick={() => handleNavigate(data[1])}
                     >
-
                         <div className="top-badge">
                             #2
                         </div>
 
-                        <h2>
-                            {currentData[1].name}
-                        </h2>
+                        <h2>{data[1].name}</h2>
 
-                        <p>
-                            {currentData[1].subtitle}
-                        </p>
+                        <p>{data[1].subtitle}</p>
 
-                        {activeTab !== "users" ? (
-
-                            <div className="top-rating">
-
-                                <Star
-                                    size={16}
-                                    fill="currentColor"
-                                />
-
-                                <span>
-                                    {currentData[1].rating}
-                                </span>
-
-                                <small>
-                                    (
-                                    {currentData[1].ratingCount}
-                                    {" "}
-                                    ocen
-                                    )
-                                </small>
-
-                            </div>
-
-                        ) : (
-
-                            <div className="top-rating">
-
-                                <span>
-                                    {currentData[1].score}
-                                    {" "}
-                                    pkt
-                                </span>
-
-                            </div>
-
-                        )}
-
+                        {renderScore(data[1])}
                     </div>
-
                 )}
 
-                {/* FIRST */}
-
-                {currentData[0] && (
-
+                {data[0] && (
                     <div
                         className="top-card first-place"
-                        onClick={() =>
-                            handleNavigate(
-                                currentData[0].id
-                            )
-                        }
+                        onClick={() => handleNavigate(data[0])}
                     >
-
                         <div className="top-badge">
-
                             <Trophy size={16} />
-
                             #1
-
                         </div>
 
-                        <h2>
-                            {currentData[0].name}
-                        </h2>
+                        <h2>{data[0].name}</h2>
 
-                        <p>
-                            {currentData[0].subtitle}
-                        </p>
+                        <p>{data[0].subtitle}</p>
 
-                        {activeTab !== "users" ? (
-
-                            <div className="top-rating">
-
-                                <Star
-                                    size={16}
-                                    fill="currentColor"
-                                />
-
-                                <span>
-                                    {currentData[0].rating}
-                                </span>
-
-                                <small>
-                                    (
-                                    {currentData[0].ratingCount}
-                                    {" "}
-                                    ocen
-                                    )
-                                </small>
-
-                            </div>
-
-                        ) : (
-
-                            <div className="top-rating">
-
-                                <span>
-                                    {currentData[0].score}
-                                    {" "}
-                                    pkt
-                                </span>
-
-                            </div>
-
-                        )}
-
+                        {renderScore(data[0])}
                     </div>
-
                 )}
 
-                {/* THIRD */}
-
-                {currentData[2] && (
-
+                {data[2] && (
                     <div
                         className="top-card third-place"
-                        onClick={() =>
-                            handleNavigate(
-                                currentData[2].id
-                            )
-                        }
+                        onClick={() => handleNavigate(data[2])}
                     >
-
                         <div className="top-badge">
                             #3
                         </div>
 
-                        <h2>
-                            {currentData[2].name}
-                        </h2>
+                        <h2>{data[2].name}</h2>
 
-                        <p>
-                            {currentData[2].subtitle}
-                        </p>
+                        <p>{data[2].subtitle}</p>
 
-                        {activeTab !== "users" ? (
+                        {renderScore(data[2])}
+                    </div>
+                )}
+            </div>
+        );
+    };
 
-                            <div className="top-rating">
+    const renderLeaderboard = (data) => {
+        return (
+            <>
+                {renderPodium(data)}
 
-                                <Star
-                                    size={16}
-                                    fill="currentColor"
-                                />
-
-                                <span>
-                                    {currentData[2].rating}
-                                </span>
-
-                                <small>
-                                    (
-                                    {currentData[2].ratingCount}
-                                    {" "}
-                                    ocen
-                                    )
-                                </small>
-
-                            </div>
-
-                        ) : (
-
-                            <div className="top-rating">
-
-                                <span>
-                                    {currentData[2].score}
-                                    {" "}
-                                    pkt
-                                </span>
-
-                            </div>
-
-                        )}
-
+                <div className="leaderboard">
+                    <div className="leaderboard-header">
+                        <h3>Pełny ranking</h3>
                     </div>
 
-                )}
+                    <div className="leaderboard-list">
+                        {data.map((item) => (
+                            <div
+                                className="leaderboard-item"
+                                key={item.id}
+                                onClick={() => handleNavigate(item)}
+                            >
+                                <div className="leaderboard-position">
+                                    #{item.position}
+                                </div>
 
+                                <div className="leaderboard-content">
+                                    <h4>{item.name}</h4>
+
+                                    <p>{item.subtitle}</p>
+                                </div>
+
+                                <div className="leaderboard-score">
+                                    {activeTab === "users" ? (
+                                        <>
+                                            {item.score} pkt
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Star size={16} fill="currentColor" />
+
+                                            {item.rating.toFixed(1)}
+
+                                            <small>
+                                                ({item.ratingCount} ocen)
+                                            </small>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </>
+        );
+    };
+
+    const renderCoffeeRanking = () => {
+        if (isCoffeeLoading) {
+            return renderPlaceholder(
+                "Ładowanie rankingu...",
+                "Pobieramy aktualne dane rankingu kaw."
+            );
+        }
+
+        if (coffeeError) {
+            return renderPlaceholder(
+                "Wystąpił błąd",
+                coffeeError
+            );
+        }
+
+        if (coffeeRanking.length === 0) {
+            return renderPlaceholder(
+                "Brak danych rankingowych",
+                "Ranking kaw pojawi się po wystawieniu pierwszych ocen."
+            );
+        }
+
+        return renderLeaderboard(coffeeRanking);
+    };
+
+    const renderRecipeRanking = () => {
+        if (isRecipeLoading) {
+            return renderPlaceholder(
+                "Ładowanie rankingu...",
+                "Pobieramy aktualne dane rankingu receptur."
+            );
+        }
+
+        if (recipeError) {
+            return renderPlaceholder(
+                "Wystąpił błąd",
+                recipeError
+            );
+        }
+
+        if (recipeRanking.length === 0) {
+            return renderPlaceholder(
+                "Brak danych rankingowych",
+                "Ranking receptur pojawi się po wystawieniu pierwszych ocen publicznym recepturom."
+            );
+        }
+
+        return renderLeaderboard(recipeRanking);
+    };
+
+    const renderUserRanking = () => {
+        if (isUserLoading) {
+            return renderPlaceholder(
+                "Ładowanie rankingu...",
+                "Pobieramy aktualne dane rankingu użytkowników."
+            );
+        }
+
+        if (userError) {
+            return renderPlaceholder(
+                "Wystąpił błąd",
+                userError
+            );
+        }
+
+        if (userRanking.length === 0) {
+            return renderPlaceholder(
+                "Brak danych rankingowych",
+                "Ranking użytkowników pojawi się po pierwszych aktywnościach."
+            );
+        }
+
+        return renderLeaderboard(userRanking);
+    };
+
+    return (
+        <div className="ranking-page">
+            <div className="ranking-header">
+                <h1>Rankingi</h1>
+
+                <p>
+                    Sprawdź najwyżej oceniane kawy, receptury i użytkowników.
+                </p>
             </div>
 
-            {/* LEADERBOARD */}
+            <div className="ranking-tabs">
+                <button
+                    className={activeTab === "coffees" ? "active" : ""}
+                    onClick={() => setActiveTab("coffees")}
+                >
+                    <Coffee size={18} />
+                    Kawy
+                </button>
 
-            <div className="leaderboard">
+                <button
+                    className={activeTab === "recipes" ? "active" : ""}
+                    onClick={() => setActiveTab("recipes")}
+                >
+                    <BookOpen size={18} />
+                    Receptury
+                </button>
 
-                <div className="leaderboard-header">
-
-                    <h3>
-                        Pełny ranking
-                    </h3>
-
-                </div>
-
-                <div className="leaderboard-list">
-
-                    {currentData.map((item, index) => (
-
-                        <div
-                            className="leaderboard-item"
-                            key={item.id}
-                            onClick={() =>
-                                handleNavigate(item.id)
-                            }
-                        >
-
-                            <div className="leaderboard-position">
-
-                                #{index + 1}
-
-                            </div>
-
-                            <div className="leaderboard-content">
-
-                                <h4>
-                                    {item.name}
-                                </h4>
-
-                                <p>
-                                    {item.subtitle}
-                                </p>
-
-                            </div>
-
-                            <div className="leaderboard-score">
-
-                                {activeTab !== "users" ? (
-
-                                    <>
-
-                                        <Star
-                                            size={16}
-                                            fill="currentColor"
-                                        />
-
-                                        {item.rating}
-
-                                    </>
-
-                                ) : (
-
-                                    <>
-                                        {item.score} pkt
-                                    </>
-
-                                )}
-
-                            </div>
-
-                        </div>
-
-                    ))}
-
-                </div>
-
+                <button
+                    className={activeTab === "users" ? "active" : ""}
+                    onClick={() => setActiveTab("users")}
+                >
+                    <Users size={18} />
+                    Użytkownicy
+                </button>
             </div>
 
+            {activeTab === "coffees" && renderCoffeeRanking()}
+
+            {activeTab === "recipes" && renderRecipeRanking()}
+
+            {activeTab === "users" && renderUserRanking()}
         </div>
-
     );
 }
 
 export default Ranking;
-
