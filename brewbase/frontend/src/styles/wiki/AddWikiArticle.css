@@ -73,9 +73,10 @@
 
 /* INPUTS */
 
-.form-group input,
+.form-group > input,
 .select-wrapper,
-.form-group textarea{
+.combobox input,
+.form-group > textarea{
     width:100%;
 
     border:none;
@@ -92,7 +93,7 @@
     box-sizing:border-box;
 }
 
-.form-group input{
+.form-group > input{
     height:64px;
 
     padding:0 22px;
@@ -100,6 +101,59 @@
     font-size:15px;
 
     outline:none;
+}
+
+.combobox{
+    position:relative;
+
+    width:100%;
+}
+
+.combobox input{
+    width:100%;
+}
+
+.combobox-dropdown{
+    position:absolute;
+    top:calc(100% + 8px);
+    left:0;
+    right:0;
+    z-index:20;
+
+    max-height:240px;
+    overflow-y:auto;
+
+    margin:0;
+    padding:8px;
+
+    list-style:none;
+
+    background:white;
+
+    border:1px solid #e8e8e8;
+    border-radius:18px;
+
+    box-shadow:
+            0 8px 24px rgba(0,0,0,0.08);
+
+    box-sizing:border-box;
+}
+
+.combobox-option{
+    padding:12px 14px;
+
+    font-size:15px;
+
+    color:#333;
+
+    border-radius:12px;
+
+    cursor:pointer;
+}
+
+.combobox-option:hover,
+.combobox-option.selected{
+    background:#f3f3f3;
 }
 
 /* SELECT */
@@ -156,6 +210,16 @@
     justify-content:flex-end;
 
     margin-top:10px;
+}
+
+.submit-error{
+    width:100%;
+
+    margin:0 0 12px 0;
+
+    font-size:14px;
+
+    color:#b42318;
 }
 
 .submit-article-button{
