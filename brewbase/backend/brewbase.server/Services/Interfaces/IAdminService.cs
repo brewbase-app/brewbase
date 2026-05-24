@@ -19,4 +19,6 @@ public interface IAdminService
     
     Task<List<PendingArticleResponseDto>> GetPendingArticlesAsync();
     
+    Task<List<ReportedArticleResponseDto>> GetReportsAsync();
+    
 }

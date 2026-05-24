@@ -97,9 +97,7 @@ public class AdminService : IAdminService
         return true;
     }
     
-    public async Task<bool> RejectArticleAsync(
-        int articleId,
-        ModerateArticleRequestDto dto)
+    public async Task<bool> RejectArticleAsync(int articleId, ModerateArticleRequestDto dto)
     {
         var moderatorId = _currentUserProvider.GetUserId();
 
@@ -119,8 +117,7 @@ public class AdminService : IAdminService
         return true;
     }
     
-    public async Task<List<PendingArticleResponseDto>>
-        GetPendingArticlesAsync()
+    public async Task<List<PendingArticleResponseDto>> GetPendingArticlesAsync()
     {
         return await _context.Articles
             .Where(a => a.Status == "Pending")
@@ -132,6 +129,22 @@ public class AdminService : IAdminService
                 Content = a.Content,
                 AuthorLogin = a.User.Login,
                 CreatedAt = a.CreatedAt
+            })
+            .ToListAsync();
+    }
+    
+    public async Task<List<ReportedArticleResponseDto>> GetReportsAsync()
+    {
+        return await _context.Reports
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => new ReportedArticleResponseDto
+            {
+                ReportId = r.Id,
+                ArticleId = r.ArticleId,
+                ArticleTitle = r.Article.Title,
+                ReportedBy = r.ReportedByUser.Login,
+                Reason = r.Reason,
+                CreatedAt = r.CreatedAt
             })
             .ToListAsync();
     }
