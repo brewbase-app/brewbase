@@ -29,5 +29,7 @@ public partial class Article
 
     public virtual AppUser? ModeratedByUser { get; set; }
 
+    public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
+
     public virtual AppUser User { get; set; } = null!;
 }

@@ -103,4 +103,14 @@ public class AdminController : ControllerBase
 
         return Ok(articles);
     }
+    
+    [HttpGet("reports")]
+    public async Task<ActionResult<List<ReportedArticleResponseDto>>>
+        GetReports()
+    {
+        var reports = await _adminService
+            .GetReportsAsync();
+
+        return Ok(reports);
+    }
 }
