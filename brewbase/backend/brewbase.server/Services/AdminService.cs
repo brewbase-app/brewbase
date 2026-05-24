@@ -92,9 +92,16 @@ public class AdminService : IAdminService
         article.ModeratedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         article.ModeratedByUserId = moderatorId;
         article.PublishedAt = article.ModeratedAt;
+        
+        _context.Notifications.Add(new Notification
+        {
+            UserId = article.UserId,
+            Content = "Twój artykuł został zatwierdzony.",
+            CreatedAt = DateTime.Now
+        });
 
         await _context.SaveChangesAsync();
-
+        
         return true;
     }
     
@@ -112,6 +119,13 @@ public class AdminService : IAdminService
         article.ModeratedAt = DateTime.Now;
         article.ModeratedByUserId = moderatorId;
         article.ModerationComment = dto.Comment;
+        
+        _context.Notifications.Add(new Notification
+        {
+            UserId = article.UserId,
+            Content = "Twój artykuł został odrzucony.",
+            CreatedAt = DateTime.Now
+        });
 
         await _context.SaveChangesAsync();
 
