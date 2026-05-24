@@ -51,6 +51,8 @@ public partial class BrewDbContext : DbContext
 
     public virtual DbSet<Region> Regions { get; set; }
 
+    public virtual DbSet<Report> Reports { get; set; }
+
     public virtual DbSet<Roastery> Roasteries { get; set; }
 
     public virtual DbSet<UserPreference> UserPreferences { get; set; }
@@ -607,6 +609,36 @@ public partial class BrewDbContext : DbContext
                 .HasForeignKey(d => d.CountryId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("region_country");
+        });
+
+        modelBuilder.Entity<Report>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("report_pk");
+
+            entity.ToTable("report");
+
+            entity.HasIndex(e => e.ArticleId, "idx_report_article_id");
+
+            entity.HasIndex(e => e.ReportedByUserId, "idx_report_reported_by_user_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ArticleId).HasColumnName("article_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.ReportedByUserId).HasColumnName("reported_by_user_id");
+
+            entity.HasOne(d => d.Article).WithMany(p => p.Reports)
+                .HasForeignKey(d => d.ArticleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("report_article_fk");
+
+            entity.HasOne(d => d.ReportedByUser).WithMany(p => p.Reports)
+                .HasForeignKey(d => d.ReportedByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("report_user_fk");
         });
 
         modelBuilder.Entity<Roastery>(entity =>
