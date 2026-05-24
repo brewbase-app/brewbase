@@ -68,6 +68,10 @@ import AddWikiArticle from "./pages/wiki/AddWikiArticle";
 import Roasteries from "./pages/wiki/Roasteries";
 import RoasteryDetails from "./pages/wiki/RoasteryDetails";
 
+/* ADMIN */
+
+import AdminModeration from "./pages/AdminModeration";
+
 function Layout() {
 
     const location = useLocation();
@@ -324,6 +328,12 @@ function Layout() {
                         <Route
                             path="/wiki/roasteries/:id"
                             element={<RoasteryDetails />}
+                        />
+                        {/* ADMIN */}
+
+                        <Route
+                            path="/admin"
+                            element={<AdminModeration />}
                         />
 
                     </Route>
