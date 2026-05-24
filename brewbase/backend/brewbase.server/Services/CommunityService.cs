@@ -51,6 +51,13 @@ public class CommunityService : ICommunityService
         };
 
         _context.Follows.Add(follow);
+        
+        _context.Notifications.Add(new Notification
+        {
+            UserId = followedUserId,
+            Content = "Nowy użytkownik zaczął Cię obserwować.",
+            CreatedAt = DateTime.Now
+        });
 
         await _context.SaveChangesAsync();
 
@@ -74,7 +81,7 @@ public class CommunityService : ICommunityService
             return false;
 
         _context.Follows.Remove(follow);
-
+        
         await _context.SaveChangesAsync();
 
         return true;
