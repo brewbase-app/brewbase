@@ -11,6 +11,7 @@ CREATE TABLE article (
                          title varchar(255)  NOT NULL,
                          content text  NOT NULL,
                          status varchar(50)  NOT NULL,
+                         module varchar(50)  NOT NULL DEFAULT 'general',
                          created_at timestamp  NOT NULL,
                          updated_at timestamp  NOT NULL,
                          published_at timestamp  NULL,

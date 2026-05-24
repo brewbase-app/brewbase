@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { useNavigate } from "react-router-dom";
+
 import "../../styles/wiki/AddWikiArticle.css";
 
 import {
@@ -7,7 +9,29 @@ import {
     ChevronDown
 } from "lucide-react";
 
+import { createArticle } from "../../api/articlesApi";
+
+import ComboBoxInput from "../../components/ComboBoxInput";
+import MultiSelectInput from "../../components/MultiSelectInput";
+
+import { BEAN_ORIGIN_COUNTRIES } from "../../utils/beanOriginCountries";
+import { COFFEE_VARIETIES } from "../../utils/coffeeVarieties";
+import { COFFEE_PROCESSING_METHODS } from "../../utils/coffeeProcessingMethods";
+import { BREWING_METHOD_OPTIONS } from "../../utils/brewingMethodOptions";
+import { ROASTING_STYLE_OPTIONS } from "../../utils/roastingStyleOptions";
+import { COFFEE_REGIONS } from "../../utils/coffeeRegions";
+import { COFFEE_FLAVOR_PROFILES } from "../../utils/coffeeFlavorProfiles";
+
+const CATEGORY_TO_MODULE = {
+    coffee: "coffee",
+    country: "country",
+    brewing: "brewing_method",
+    roastery: "roastery",
+};
+
 function AddWikiArticle() {
+
+    const navigate = useNavigate();
 
     const [title, setTitle] = useState("");
 
@@ -15,7 +39,148 @@ function AddWikiArticle() {
 
     const [content, setContent] = useState("");
 
+    const [beanOriginCountry, setBeanOriginCountry] = useState("");
+
+    const [coffeeVariety, setCoffeeVariety] = useState("");
+
+    const [coffeeProcessing, setCoffeeProcessing] = useState("");
+
+    const [flavorProfiles, setFlavorProfiles] = useState([]);
+
+    const [brewingMethod, setBrewingMethod] = useState("");
+
+    const [roastingStyles, setRoastingStyles] = useState([]);
+
+    const [countryRegion, setCountryRegion] = useState("");
+
+    const [countryFlavorProfiles, setCountryFlavorProfiles] = useState([]);
+
     const [files, setFiles] = useState([]);
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const [submitError, setSubmitError] = useState("");
+
+    const handleSubmit = async () => {
+        const module = CATEGORY_TO_MODULE[category];
+
+        const articleTitle =
+            category === "brewing"
+                ? brewingMethod.trim()
+                : title.trim();
+
+        if (!module || !articleTitle || !content.trim()) {
+            setSubmitError(
+                "Uzupełnij wymagane pola: tytuł, opis i kategorię."
+            );
+            return;
+        }
+
+        if (category === "coffee" && !beanOriginCountry.trim()) {
+            setSubmitError(
+                "Podaj kraj pochodzenia ziaren."
+            );
+            return;
+        }
+
+        if (category === "coffee" && !coffeeVariety.trim()) {
+            setSubmitError(
+                "Podaj odmianę."
+            );
+            return;
+        }
+
+        if (category === "coffee" && !coffeeProcessing.trim()) {
+            setSubmitError(
+                "Podaj obróbkę ziaren."
+            );
+            return;
+        }
+
+        if (category === "roastery" && roastingStyles.length === 0) {
+            setSubmitError(
+                "Wybierz co najmniej jeden styl palenia."
+            );
+            return;
+        }
+
+        if (category === "country" && !title.trim()) {
+            setSubmitError(
+                "Podaj nazwę kraju."
+            );
+            return;
+        }
+
+        if (category === "country" && !countryRegion.trim()) {
+            setSubmitError(
+                "Podaj region."
+            );
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+            setSubmitError("");
+
+            let articleContent = content.trim();
+
+            if (category === "coffee") {
+                const metadataLines = [
+                    `Kraj pochodzenia ziaren: ${beanOriginCountry.trim()}`,
+                    `Odmiana: ${coffeeVariety.trim()}`,
+                    `Obróbka ziaren: ${coffeeProcessing.trim()}`,
+                ];
+
+                if (flavorProfiles.length > 0) {
+                    metadataLines.push(
+                        `Profil smakowy: ${flavorProfiles.join(", ")}`
+                    );
+                }
+
+                articleContent =
+                    `${metadataLines.join("\n")}\n\n` +
+                    articleContent;
+            }
+
+            if (category === "roastery") {
+                articleContent =
+                    `Styl palenia: ${roastingStyles.join(", ")}\n\n` +
+                    articleContent;
+            }
+
+            if (category === "country") {
+                const metadataLines = [
+                    `Region: ${countryRegion.trim()}`,
+                ];
+
+                if (countryFlavorProfiles.length > 0) {
+                    metadataLines.push(
+                        `Profil smakowy: ${countryFlavorProfiles.join(", ")}`
+                    );
+                }
+
+                articleContent =
+                    `${metadataLines.join("\n")}\n\n` +
+                    articleContent;
+            }
+
+            await createArticle({
+                title: articleTitle,
+                content: articleContent,
+                module,
+            });
+
+            navigate("/wiki", {
+                state: { articleSubmitted: true },
+            });
+        } catch {
+            setSubmitError(
+                "Nie udało się wysłać artykułu. Sprawdź, czy jesteś zalogowany."
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
 
@@ -65,8 +230,8 @@ function AddWikiArticle() {
                                     Kawy
                                 </option>
 
-                                <option value="region">
-                                    Regiony
+                                <option value="country">
+                                    Kraje
                                 </option>
 
                                 <option value="brewing">
@@ -111,102 +276,45 @@ function AddWikiArticle() {
                             <div className="form-group">
 
                                 <label>
-                                    Region
+                                    Kraj pochodzenia ziaren
                                 </label>
 
-                                <div className="select-wrapper">
-
-                                    <select>
-
-                                        <option value="">
-                                            Wybierz region
-                                        </option>
-
-                                        <option value="Etiopia">
-                                            Etiopia
-                                        </option>
-
-                                        <option value="Kenia">
-                                            Kenia
-                                        </option>
-
-                                        <option value="Kolumbia">
-                                            Kolumbia
-                                        </option>
-
-                                    </select>
-
-                                    <ChevronDown size={18} />
-
-                                </div>
+                                <ComboBoxInput
+                                    value={beanOriginCountry}
+                                    onChange={setBeanOriginCountry}
+                                    options={BEAN_ORIGIN_COUNTRIES}
+                                    placeholder="Wybierz z listy lub wpisz kraj"
+                                />
 
                             </div>
 
                             <div className="form-group">
 
                                 <label>
-                                    Variety
+                                    Odmiana
                                 </label>
 
-                                <div className="select-wrapper">
-
-                                    <select>
-
-                                        <option value="">
-                                            Wybierz variety
-                                        </option>
-
-                                        <option value="Geisha">
-                                            Geisha
-                                        </option>
-
-                                        <option value="Bourbon">
-                                            Bourbon
-                                        </option>
-
-                                        <option value="Typica">
-                                            Typica
-                                        </option>
-
-                                    </select>
-
-                                    <ChevronDown size={18} />
-
-                                </div>
+                                <ComboBoxInput
+                                    value={coffeeVariety}
+                                    onChange={setCoffeeVariety}
+                                    options={COFFEE_VARIETIES}
+                                    placeholder="Wybierz z listy lub wpisz odmianę"
+                                />
 
                             </div>
 
                             <div className="form-group">
 
                                 <label>
-                                    Processing method
+                                    Obróbka ziaren
                                 </label>
 
-                                <div className="select-wrapper">
-
-                                    <select>
-
-                                        <option value="">
-                                            Wybierz processing
-                                        </option>
-
-                                        <option value="Washed">
-                                            Washed
-                                        </option>
-
-                                        <option value="Natural">
-                                            Natural
-                                        </option>
-
-                                        <option value="Honey">
-                                            Honey
-                                        </option>
-
-                                    </select>
-
-                                    <ChevronDown size={18} />
-
-                                </div>
+                                <ComboBoxInput
+                                    value={coffeeProcessing}
+                                    onChange={setCoffeeProcessing}
+                                    options={COFFEE_PROCESSING_METHODS}
+                                    placeholder="Wybierz z listy lub wpisz obróbkę"
+                                />
 
                             </div>
 
@@ -216,9 +324,11 @@ function AddWikiArticle() {
                                     Profil smakowy
                                 </label>
 
-                                <input
-                                    type="text"
-                                    placeholder="Np. jaśmin, cytrusy, miód"
+                                <MultiSelectInput
+                                    options={COFFEE_FLAVOR_PROFILES}
+                                    value={flavorProfiles}
+                                    onChange={setFlavorProfiles}
+                                    allowCustom
                                 />
 
                             </div>
@@ -243,25 +353,23 @@ function AddWikiArticle() {
 
                     )}
 
-                    {/* REGIONS */}
+                    {/* COUNTRIES */}
 
-                    {category === "region" && (
+                    {category === "country" && (
 
                         <>
 
                             <div className="form-group">
 
                                 <label>
-                                    Nazwa regionu
+                                    Nazwa kraju
                                 </label>
 
-                                <input
-                                    type="text"
-                                    placeholder="Np. Yirgacheffe"
+                                <ComboBoxInput
                                     value={title}
-                                    onChange={(e) =>
-                                        setTitle(e.target.value)
-                                    }
+                                    onChange={setTitle}
+                                    options={BEAN_ORIGIN_COUNTRIES}
+                                    placeholder="Wybierz z listy lub wpisz kraj"
                                 />
 
                             </div>
@@ -269,12 +377,14 @@ function AddWikiArticle() {
                             <div className="form-group">
 
                                 <label>
-                                    Kraj
+                                    Region
                                 </label>
 
-                                <input
-                                    type="text"
-                                    placeholder="Np. Etiopia"
+                                <ComboBoxInput
+                                    value={countryRegion}
+                                    onChange={setCountryRegion}
+                                    options={COFFEE_REGIONS}
+                                    placeholder="Wybierz z listy lub wpisz region"
                                 />
 
                             </div>
@@ -282,12 +392,14 @@ function AddWikiArticle() {
                             <div className="form-group">
 
                                 <label>
-                                    Wysokość upraw
+                                    Profil smakowy
                                 </label>
 
-                                <input
-                                    type="text"
-                                    placeholder="Np. 1800–2200 m n.p.m."
+                                <MultiSelectInput
+                                    options={COFFEE_FLAVOR_PROFILES}
+                                    value={countryFlavorProfiles}
+                                    onChange={setCountryFlavorProfiles}
+                                    allowCustom
                                 />
 
                             </div>
@@ -295,11 +407,11 @@ function AddWikiArticle() {
                             <div className="form-group">
 
                                 <label>
-                                    Opis regionu
+                                    Opis
                                 </label>
 
                                 <textarea
-                                    placeholder="Dodaj opis regionu..."
+                                    placeholder="Dodaj opis..."
                                     value={content}
                                     onChange={(e) =>
                                         setContent(e.target.value)
@@ -321,51 +433,15 @@ function AddWikiArticle() {
                             <div className="form-group">
 
                                 <label>
-                                    Nazwa metody
+                                    Metoda parzenia
                                 </label>
 
-                                <input
-                                    type="text"
-                                    placeholder="Np. V60"
-                                    value={title}
-                                    onChange={(e) =>
-                                        setTitle(e.target.value)
-                                    }
+                                <ComboBoxInput
+                                    value={brewingMethod}
+                                    onChange={setBrewingMethod}
+                                    options={BREWING_METHOD_OPTIONS}
+                                    placeholder="Wybierz z listy lub wpisz metodę"
                                 />
-
-                            </div>
-
-                            <div className="form-group">
-
-                                <label>
-                                    Typ metody
-                                </label>
-
-                                <div className="select-wrapper">
-
-                                    <select>
-
-                                        <option value="">
-                                            Wybierz typ metody
-                                        </option>
-
-                                        <option value="Pour over">
-                                            Pour over
-                                        </option>
-
-                                        <option value="Immersion">
-                                            Immersion
-                                        </option>
-
-                                        <option value="Espresso">
-                                            Espresso
-                                        </option>
-
-                                    </select>
-
-                                    <ChevronDown size={18} />
-
-                                </div>
 
                             </div>
 
@@ -457,56 +533,10 @@ function AddWikiArticle() {
                                     Styl palenia
                                 </label>
 
-                                <div className="select-wrapper">
-
-                                    <select>
-
-                                        <option value="">
-                                            Wybierz styl palenia
-                                        </option>
-
-                                        <option value="Light Roast">
-                                            Light Roast
-                                        </option>
-
-                                        <option value="Omni Roast">
-                                            Omni Roast
-                                        </option>
-
-                                        <option value="Espresso Roast">
-                                            Espresso Roast
-                                        </option>
-
-                                    </select>
-
-                                    <ChevronDown size={18} />
-
-                                </div>
-
-                            </div>
-
-                            <div className="form-group">
-
-                                <label>
-                                    Specjalizacja
-                                </label>
-
-                                <input
-                                    type="text"
-                                    placeholder="Np. Filter Coffee, Single Origin"
-                                />
-
-                            </div>
-
-                            <div className="form-group">
-
-                                <label>
-                                    Regiony sourcingu
-                                </label>
-
-                                <input
-                                    type="text"
-                                    placeholder="Np. Etiopia, Kenia, Kolumbia"
+                                <MultiSelectInput
+                                    options={ROASTING_STYLE_OPTIONS}
+                                    value={roastingStyles}
+                                    onChange={setRoastingStyles}
                                 />
 
                             </div>
@@ -586,13 +616,24 @@ function AddWikiArticle() {
 
                             <div className="article-actions">
 
+                                {submitError && (
+                                    <p className="submit-error">
+                                        {submitError}
+                                    </p>
+                                )}
+
                                 <button
                                     className="submit-article-button"
+                                    type="button"
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting}
                                 >
 
                                     <Send size={16} />
 
-                                    Wyślij do moderacji
+                                    {isSubmitting
+                                        ? "Wysyłanie..."
+                                        : "Wyślij do moderacji"}
 
                                 </button>
 

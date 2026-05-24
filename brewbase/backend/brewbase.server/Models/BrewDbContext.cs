@@ -129,6 +129,10 @@ public partial class BrewDbContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasColumnName("status");
+            entity.Property(e => e.Module)
+                .HasMaxLength(50)
+                .HasDefaultValue("general")
+                .HasColumnName("module");
             entity.Property(e => e.Title)
                 .HasMaxLength(255)
                 .HasColumnName("title");

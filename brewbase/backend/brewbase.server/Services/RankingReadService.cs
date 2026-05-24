@@ -78,7 +78,7 @@ public class RankingReadService : IRankingReadService
                     .SelectMany(recipe => recipe.UserRecipeFavorites)
                     .Count(),
                 PublishedArticleCount = user.ArticleUsers
-                    .Count(article => article.Status == "APPROVED")
+                    .Count(article => article.Status == "Approved")
             })
             .ToListAsync();
 

@@ -1,6 +1,9 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+
+import { useLocation, useNavigate } from "react-router-dom";
 
 import "../../styles/wiki/WikiHome.css";
+import "../../styles/wiki/MyWikiArticles.css";
 
 import {
     Coffee,
@@ -8,12 +11,25 @@ import {
     FlaskConical,
     Search,
     Plus,
-    Flame
+    Flame,
+    FileText,
+    CheckCircle,
+    X
 } from "lucide-react";
 
 function WikiHome() {
 
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const [showSubmitSuccess, setShowSubmitSuccess] = useState(false);
+
+    useEffect(() => {
+        if (location.state?.articleSubmitted) {
+            setShowSubmitSuccess(true);
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location, navigate]);
 
     const categories = [
 
@@ -26,9 +42,9 @@ function WikiHome() {
         },
 
         {
-            title: "Regiony",
+            title: "Kraje",
             description:
-                "Odkrywaj regiony upraw kawy z całego świata.",
+                "Poznaj kraje pochodzenia kaw specialty.",
             icon: <Globe size={34} />,
             route: "/wiki/regions"
         },
@@ -65,24 +81,65 @@ function WikiHome() {
                         </h1>
 
                         <p>
-                            Poznaj kawy, regiony
+                            Poznaj kawy, kraje
                             i wiedzę o metodach parzenia.
                         </p>
 
                     </div>
 
-                    <button
-                        className="add-article-button"
-                        onClick={() => navigate("/wiki/add")}
-                    >
+                    <div className="wiki-header-actions">
 
-                        <Plus size={18} />
+                        <button
+                            className="my-articles-button"
+                            onClick={() => navigate("/wiki/my-articles")}
+                        >
 
-                        Nowy artykuł
+                            <FileText size={18} />
 
-                    </button>
+                            Moje artykuły
+
+                        </button>
+
+                        <button
+                            className="add-article-button"
+                            onClick={() => navigate("/wiki/add")}
+                        >
+
+                            <Plus size={18} />
+
+                            Nowy artykuł
+
+                        </button>
+
+                    </div>
 
                 </div>
+
+                {showSubmitSuccess && (
+
+                    <div className="wiki-submit-success">
+
+                        <CheckCircle size={22} />
+
+                        <p>
+                            Artykuł został wysłany do moderacji.
+                            Po akceptacji pojawi się w encyklopedii.
+                            Status możesz sprawdzić w sekcji
+                            „Moje artykuły”.
+                        </p>
+
+                        <button
+                            type="button"
+                            className="wiki-submit-success-close"
+                            aria-label="Zamknij komunikat"
+                            onClick={() => setShowSubmitSuccess(false)}
+                        >
+                            <X size={18} />
+                        </button>
+
+                    </div>
+
+                )}
 
                 <div className="wiki-search-container">
 

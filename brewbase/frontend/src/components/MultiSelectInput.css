@@ -1,0 +1,155 @@
+.multi-select-field{
+    width:100%;
+}
+
+.multi-select{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.multi-select-option{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+
+    box-sizing:border-box;
+
+    height:38px;
+
+    padding:0 18px;
+
+    border:1px solid #e8e8e8;
+
+    background:white;
+
+    border-radius:18px;
+
+    font-family:inherit;
+    font-size:14px;
+    font-weight:500;
+    line-height:1;
+
+    color:#333;
+
+    cursor:pointer;
+
+    transition:0.2s ease;
+
+    box-shadow:0 2px 10px rgba(0,0,0,0.03);
+}
+
+button.multi-select-option{
+    margin:0;
+
+    appearance:none;
+}
+
+.multi-select-option:hover{
+    border-color:#d0d0d0;
+}
+
+.multi-select-option.selected{
+    background:#1f1f1f;
+    border-color:#1f1f1f;
+
+    color:white;
+}
+
+.multi-select-option-input{
+    gap:4px;
+
+    cursor:text;
+}
+
+.multi-select-option-plus{
+    flex-shrink:0;
+
+    font-size:14px;
+    font-weight:500;
+    line-height:1;
+}
+
+.multi-select-option-input input{
+    width:2.75rem;
+    max-width:5rem;
+
+    height:14px;
+    min-height:0;
+
+    padding:0;
+    margin:0;
+
+    border:none;
+    outline:none;
+
+    box-shadow:none;
+
+    font-family:inherit;
+    font-size:14px;
+    font-weight:500;
+    line-height:1;
+
+    color:#333;
+
+    background:transparent;
+}
+
+.multi-select-option-input:focus-within input{
+    width:3.5rem;
+}
+
+.multi-select-option-input input::placeholder{
+    color:#888;
+}
+
+/* Filtry boczne */
+
+.coffees-filters .multi-select-option,
+.regions-filters .multi-select-option{
+    height:32px;
+
+    padding:0 12px;
+
+    border:1px solid #ddd;
+
+    background:#fafafa;
+
+    border-radius:14px;
+
+    font-size:12px;
+
+    box-shadow:none;
+}
+
+.coffees-filters .multi-select-option.selected,
+.regions-filters .multi-select-option.selected{
+    background:#1f1f1f;
+    border-color:#1f1f1f;
+
+    color:white;
+}
+
+.coffees-filters .multi-select-option-plus,
+.regions-filters .multi-select-option-plus{
+    font-size:12px;
+}
+
+.coffees-filters .multi-select-option-input input,
+.regions-filters .multi-select-option-input input{
+    width:2.25rem;
+
+    height:12px;
+
+    font-size:12px;
+}
+
+.coffees-filters .multi-select-option-input:focus-within input,
+.regions-filters .multi-select-option-input:focus-within input{
+    width:3rem;
+}
+
+.coffees-filters .multi-select-option-input input::placeholder,
+.regions-filters .multi-select-option-input input::placeholder{
+    color:#777;
+}

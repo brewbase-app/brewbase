@@ -146,6 +146,16 @@
 
 /* GRID */
 
+.methods-empty-state{
+    flex:1;
+
+    margin:0;
+
+    font-size:16px;
+
+    color:#666;
+}
+
 .methods-grid{
     flex:1;
 

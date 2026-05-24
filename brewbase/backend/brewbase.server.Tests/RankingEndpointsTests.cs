@@ -467,7 +467,8 @@ public class RankingEndpointsTests : IDisposable
             UserId = user.Id,
             Title = $"Approved article {Guid.NewGuid()}",
             Content = "Article content",
-            Status = "APPROVED",
+            Module = "general",
+            Status = "Approved",
             CreatedAt = now,
             UpdatedAt = now,
             PublishedAt = now

@@ -89,8 +89,9 @@ public class AdminService : IAdminService
             return false;
 
         article.Status = "Approved";
-        article.ModeratedAt = DateTime.Now;
+        article.ModeratedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         article.ModeratedByUserId = moderatorId;
+        article.PublishedAt = article.ModeratedAt;
         
         _context.Notifications.Add(new Notification
         {
