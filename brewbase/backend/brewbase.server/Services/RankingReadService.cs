@@ -18,135 +18,90 @@ public class RankingReadService : IRankingReadService
     {
         var safeLimit = Math.Clamp(limit, 1, 50);
 
-        var ranking = await _context.Coffees
+        return await _context.CoffeeRankings
             .AsNoTracking()
-            .Select(coffee => new CoffeeRankingResponseDto
-            {
-                CoffeeId = coffee.Id,
-                Name = coffee.Name,
-                Region = coffee.Region.Name,
-                Roastery = coffee.Roastery.Name,
-                ProcessingMethod = coffee.ProcessingMethod != null
-                    ? coffee.ProcessingMethod.Name
-                    : null,
-                Variety = coffee.Variety != null
-                    ? coffee.Variety.Name
-                    : null,
-                AverageRating = coffee.CoffeeRatings
-                    .Average(rating => (double?)rating.Value) ?? 0,
-                RatingCount = coffee.CoffeeRatings.Count,
-                RecipeUsedCount = coffee.Recipes.Count
-            })
-            .Where(coffee => coffee.RatingCount > 0)
-            .OrderByDescending(coffee => coffee.AverageRating)
-            .ThenByDescending(coffee => coffee.RatingCount)
-            .ThenByDescending(coffee => coffee.RecipeUsedCount)
-            .ThenBy(coffee => coffee.Name)
+            .Where(ranking => ranking.Position > 0)
+            .OrderBy(ranking => ranking.Position)
             .Take(safeLimit)
+            .Select(ranking => new CoffeeRankingResponseDto
+            {
+                Position = ranking.Position,
+                CoffeeId = ranking.CoffeeId,
+                Name = ranking.Coffee.Name,
+                Region = ranking.Coffee.Region != null
+                    ? ranking.Coffee.Region.Name
+                    : null,
+                Roastery = ranking.Coffee.Roastery != null
+                    ? ranking.Coffee.Roastery.Name
+                    : null,
+                ProcessingMethod = ranking.Coffee.ProcessingMethod != null
+                    ? ranking.Coffee.ProcessingMethod.Name
+                    : null,
+                Variety = ranking.Coffee.Variety != null
+                    ? ranking.Coffee.Variety.Name
+                    : null,
+                AverageRating = ranking.AverageRating,
+                RatingCount = ranking.RatingCount,
+                RecipeUsedCount = ranking.RecipeUsedCount
+            })
             .ToListAsync();
-
-        for (var index = 0; index < ranking.Count; index++)
-        {
-            ranking[index].Position = index + 1;
-        }
-
-        return ranking;
     }
     
     public async Task<List<UserRankingResponseDto>> GetUserRankingAsync(int limit)
     {
         var safeLimit = Math.Clamp(limit, 1, 50);
 
-        var ranking = await _context.AppUsers
+        return await _context.UserRankings
             .AsNoTracking()
-            .Where(user => !user.IsBlocked)
-            .Select(user => new UserRankingResponseDto
+            .Where(ranking => ranking.Position > 0)
+            .OrderBy(ranking => ranking.Position)
+            .Take(safeLimit)
+            .Select(ranking => new UserRankingResponseDto
             {
-                UserId = user.Id,
-                Login = user.Login,
-
-                PublicRecipeCount = user.Recipes.Count(recipe => recipe.IsPublic),
-                CoffeeRatingCount = user.CoffeeRatings.Count,
-                RecipeRatingCount = user.RecipeRatings.Count,
-                QuickNoteCount = user.QuickNotes.Count,
-                CuppingSessionCount = user.CuppingSessions.Count,
-                CuppingSessionCoffeeCount = user.CuppingSessions
-                    .SelectMany(session => session.CuppingSessionCoffees)
-                    .Count(),
-                FollowersCount = user.FollowFolloweds.Count,
-                ReceivedRecipeFavoriteCount = user.Recipes
-                    .SelectMany(recipe => recipe.UserRecipeFavorites)
-                    .Count(),
-                PublishedArticleCount = user.ArticleUsers
-                    .Count(article => article.Status == "Approved")
+                Position = ranking.Position,
+                UserId = ranking.UserId,
+                Login = ranking.User.Login,
+                ActivityScore = ranking.ActivityScore,
+                PublicRecipeCount = ranking.PublicRecipeCount,
+                CoffeeRatingCount = ranking.CoffeeRatingCount,
+                RecipeRatingCount = ranking.RecipeRatingCount,
+                QuickNoteCount = ranking.QuickNoteCount,
+                CuppingSessionCount = ranking.CuppingSessionCount,
+                CuppingSessionCoffeeCount = ranking.CuppingSessionCoffeeCount,
+                FollowersCount = ranking.FollowersCount,
+                ReceivedRecipeFavoriteCount = ranking.ReceivedRecipeFavoriteCount,
+                PublishedArticleCount = ranking.PublishedArticleCount
             })
             .ToListAsync();
-
-        foreach (var user in ranking)
-        {
-            user.ActivityScore =
-                user.PublicRecipeCount * 10
-                + user.CoffeeRatingCount * 3
-                + user.RecipeRatingCount * 3
-                + user.QuickNoteCount * 2
-                + user.CuppingSessionCount * 8
-                + user.CuppingSessionCoffeeCount * 2
-                + user.FollowersCount * 5
-                + user.ReceivedRecipeFavoriteCount * 4
-                + user.PublishedArticleCount * 12;
-        }
-
-        ranking = ranking
-            .Where(user => user.ActivityScore > 0)
-            .OrderByDescending(user => user.ActivityScore)
-            .ThenByDescending(user => user.PublicRecipeCount)
-            .ThenByDescending(user => user.FollowersCount)
-            .ThenBy(user => user.Login)
-            .Take(safeLimit)
-            .ToList();
-
-        for (var index = 0; index < ranking.Count; index++)
-        {
-            ranking[index].Position = index + 1;
-        }
-
-        return ranking;
     }
     
     public async Task<List<RecipeRankingResponseDto>> GetRecipeRankingAsync(int limit)
     {
         var safeLimit = Math.Clamp(limit, 1, 50);
 
-        var ranking = await _context.Recipes
+        return await _context.RecipeRankings
             .AsNoTracking()
-            .Where(recipe => recipe.IsPublic)
-            .Select(recipe => new RecipeRankingResponseDto
-            {
-                RecipeId = recipe.Id,
-                Title = recipe.Title,
-                Coffee = recipe.Coffee.Name,
-                BrewingMethod = recipe.BrewingMethod.Name,
-                UserId = recipe.UserId,
-                UserLogin = recipe.User.Login,
-                AverageRating = recipe.RecipeRatings
-                    .Average(rating => (double?)rating.Value) ?? 0,
-                RatingCount = recipe.RecipeRatings.Count,
-                SaveCount = recipe.UserRecipeFavorites.Count
-            })
-            .Where(recipe => recipe.RatingCount > 0)
-            .OrderByDescending(recipe => recipe.AverageRating)
-            .ThenByDescending(recipe => recipe.RatingCount)
-            .ThenByDescending(recipe => recipe.SaveCount)
-            .ThenBy(recipe => recipe.Title)
+            .Where(ranking => ranking.Position > 0)
+            .OrderBy(ranking => ranking.Position)
             .Take(safeLimit)
+            .Select(ranking => new RecipeRankingResponseDto
+            {
+                Position = ranking.Position,
+                RecipeId = ranking.RecipeId,
+                Title = ranking.Recipe.Title,
+                Coffee = ranking.Recipe.Coffee != null
+                    ? ranking.Recipe.Coffee.Name
+                    : null,
+                BrewingMethod = ranking.Recipe.BrewingMethod != null
+                    ? ranking.Recipe.BrewingMethod.Name
+                    : null,
+                UserId = ranking.Recipe.UserId,
+                UserLogin = ranking.Recipe.User.Login,
+                AverageRating = ranking.AverageRating,
+                RatingCount = ranking.RatingCount,
+                SaveCount = ranking.SaveCount
+            })
             .ToListAsync();
-
-        for (var index = 0; index < ranking.Count; index++)
-        {
-            ranking[index].Position = index + 1;
-        }
-
-        return ranking;
     }
     
 }
