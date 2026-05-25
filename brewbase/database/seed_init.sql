@@ -1,3 +1,7 @@
+-- Seed początkowy BrewBase (katalog, użytkownicy, przepisy)
+-- Hasło testowe dla kawosz i admin: Test123!
+-- Po tym pliku uruchom seed_wiki.sql, aby zobaczyć działającą wiki.
+
 -- COUNTRY
 INSERT INTO country (id, name) VALUES
                                    (1, 'Etiopia'),
@@ -33,13 +37,13 @@ INSERT INTO roastery (id, name) VALUES
                                     (2, 'Hard Beans'),
                                     (3, 'Audun Coffee');
 
--- USERS
+-- USERS (hasło dla obu kont: Test123!)
 INSERT INTO app_user (
     id, email, password_hash, login, role,
     activity_points, label, is_blocked, created_at
 ) VALUES
-      (1, 'user@brewbase.pl', 'hashed', 'kawosz', 'USER', 0, NULL, false, CURRENT_TIMESTAMP),
-      (2, 'admin@brewbase.pl', 'hashed', 'admin', 'ADMIN', 0, NULL, false, CURRENT_TIMESTAMP);
+      (1, 'user@brewbase.pl', '$2a$11$kBKPLNa4Oin6iMjt7inZKOSmNvMInjggIlmPRz69CwPdJPq6THaSW', 'kawosz', 'USER', 0, NULL, false, CURRENT_TIMESTAMP),
+      (2, 'admin@brewbase.pl', '$2a$11$kBKPLNa4Oin6iMjt7inZKOSmNvMInjggIlmPRz69CwPdJPq6THaSW', 'admin', 'ADMIN', 0, NULL, false, CURRENT_TIMESTAMP);
 
 -- COFFEE (FIXED COLUMN NAME)
 INSERT INTO coffee (

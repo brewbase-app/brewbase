@@ -1,84 +1,113 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 
 import "../../styles/wiki/BrewingMethods.css";
 
-import {
-    Search
-} from "lucide-react";
+import { Search } from "lucide-react";
+
+import { getArticles } from "../../api/articlesApi";
+
+import { BREWING_METHOD_OPTIONS } from "../../utils/brewingMethodOptions";
+import { buildFilterOptions } from "../../utils/parseCoffeeArticleMetadata";
+
+function getArticleExcerpt(content, maxLength = 140) {
+    if (!content) {
+        return "";
+    }
+
+    const firstParagraph = content
+        .split("\n\n")[0]
+        .replace(/\n/g, " ")
+        .trim();
+
+    if (firstParagraph.length <= maxLength) {
+        return firstParagraph;
+    }
+
+    return `${firstParagraph.slice(0, maxLength).trim()}...`;
+}
+
+function mapBrewingArticle(article) {
+    return {
+        id: article.id,
+        title: article.title,
+        excerpt: getArticleExcerpt(article.content ?? ""),
+    };
+}
 
 function BrewingMethods() {
-
     const navigate = useNavigate();
 
-    const methods = [
-
-        {
-            id: 1,
-            name: "V60",
-            type: "Pour over",
-            difficulty: "Średni",
-            brewTime: "2:30–3:00",
-            description:
-                "Jedna z najpopularniejszych metod przelewowych specialty coffee.",
-        },
-
-        {
-            id: 2,
-            name: "Chemex",
-            type: "Pour over",
-            difficulty: "Łatwy",
-            brewTime: "4:00–5:00",
-            description:
-                "Metoda zapewniająca bardzo czysty i delikatny napar.",
-        },
-
-        {
-            id: 3,
-            name: "French Press",
-            type: "Immersion",
-            difficulty: "Łatwy",
-            brewTime: "4:00",
-            description:
-                "Klasyczna metoda immersyjna dająca pełne body i intensywny smak.",
-        }
-    ];
-
-    const types = [
-        ...new Set(
-            methods.map((method) => method.type)
-        )
-    ];
-
+    const [articles, setArticles] = useState([]);
     const [search, setSearch] = useState("");
+    const [selectedMethod, setSelectedMethod] = useState("");
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    const [selectedType, setSelectedType] =
-        useState("");
+    useEffect(() => {
+        const loadArticles = async () => {
+            try {
+                setIsLoading(true);
+                setError("");
 
-    const filteredMethods = methods.filter((method) => {
+                const data = await getArticles("brewing_method");
+
+                setArticles(
+                    (Array.isArray(data) ? data : []).map(mapBrewingArticle)
+                );
+            } catch {
+                setError("Nie udało się pobrać metod parzenia.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadArticles();
+    }, []);
+
+    const methodNames = buildFilterOptions(
+        BREWING_METHOD_OPTIONS,
+        articles.map((article) => article.title)
+    );
+
+    const filteredArticles = articles.filter((article) => {
+        const query = search.toLowerCase();
 
         const matchesSearch =
-            method.name
+            (article.title ?? "")
                 .toLowerCase()
-                .includes(search.toLowerCase());
+                .includes(query) ||
+            (article.excerpt ?? "")
+                .toLowerCase()
+                .includes(query);
 
-        const matchesType =
-            selectedType === "" ||
-            method.type === selectedType;
+        const matchesMethod =
+            selectedMethod === "" ||
+            article.title === selectedMethod;
 
-        return (
-            matchesSearch &&
-            matchesType
-        );
+        return matchesSearch && matchesMethod;
     });
 
+    if (isLoading) {
+        return (
+            <div className="methods-page">
+                <h1>Ładowanie metod parzenia...</h1>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="methods-page">
+                <h1>{error}</h1>
+            </div>
+        );
+    }
+
     return (
-
         <div className="methods-page">
-
             <div className="methods-header">
-
                 <h1>Metody parzenia</h1>
 
                 <p>
@@ -87,7 +116,6 @@ function BrewingMethods() {
                 </p>
 
                 <div className="methods-search-container">
-
                     <Search size={18} />
 
                     <input
@@ -95,119 +123,82 @@ function BrewingMethods() {
                         placeholder="Szukaj metod..."
                         className="methods-search"
                         value={search}
-                        onChange={(e) =>
-                            setSearch(e.target.value)
+                        onChange={(event) =>
+                            setSearch(event.target.value)
                         }
                     />
-
                 </div>
-
             </div>
 
             <div className="methods-content">
-
-                {/* FILTERS */}
-
                 <div className="methods-filters">
-
                     <h3>Filtry</h3>
 
                     <div className="filter-group">
-
-                        <label>Typ metody</label>
+                        <label>Metoda parzenia</label>
 
                         <select
-                            value={selectedType}
-                            onChange={(e) =>
-                                setSelectedType(
-                                    e.target.value
-                                )
+                            value={selectedMethod}
+                            onChange={(event) =>
+                                setSelectedMethod(event.target.value)
                             }
                         >
-
                             <option value="">
                                 Wszystkie
                             </option>
 
-                            {types.map((type) => (
-
+                            {methodNames.map((method) => (
                                 <option
-                                    key={type}
-                                    value={type}
+                                    key={method}
+                                    value={method}
                                 >
-                                    {type}
+                                    {method}
                                 </option>
-
                             ))}
-
                         </select>
-
                     </div>
-
                 </div>
 
-                {/* GRID */}
+                {filteredArticles.length === 0 ? (
+                    <p className="methods-empty-state">
+                        {articles.length === 0
+                            ? "Brak opublikowanych artykułów o metodach parzenia."
+                            : "Brak wyników dla wybranych filtrów."}
+                    </p>
+                ) : (
+                    <div className="methods-grid">
+                        {filteredArticles.map((article) => (
+                            <div
+                                className="method-card"
+                                key={article.id}
+                                onClick={() =>
+                                    navigate(
+                                        `/wiki/articles/${article.id}`
+                                    )
+                                }
+                            >
+                                <div className="method-image" />
 
-                <div className="methods-grid">
+                                <div className="method-card-content">
+                                    <div className="method-top">
+                                        <h2>
+                                            {article.title}
+                                        </h2>
+                                    </div>
 
-                    {filteredMethods.map((method) => (
-
-                        <div
-                            className="method-card"
-                            key={method.id}
-                            onClick={() =>
-                                navigate(
-                                    `/wiki/methods/${method.id}`
-                                )
-                            }
-                        >
-
-                            <div className="method-image" />
-
-                            <div className="method-card-content">
-
-                                <div className="method-top">
-
-                                    <h2>
-                                        {method.name}
-                                    </h2>
-
-                                    <span>
-                                        {method.difficulty}
-                                    </span>
-
+                                    {article.excerpt && (
+                                        <p>
+                                            {article.excerpt}
+                                        </p>
+                                    )}
                                 </div>
-
-                                <p>
-                                    {method.description}
-                                </p>
-
-                                <div className="method-tags">
-
-                                    <span>
-                                        {method.type}
-                                    </span>
-
-                                    <span>
-                                        {method.brewTime}
-                                    </span>
-
-                                </div>
-
                             </div>
-
-                        </div>
-
-                    ))}
-
-                </div>
-
+                        ))}
+                    </div>
+                )}
             </div>
-
         </div>
-
     );
 }
 
 export default BrewingMethods;
-

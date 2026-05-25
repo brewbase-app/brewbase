@@ -333,6 +333,18 @@ public class RankingEndpointsTests : IDisposable
             }
         );
 
+        context.Articles.Add(new Article
+        {
+            UserId = user.Id,
+            Title = $"Approved article {Guid.NewGuid()}",
+            Content = "Article content",
+            Module = "general",
+            Status = "Approved",
+            CreatedAt = now,
+            UpdatedAt = now,
+            PublishedAt = now
+        });
+
         await context.SaveChangesAsync();
 
         var response = await _client.GetAsync("/api/Ranking/recipes?limit=2");

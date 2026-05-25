@@ -116,7 +116,11 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICommunityService, CommunityService>();
 builder.Services.AddScoped<IRankingRefreshService, RankingRefreshService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
+builder.Services.AddScoped<IArticleReadService, ArticleReadService>();
+builder.Services.AddScoped<IArticleWriteService, ArticleWriteService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();

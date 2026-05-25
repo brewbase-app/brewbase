@@ -51,6 +51,13 @@ public class CommunityService : ICommunityService
         };
 
         _context.Follows.Add(follow);
+        
+        _context.Notifications.Add(new Notification
+        {
+            UserId = followedUserId,
+            Content = "Nowy użytkownik zaczął Cię obserwować.",
+            CreatedAt = DateTime.Now
+        });
 
         await _context.SaveChangesAsync();
 
@@ -74,7 +81,7 @@ public class CommunityService : ICommunityService
             return false;
 
         _context.Follows.Remove(follow);
-
+        
         await _context.SaveChangesAsync();
 
         return true;
@@ -146,5 +153,43 @@ public class CommunityService : ICommunityService
             .ToListAsync();
     }
     
+    public async Task<List<UserActivityResponseDto>> GetFeedAsync()
+    {
+        var currentUserId = _currentUserProvider.GetUserId();
+
+        var followedUserIds = await _context.Follows
+            .Where(f => f.FollowerId == currentUserId)
+            .Select(f => f.FollowedId)
+            .ToListAsync();
+
+        var articleActivities = await _context.Articles
+            .Where(a => followedUserIds.Contains(a.UserId))
+            .Select(a => new UserActivityResponseDto
+            {
+                Username = a.User.Login,
+                ActivityType = "Article",
+                Description = $"Dodał artykuł: {a.Title}",
+                CreatedAt = a.CreatedAt
+            })
+            .ToListAsync();
+
+        var followActivities = await _context.Follows
+            .Where(f => followedUserIds.Contains(f.FollowerId))
+            .Select(f => new UserActivityResponseDto
+            {
+                Username = f.Follower.Login,
+                ActivityType = "Follow",
+                Description =
+                    $"Zaczął obserwować użytkownika {f.Followed.Login}",
+                CreatedAt = f.CreatedAt
+            })
+            .ToListAsync();
+
+        return articleActivities
+            .Concat(followActivities)
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(50)
+            .ToList();
+    }
 
 }

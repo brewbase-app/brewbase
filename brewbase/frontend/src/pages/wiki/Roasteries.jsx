@@ -10,6 +10,8 @@ import {
 
 import "../../styles/wiki/Roasteries.css";
 
+import WikiArticlesSection from "../../components/WikiArticlesSection";
+
 function Roasteries() {
 
     const navigate = useNavigate();
@@ -188,6 +190,12 @@ function Roasteries() {
                 ))}
 
             </div>
+
+            <WikiArticlesSection
+                module="roastery"
+                gridClassName="roasteries-grid"
+                cardClassName="roastery-card"
+            />
 
         </div>
 

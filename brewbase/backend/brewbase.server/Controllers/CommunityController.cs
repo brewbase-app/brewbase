@@ -82,4 +82,14 @@ public class CommunityController : ControllerBase
 
         return Ok(users);
     }
+    
+    [Authorize]
+    [HttpGet("feed")]
+    public async Task<ActionResult<List<UserActivityResponseDto>>>
+        GetFeed()
+    {
+        var result = await _communityService.GetFeedAsync();
+
+        return Ok(result);
+    }
 }

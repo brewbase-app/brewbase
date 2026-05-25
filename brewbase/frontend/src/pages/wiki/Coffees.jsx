@@ -18,27 +18,70 @@ import {
     getCoffees
 } from "../../api/coffeeApi";
 
+import { getArticles } from "../../api/articlesApi";
+
+import MultiSelectInput from "../../components/MultiSelectInput";
+
+import { BEAN_ORIGIN_COUNTRIES } from "../../utils/beanOriginCountries";
+import { COFFEE_VARIETIES } from "../../utils/coffeeVarieties";
+import { COFFEE_PROCESSING_METHODS } from "../../utils/coffeeProcessingMethods";
+import { COFFEE_FLAVOR_PROFILES } from "../../utils/coffeeFlavorProfiles";
+import {
+    buildFilterOptions,
+    parseCoffeeArticleMetadata,
+} from "../../utils/parseCoffeeArticleMetadata";
+
+function mapCoffeeArticle(article) {
+    const metadata = parseCoffeeArticleMetadata(article.content ?? "");
+
+    return {
+        key: `article-${article.id}`,
+        name: article.title,
+        beanOriginCountry:
+            article.beanOriginCountry ?? metadata.beanOriginCountry,
+        variety: article.variety ?? metadata.variety,
+        processingMethod:
+            article.processingMethod ?? metadata.processingMethod,
+        flavorProfiles:
+            Array.isArray(article.flavorProfiles) &&
+            article.flavorProfiles.length > 0
+                ? article.flavorProfiles
+                : metadata.flavorProfiles,
+        roastery: null,
+        authorLogin: article.authorLogin ?? null,
+        isWikiArticle: true,
+        coffeeId: null,
+        articleId: article.id,
+    };
+}
+
 function Coffees() {
     const navigate = useNavigate();
 
     const [coffees, setCoffees] = useState([]);
+    const [articles, setArticles] = useState([]);
     const [search, setSearch] = useState("");
-    const [selectedRegion, setSelectedRegion] = useState("");
+    const [selectedOriginCountry, setSelectedOriginCountry] = useState("");
     const [selectedProcessing, setSelectedProcessing] = useState("");
     const [selectedVariety, setSelectedVariety] = useState("");
+    const [selectedFlavorProfiles, setSelectedFlavorProfiles] = useState([]);
     const [favorites, setFavorites] = useState(getFavoriteCoffees());
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
 
     useEffect(() => {
-        const loadCoffees = async () => {
+        const loadData = async () => {
             try {
                 setIsLoading(true);
                 setError("");
 
-                const data = await getCoffees();
+                const [coffeeData, articleData] = await Promise.all([
+                    getCoffees(),
+                    getArticles("coffee"),
+                ]);
 
-                setCoffees(Array.isArray(data) ? data : []);
+                setCoffees(Array.isArray(coffeeData) ? coffeeData : []);
+                setArticles(Array.isArray(articleData) ? articleData : []);
             } catch {
                 setError("Nie udało się pobrać kaw.");
             } finally {
@@ -46,64 +89,90 @@ function Coffees() {
             }
         };
 
-        loadCoffees();
+        loadData();
     }, []);
 
-    const regions = [
-        ...new Set(
-            coffees
-                .map((coffee) => coffee.region)
-                .filter(Boolean)
-        )
-    ];
+    const catalogItems = coffees.map((coffee) => ({
+        key: `catalog-${coffee.id}`,
+        name: coffee.name,
+        beanOriginCountry: coffee.region ?? null,
+        variety: coffee.variety ?? null,
+        processingMethod: coffee.processingMethod ?? null,
+        flavorProfiles: [],
+        roastery: coffee.roastery ?? null,
+        authorLogin: null,
+        isWikiArticle: false,
+        coffeeId: coffee.id,
+        articleId: null,
+    }));
 
-    const processingMethods = [
-        ...new Set(
-            coffees
-                .map((coffee) => coffee.processingMethod)
-                .filter(Boolean)
-        )
-    ];
+    const articleItems = articles.map(mapCoffeeArticle);
 
-    const varieties = [
-        ...new Set(
-            coffees
-                .map((coffee) => coffee.variety)
-                .filter(Boolean)
-        )
-    ];
+    const allItems = [...catalogItems, ...articleItems];
 
-    const handleFavorite = (coffeeId) => {
+    const originCountries = buildFilterOptions(
+        BEAN_ORIGIN_COUNTRIES,
+        catalogItems.map((item) => item.beanOriginCountry),
+        articleItems.map((item) => item.beanOriginCountry)
+    );
+
+    const processingMethods = buildFilterOptions(
+        COFFEE_PROCESSING_METHODS,
+        catalogItems.map((item) => item.processingMethod),
+        articleItems.map((item) => item.processingMethod)
+    );
+
+    const varieties = buildFilterOptions(
+        COFFEE_VARIETIES,
+        catalogItems.map((item) => item.variety),
+        articleItems.map((item) => item.variety)
+    );
+
+    const flavorProfileOptions = buildFilterOptions(
+        COFFEE_FLAVOR_PROFILES,
+        articleItems.flatMap((item) => item.flavorProfiles)
+    );
+
+    const handleFavorite = (coffeeId, event) => {
+        event.stopPropagation();
+
         const updated = toggleFavoriteCoffee(coffeeId);
 
         setFavorites(updated);
     };
 
-    const filteredCoffees = coffees.filter((coffee) => {
+    const filteredItems = allItems.filter((item) => {
         const query = search.toLowerCase();
 
         const matchesSearch =
-            (coffee.name ?? "")
+            (item.name ?? "")
                 .toLowerCase()
                 .includes(query);
 
-        const matchesRegion =
-            selectedRegion === "" ||
-            coffee.region === selectedRegion;
+        const matchesOriginCountry =
+            selectedOriginCountry === "" ||
+            item.beanOriginCountry === selectedOriginCountry;
 
         const matchesProcessing =
             selectedProcessing === "" ||
-            coffee.processingMethod === selectedProcessing;
+            item.processingMethod === selectedProcessing;
 
         const matchesVariety =
             selectedVariety === "" ||
-            coffee.variety === selectedVariety;
+            item.variety === selectedVariety;
+
+        const matchesFlavorProfiles =
+            selectedFlavorProfiles.length === 0 ||
+            selectedFlavorProfiles.some((profile) =>
+                item.flavorProfiles.includes(profile)
+            );
 
         return (
             matchesSearch &&
-            matchesRegion &&
+            matchesOriginCountry &&
             matchesProcessing &&
-            matchesVariety
+            matchesVariety &&
+            matchesFlavorProfiles
         );
     });
 
@@ -153,25 +222,25 @@ function Coffees() {
 
                     <div className="filter-group">
                         <label>
-                            Region
+                            Kraj pochodzenia ziaren
                         </label>
 
                         <select
-                            value={selectedRegion}
+                            value={selectedOriginCountry}
                             onChange={(event) =>
-                                setSelectedRegion(event.target.value)
+                                setSelectedOriginCountry(event.target.value)
                             }
                         >
                             <option value="">
                                 Wszystkie
                             </option>
 
-                            {regions.map((region) => (
+                            {originCountries.map((country) => (
                                 <option
-                                    key={region}
-                                    value={region}
+                                    key={country}
+                                    value={country}
                                 >
-                                    {region}
+                                    {country}
                                 </option>
                             ))}
                         </select>
@@ -179,7 +248,7 @@ function Coffees() {
 
                     <div className="filter-group">
                         <label>
-                            Processing
+                            Obróbka ziaren
                         </label>
 
                         <select
@@ -205,7 +274,7 @@ function Coffees() {
 
                     <div className="filter-group">
                         <label>
-                            Variety
+                            Odmiana
                         </label>
 
                         <select
@@ -228,68 +297,111 @@ function Coffees() {
                             ))}
                         </select>
                     </div>
+
+                    <div className="filter-group">
+                        <label>
+                            Profil smakowy
+                        </label>
+
+                        <MultiSelectInput
+                            options={flavorProfileOptions}
+                            value={selectedFlavorProfiles}
+                            onChange={setSelectedFlavorProfiles}
+                            allowCustom
+                            customPlaceholder="Inny..."
+                        />
+                    </div>
                 </div>
 
                 <div className="coffees-grid">
-                    {filteredCoffees.map((coffee) => (
+                    {filteredItems.length === 0 ? (
+                        <p className="coffees-empty-state">
+                            {allItems.length === 0
+                                ? "Brak kaw do wyświetlenia."
+                                : "Brak wyników dla wybranych filtrów."}
+                        </p>
+                    ) : (
+                        filteredItems.map((item) => (
                         <div
                             className="coffee-card"
-                            key={coffee.id}
-                            onClick={() =>
-                                navigate(`/wiki/coffees/${coffee.id}`)
-                            }
+                            key={item.key}
+                            onClick={() => {
+                                if (item.isWikiArticle) {
+                                    navigate(`/wiki/articles/${item.articleId}`);
+                                    return;
+                                }
+
+                                navigate(`/wiki/coffees/${item.coffeeId}`);
+                            }}
                         >
                             <div className="coffee-image" />
 
                             <div className="coffee-card-content">
                                 <div className="coffee-top">
                                     <h2>
-                                        {coffee.name}
+                                        {item.name}
                                     </h2>
 
-                                    <button
-                                        className="favorite-button"
-                                        onClick={(event) => {
-                                            event.stopPropagation();
-
-                                            handleFavorite(coffee.id);
-                                        }}
-                                    >
-                                        <Heart
-                                            size={18}
-                                            fill={
-                                                favorites.includes(coffee.id)
-                                                    ? "currentColor"
-                                                    : "none"
+                                    {!item.isWikiArticle && (
+                                        <button
+                                            className="favorite-button"
+                                            onClick={(event) =>
+                                                handleFavorite(
+                                                    item.coffeeId,
+                                                    event
+                                                )
                                             }
-                                        />
-                                    </button>
+                                        >
+                                            <Heart
+                                                size={18}
+                                                fill={
+                                                    favorites.includes(
+                                                        item.coffeeId
+                                                    )
+                                                        ? "currentColor"
+                                                        : "none"
+                                                }
+                                            />
+                                        </button>
+                                    )}
                                 </div>
 
                                 <p>
-                                    {coffee.region ?? "Brak regionu"}
+                                    {item.beanOriginCountry ??
+                                        "Brak kraju pochodzenia"}
                                 </p>
 
                                 <div className="coffee-tags">
-                                    {coffee.variety && (
+                                    {item.variety && (
                                         <span>
-                                            {coffee.variety}
+                                            {item.variety}
                                         </span>
                                     )}
 
-                                    {coffee.processingMethod && (
+                                    {item.processingMethod && (
                                         <span>
-                                            {coffee.processingMethod}
+                                            {item.processingMethod}
                                         </span>
                                     )}
+
+                                    {item.flavorProfiles.map((profile) => (
+                                        <span key={profile}>
+                                            {profile}
+                                        </span>
+                                    ))}
                                 </div>
 
                                 <small>
-                                    {coffee.roastery ?? "Brak palarni"}
+                                    {item.isWikiArticle
+                                        ? item.authorLogin
+                                            ? `Autor artykułu: ${item.authorLogin}`
+                                            : "Artykuł wiki"
+                                        : item.roastery ?? "Brak palarni"}
                                 </small>
                             </div>
                         </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             </div>
         </div>
