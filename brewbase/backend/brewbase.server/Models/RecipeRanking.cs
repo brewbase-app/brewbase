@@ -18,4 +18,10 @@ public partial class RecipeRanking
     public int RecipeId { get; set; }
 
     public virtual Recipe Recipe { get; set; } = null!;
+    
+    public int Position { get; set; }
+
+    public double AverageRating { get; set; }
+
+    public double RankingScore { get; set; }
 }

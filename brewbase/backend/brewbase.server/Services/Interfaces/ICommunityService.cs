@@ -13,4 +13,6 @@ public interface ICommunityService
     
     Task<List<FollowUserListResponseDto>> GetFollowingAsync();
     
+    Task<List<UserActivityResponseDto>> GetFeedAsync();
+    
 }

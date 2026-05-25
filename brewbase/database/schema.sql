@@ -11,6 +11,7 @@ CREATE TABLE article (
                          title varchar(255)  NOT NULL,
                          content text  NOT NULL,
                          status varchar(50)  NOT NULL,
+                         module varchar(50)  NOT NULL DEFAULT 'general',
                          created_at timestamp  NOT NULL,
                          updated_at timestamp  NOT NULL,
                          published_at timestamp  NULL,
@@ -50,6 +51,9 @@ CREATE TABLE coffee_ranking (
                                 recipe_used_count int  NOT NULL,
                                 like_count int  NOT NULL,
                                 coffee_id int  NOT NULL,
+                                CONSTRAINT coffee_ranking_pk PRIMARY KEY (id),
+                                average_rating double precision NOT NULL DEFAULT 0,
+                                ranking_score double precision NOT NULL DEFAULT 0,
                                 CONSTRAINT coffee_ranking_pk PRIMARY KEY (id)
 );
 
@@ -62,7 +66,6 @@ CREATE TABLE coffee_rating (
                                user_id int  NOT NULL,
                                coffee_id int  NOT NULL,
                                CONSTRAINT coffee_rating_pk PRIMARY KEY (id)
-);
 
 -- Table: country
 CREATE TABLE country (
@@ -154,6 +157,9 @@ CREATE TABLE recipe_ranking (
                                 like_count int  NOT NULL,
                                 save_count int  NOT NULL,
                                 recipe_id int  NOT NULL,
+                                position integer NOT NULL DEFAULT 0,
+                                average_rating double precision NOT NULL DEFAULT 0,
+                                ranking_score double precision NOT NULL DEFAULT 0,
                                 CONSTRAINT recipe_ranking_pk PRIMARY KEY (id)
 );
 
@@ -218,6 +224,16 @@ CREATE TABLE user_ranking (
                               recipe_count int  NOT NULL,
                               like_count int  NOT NULL,
                               user_id int  NOT NULL,
+                              position integer NOT NULL DEFAULT 0,
+                              public_recipe_count integer NOT NULL DEFAULT 0,
+                              coffee_rating_count integer NOT NULL DEFAULT 0,
+                              recipe_rating_count integer NOT NULL DEFAULT 0,
+                              quick_note_count integer NOT NULL DEFAULT 0,
+                              cupping_session_count integer NOT NULL DEFAULT 0,
+                              cupping_session_coffee_count integer NOT NULL DEFAULT 0,
+                              followers_count integer NOT NULL DEFAULT 0,
+                              received_recipe_favorite_count integer NOT NULL DEFAULT 0,
+                              published_article_count integer NOT NULL DEFAULT 0,
                               CONSTRAINT user_ranking_pk PRIMARY KEY (id)
 );
 

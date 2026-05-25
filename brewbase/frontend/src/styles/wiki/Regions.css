@@ -87,10 +87,21 @@
     align-items:flex-start;
 }
 
+.regions-empty-state{
+    flex:1;
+
+    margin:0;
+
+    font-size:16px;
+
+    color:#666;
+}
+
 /* FILTERS */
 
 .regions-filters{
     width:260px;
+    flex-shrink:0;
 
     background:white;
 

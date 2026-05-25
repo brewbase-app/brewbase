@@ -129,6 +129,10 @@ public partial class BrewDbContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasColumnName("status");
+            entity.Property(e => e.Module)
+                .HasMaxLength(50)
+                .HasDefaultValue("general")
+                .HasColumnName("module");
             entity.Property(e => e.Title)
                 .HasMaxLength(255)
                 .HasColumnName("title");
@@ -220,13 +224,17 @@ public partial class BrewDbContext : DbContext
             entity.HasIndex(e => e.CoffeeId, "idx_coffee_ranking_coffee_id");
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CoffeeId).HasColumnName("coffee_id");
-            entity.Property(e => e.LikeCount).HasColumnName("like_count");
-            entity.Property(e => e.RatingCount).HasColumnName("rating_count");
-            entity.Property(e => e.RecipeUsedCount).HasColumnName("recipe_used_count");
             entity.Property(e => e.RefreshedAt)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("refreshed_at");
+            entity.Property(e => e.RatingCount).HasColumnName("rating_count");
+            entity.Property(e => e.RecipeUsedCount).HasColumnName("recipe_used_count");
+            entity.Property(e => e.LikeCount).HasColumnName("like_count");
+            entity.Property(e => e.CoffeeId).HasColumnName("coffee_id");
+
+            entity.Property(e => e.Position).HasColumnName("position");
+            entity.Property(e => e.AverageRating).HasColumnName("average_rating");
+            entity.Property(e => e.RankingScore).HasColumnName("ranking_score");
 
             entity.HasOne(d => d.Coffee).WithMany(p => p.CoffeeRankings)
                 .HasForeignKey(d => d.CoffeeId)
@@ -488,13 +496,17 @@ public partial class BrewDbContext : DbContext
             entity.HasIndex(e => e.RecipeId, "idx_recipe_ranking_recipe_id");
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.LikeCount).HasColumnName("like_count");
-            entity.Property(e => e.RatingCount).HasColumnName("rating_count");
-            entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
             entity.Property(e => e.RefreshedAt)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("refreshed_at");
+            entity.Property(e => e.RatingCount).HasColumnName("rating_count");
+            entity.Property(e => e.LikeCount).HasColumnName("like_count");
             entity.Property(e => e.SaveCount).HasColumnName("save_count");
+            entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
+
+            entity.Property(e => e.Position).HasColumnName("position");
+            entity.Property(e => e.AverageRating).HasColumnName("average_rating");
+            entity.Property(e => e.RankingScore).HasColumnName("ranking_score");
 
             entity.HasOne(d => d.Recipe).WithMany(p => p.RecipeRankings)
                 .HasForeignKey(d => d.RecipeId)
@@ -684,13 +696,24 @@ public partial class BrewDbContext : DbContext
             entity.HasIndex(e => e.UserId, "idx_user_ranking_user_id");
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.ActivityScore).HasColumnName("activity_score");
-            entity.Property(e => e.LikeCount).HasColumnName("like_count");
-            entity.Property(e => e.RecipeCount).HasColumnName("recipe_count");
             entity.Property(e => e.RefreshedAt)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("refreshed_at");
+            entity.Property(e => e.ActivityScore).HasColumnName("activity_score");
+            entity.Property(e => e.RecipeCount).HasColumnName("recipe_count");
+            entity.Property(e => e.LikeCount).HasColumnName("like_count");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.Property(e => e.Position).HasColumnName("position");
+            entity.Property(e => e.PublicRecipeCount).HasColumnName("public_recipe_count");
+            entity.Property(e => e.CoffeeRatingCount).HasColumnName("coffee_rating_count");
+            entity.Property(e => e.RecipeRatingCount).HasColumnName("recipe_rating_count");
+            entity.Property(e => e.QuickNoteCount).HasColumnName("quick_note_count");
+            entity.Property(e => e.CuppingSessionCount).HasColumnName("cupping_session_count");
+            entity.Property(e => e.CuppingSessionCoffeeCount).HasColumnName("cupping_session_coffee_count");
+            entity.Property(e => e.FollowersCount).HasColumnName("followers_count");
+            entity.Property(e => e.ReceivedRecipeFavoriteCount).HasColumnName("received_recipe_favorite_count");
+            entity.Property(e => e.PublishedArticleCount).HasColumnName("published_article_count");
 
             entity.HasOne(d => d.User).WithMany(p => p.UserRankings)
                 .HasForeignKey(d => d.UserId)

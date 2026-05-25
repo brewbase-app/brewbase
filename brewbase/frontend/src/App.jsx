@@ -59,14 +59,15 @@ import Coffees from "./pages/wiki/Coffees";
 import CoffeeDetails from "./pages/wiki/CoffeeDetails";
 
 import Regions from "./pages/wiki/Regions";
-import RegionDetails from "./pages/wiki/RegionDetails";
 
 import BrewingMethods from "./pages/wiki/BrewingMethods";
-import BrewingMethodDetails from "./pages/wiki/BrewingMethodDetails";
 
 import AddWikiArticle from "./pages/wiki/AddWikiArticle";
 import Roasteries from "./pages/wiki/Roasteries";
 import RoasteryDetails from "./pages/wiki/RoasteryDetails";
+import WikiArticleDetails from "./pages/wiki/WikiArticleDetails";
+import MyWikiArticles from "./pages/wiki/MyWikiArticles";
+import MyWikiArticleDetails from "./pages/wiki/MyWikiArticleDetails";
 
 /* ADMIN */
 
@@ -297,21 +298,11 @@ function Layout() {
                             element={<Regions />}
                         />
 
-                        <Route
-                            path="/wiki/regions/:id"
-                            element={<RegionDetails />}
-                        />
-
                         {/* BREWING METHODS */}
 
                         <Route
                             path="/wiki/methods"
                             element={<BrewingMethods />}
-                        />
-
-                        <Route
-                            path="/wiki/methods/:id"
-                            element={<BrewingMethodDetails />}
                         />
 
                         {/* ADD ARTICLE */}
@@ -320,6 +311,22 @@ function Layout() {
                             path="/wiki/add"
                             element={<AddWikiArticle />}
                         />
+
+                        <Route
+                            path="/wiki/my-articles"
+                            element={<MyWikiArticles />}
+                        />
+
+                        <Route
+                            path="/wiki/my-articles/:id"
+                            element={<MyWikiArticleDetails />}
+                        />
+
+                        <Route
+                            path="/wiki/articles/:id"
+                            element={<WikiArticleDetails />}
+                        />
+
                         <Route
                             path="/wiki/roasteries"
                             element={<Roasteries />}

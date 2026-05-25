@@ -1,0 +1,238 @@
+.wiki-my-articles-page{
+    flex:1;
+
+    min-height:100vh;
+
+    background:#f5f5f5;
+
+    padding:50px 90px;
+
+    box-sizing:border-box;
+}
+
+.wiki-my-articles-header{
+    margin-bottom:36px;
+}
+
+.wiki-my-articles-header h1{
+    margin:0 0 12px 0;
+
+    font-size:52px;
+    font-weight:600;
+
+    letter-spacing:-1.5px;
+
+    color:#1f1f1f;
+}
+
+.wiki-my-articles-header p{
+    margin:0;
+
+    font-size:17px;
+
+    color:#666;
+}
+
+.wiki-my-articles-list{
+    display:flex;
+    flex-direction:column;
+
+    gap:16px;
+}
+
+.wiki-my-article-card{
+    background:white;
+
+    border:1px solid #ececec;
+    border-radius:22px;
+
+    padding:24px 28px;
+
+    cursor:pointer;
+
+    transition:0.2s ease;
+
+    box-shadow:0 4px 18px rgba(0,0,0,0.03);
+}
+
+.wiki-my-article-card:hover{
+    transform:translateY(-2px);
+
+    box-shadow:0 10px 30px rgba(0,0,0,0.08);
+}
+
+.wiki-my-article-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:16px;
+
+    margin-bottom:10px;
+}
+
+.wiki-my-article-top h2{
+    margin:0;
+
+    font-size:22px;
+    font-weight:600;
+
+    color:#1f1f1f;
+}
+
+.wiki-my-article-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    flex-shrink:0;
+
+    height:38px;
+}
+
+.wiki-my-article-status{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+
+    height:38px;
+    box-sizing:border-box;
+    margin:0;
+    padding:0 14px;
+
+    border-radius:999px;
+
+    font-size:13px;
+    font-weight:500;
+    line-height:1;
+
+    white-space:nowrap;
+
+    transform:translateY(1px);
+}
+
+.wiki-my-article-status.pending{
+    background:#fff4e5;
+    color:#b54708;
+}
+
+.wiki-my-article-status.approved{
+    background:#ecfdf3;
+    color:#027a48;
+}
+
+.wiki-my-article-status.rejected{
+    background:#fef3f2;
+    color:#b42318;
+}
+
+.wiki-my-article-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+
+    font-size:14px;
+
+    color:#666;
+}
+
+.wiki-my-article-comment{
+    margin-top:14px;
+
+    padding:14px 16px;
+
+    border-radius:14px;
+
+    background:#fef3f2;
+
+    font-size:14px;
+    line-height:1.6;
+
+    color:#7a271a;
+}
+
+.wiki-my-articles-empty{
+    padding:40px;
+
+    border-radius:22px;
+
+    background:white;
+
+    border:1px solid #ececec;
+
+    text-align:center;
+
+    color:#666;
+}
+
+.wiki-header-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+}
+
+.my-articles-button{
+    display:flex;
+    align-items:center;
+
+    gap:10px;
+
+    background:white;
+    color:#1f1f1f;
+
+    border:1px solid #e5e5e5;
+
+    border-radius:18px;
+
+    padding:14px 20px;
+
+    font-size:14px;
+    font-weight:500;
+
+    cursor:pointer;
+
+    transition:0.2s ease;
+
+    box-shadow:0 2px 10px rgba(0,0,0,0.03);
+}
+
+.my-articles-button:hover{
+    background:#fafafa;
+
+    transform:translateY(-2px);
+}
+
+.wiki-my-article-delete-button{
+    flex-shrink:0;
+
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+
+    width:38px;
+    height:38px;
+    margin:0;
+    padding:0;
+
+    border:none;
+    border-radius:12px;
+
+    background:#fef3f2;
+    color:#b42318;
+
+    line-height:0;
+
+    cursor:pointer;
+
+    transition:0.2s ease;
+
+    -webkit-appearance:none;
+    appearance:none;
+}
+
+.wiki-my-article-delete-button svg{
+    display:block;
+}
+
+.wiki-my-article-delete-button:hover{
+    background:#fee4e2;
+}

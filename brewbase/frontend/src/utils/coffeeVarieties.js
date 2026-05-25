@@ -1,0 +1,17 @@
+export const COFFEE_VARIETIES = [
+    "Heirloom",
+    "Bourbon",
+    "Caturra",
+    "Geisha",
+    "Typica",
+    "Catuai",
+    "Pacamara",
+    "SL28",
+    "SL34",
+    "Mundo Novo",
+    "Castillo",
+    "Villa Sarchi",
+    "Maragogipe",
+    "Java",
+    "Ruiru 11",
+];

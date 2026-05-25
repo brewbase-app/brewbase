@@ -20,4 +20,10 @@ public partial class CoffeeRanking
     public virtual Coffee Coffee { get; set; } = null!;
 
     public virtual ICollection<Recommendation> Recommendations { get; set; } = new List<Recommendation>();
+    
+    public int Position { get; set; }
+
+    public double AverageRating { get; set; }
+
+    public double RankingScore { get; set; }
 }

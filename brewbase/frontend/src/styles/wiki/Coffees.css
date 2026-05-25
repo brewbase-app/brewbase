@@ -146,6 +146,16 @@
 
 /* GRID */
 
+.coffees-empty-state{
+    grid-column:1 / -1;
+
+    margin:0;
+
+    font-size:16px;
+
+    color:#666;
+}
+
 .coffees-grid{
     flex:1;
 
@@ -305,4 +315,17 @@
     background:#e8e8e8;
 
     transform:scale(1.05);
+}
+
+.wiki-articles-section{
+    margin-top:40px;
+}
+
+.wiki-articles-section h3{
+    font-size:24px;
+    font-weight:600;
+
+    margin:0 0 20px 0;
+
+    color:#1f1f1f;
 }

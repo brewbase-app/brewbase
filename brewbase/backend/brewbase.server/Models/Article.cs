@@ -13,6 +13,8 @@ public partial class Article
 
     public string Status { get; set; } = null!;
 
+    public string Module { get; set; } = null!;
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
