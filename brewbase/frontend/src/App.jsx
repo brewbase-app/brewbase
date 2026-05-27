@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 
 import {
@@ -17,7 +16,10 @@ import "./App.css";
 import Sidebar from "./components/Sidebar";
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
 
-import Home from "./pages/Home";
+/* HOME */
+
+import Dashboard from "./pages/Dashboard";
+import FavoriteCoffees from "./pages/FavoriteCoffees";
 
 /* RECIPES */
 
@@ -134,7 +136,7 @@ function Layout() {
 
                     minHeight: "100vh",
 
-                    background: "#f5f5f5"
+                    background: "#f8f6f3"
                 }}
             >
 
@@ -182,7 +184,11 @@ function Layout() {
 
                         <Route
                             path="/home"
-                            element={<Home />}
+                            element={<Dashboard />}
+                        />
+                        <Route
+                            path="/favorite-coffees"
+                            element={<FavoriteCoffees />}
                         />
 
                         {/* RECIPES */}
@@ -211,6 +217,14 @@ function Layout() {
                             element={
                                 <RecipesList
                                     title="Ulubione receptury"
+                                />
+                            }
+                        />
+                        <Route
+                            path="/recipes/all"
+                            element={
+                                <RecipesList
+                                    title="Wszystkie receptury"
                                 />
                             }
                         />
@@ -267,6 +281,7 @@ function Layout() {
                             path="/profile/:username"
                             element={<ProfilePage />}
                         />
+
                         <Route
                             path="/profile/edit"
                             element={<EditProfilePage />}
@@ -336,6 +351,7 @@ function Layout() {
                             path="/wiki/roasteries/:id"
                             element={<RoasteryDetails />}
                         />
+
                         {/* ADMIN */}
 
                         <Route
@@ -367,4 +383,3 @@ function App() {
 }
 
 export default App;
-

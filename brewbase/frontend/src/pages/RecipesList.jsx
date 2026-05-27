@@ -1,5 +1,7 @@
 import { useState } from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import {
     Heart,
     Clock3,
@@ -11,6 +13,7 @@ import {
 } from "lucide-react";
 
 const RecipesList = ({ title }) => {
+
     const navigate = useNavigate();
 
     const [recipes, setRecipes] = useState(
@@ -20,12 +23,24 @@ const RecipesList = ({ title }) => {
     let data = [];
 
     if (title === "Ulubione receptury") {
-        data = recipes.filter((r) => r.isFavorite);
+
+        data = recipes.filter(
+            (r) => r.isFavorite
+        );
+
+    } else if (title === "Wszystkie receptury") {
+
+        data = recipes.filter(
+            (r) => r.status === "PUBLISHED"
+        );
+
     } else {
+
         data = recipes;
     }
 
     const handleDelete = (id) => {
+
         const confirmed = window.confirm(
             "Czy na pewno chcesz usunąć tę recepturę?"
         );
@@ -45,6 +60,7 @@ const RecipesList = ({ title }) => {
     };
 
     return (
+
         <div
             style={{
                 width: "100%",
@@ -54,8 +70,11 @@ const RecipesList = ({ title }) => {
                 boxSizing: "border-box"
             }}
         >
+
             {/* HEADER */}
+
             <div style={{ marginBottom: "38px" }}>
+
                 <h1
                     style={{
                         fontSize: "58px",
@@ -74,14 +93,23 @@ const RecipesList = ({ title }) => {
                         color: "#6f6f6f"
                     }}
                 >
+
                     {title === "Ulubione receptury"
                         ? "Twoje zapisane i ulubione przepisy."
-                        : "Wszystkie stworzone przez Ciebie receptury."}
+
+                        : title === "Wszystkie receptury"
+                            ? "Przeglądaj wszystkie publiczne receptury."
+
+                            : "Wszystkie stworzone przez Ciebie receptury."}
+
                 </p>
+
             </div>
 
             {/* EMPTY STATE */}
+
             {data.length === 0 && (
+
                 <div
                     style={{
                         backgroundColor: "#fafafa",
@@ -95,9 +123,11 @@ const RecipesList = ({ title }) => {
                 >
                     Brak receptur.
                 </div>
+
             )}
 
             {/* LIST */}
+
             <div
                 style={{
                     display: "flex",
@@ -106,7 +136,9 @@ const RecipesList = ({ title }) => {
                     maxWidth: "950px"
                 }}
             >
+
                 {data.map((r) => (
+
                     <div
                         key={r.id}
                         style={{
@@ -121,7 +153,9 @@ const RecipesList = ({ title }) => {
                                 "0 2px 10px rgba(0,0,0,0.03)"
                         }}
                     >
+
                         {/* LEFT */}
+
                         <div
                             style={{
                                 display: "flex",
@@ -129,6 +163,7 @@ const RecipesList = ({ title }) => {
                                 gap: "22px"
                             }}
                         >
+
                             <div
                                 style={{
                                     width: "58px",
@@ -142,14 +177,21 @@ const RecipesList = ({ title }) => {
                                     flexShrink: 0
                                 }}
                             >
+
                                 {title === "Ulubione receptury" ? (
+
                                     <Heart size={22} />
+
                                 ) : (
+
                                     <FileText size={22} />
+
                                 )}
+
                             </div>
 
                             <div>
+
                                 <div
                                     style={{
                                         display: "flex",
@@ -159,6 +201,7 @@ const RecipesList = ({ title }) => {
                                         flexWrap: "wrap"
                                     }}
                                 >
+
                                     <h2
                                         style={{
                                             fontSize: "22px",
@@ -183,6 +226,7 @@ const RecipesList = ({ title }) => {
                                             color: "#555"
                                         }}
                                     >
+
                                         {r.status === "PUBLISHED" ? (
                                             <>
                                                 <Globe size={12} />
@@ -194,7 +238,9 @@ const RecipesList = ({ title }) => {
                                                 Robocza
                                             </>
                                         )}
+
                                     </div>
+
                                 </div>
 
                                 <div
@@ -206,18 +252,25 @@ const RecipesList = ({ title }) => {
                                         fontSize: "14px"
                                     }}
                                 >
+
                                     <Clock3 size={14} />
 
                                     <span>
+
                                         {new Date(
                                             r.createdAt
                                         ).toLocaleDateString()}
+
                                     </span>
+
                                 </div>
+
                             </div>
+
                         </div>
 
                         {/* RIGHT */}
+
                         <div
                             style={{
                                 display: "flex",
@@ -225,32 +278,49 @@ const RecipesList = ({ title }) => {
                                 alignItems: "center"
                             }}
                         >
+
                             <button
                                 style={detailsButtonStyle}
                                 onClick={() =>
                                     navigate(`/recipes/${r.id}`)
                                 }
                             >
+
                                 Szczegóły
+
                                 <ChevronRight size={18} />
+
                             </button>
 
                             {title !==
-                                "Ulubione receptury" && (
+                                "Ulubione receptury" &&
+
+                                title !==
+                                "Wszystkie receptury" && (
+
                                     <button
                                         style={deleteButtonStyle}
                                         onClick={() =>
                                             handleDelete(r.id)
                                         }
                                     >
+
                                         <Trash2 size={16} />
+
                                         Usuń
+
                                     </button>
+
                                 )}
+
                         </div>
+
                     </div>
+
                 ))}
+
             </div>
+
         </div>
     );
 };
