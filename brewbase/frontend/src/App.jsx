@@ -351,6 +351,12 @@ function Layout() {
                             path="/wiki/roasteries/:id"
                             element={<RoasteryDetails />}
                         />
+                        {/* ADMIN */}
+
+                        <Route
+                            path="/admin"
+                            element={<AdminModeration />}
+                        />
 
                         {/* ADMIN */}
 
