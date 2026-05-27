@@ -11,6 +11,12 @@ const Recipes = () => {
 
     const cards = [
         {
+            title: "Wszystkie receptury",
+            description: "Przeglądaj wszystkie dostępne receptury.",
+            icon: <BookOpen size={22} />,
+            path: "/recipes/all"
+        },
+        {
             title: "Nowa receptura",
             description: "Stwórz własny przepis parzenia kawy.",
             icon: <Plus size={22} />,
