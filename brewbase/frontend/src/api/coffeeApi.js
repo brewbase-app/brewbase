@@ -16,3 +16,19 @@ export function rateCoffee(id, value) {
         }),
     });
 }
+
+export function addCoffeeFavorite(id) {
+    return apiRequest(`/api/Coffee/${id}/favorite`, {
+        method: "POST",
+    });
+}
+
+export function removeCoffeeFavorite(id) {
+    return apiRequest(`/api/Coffee/${id}/favorite`, {
+        method: "DELETE",
+    });
+}
+
+export function getFavoriteCoffees() {
+    return apiRequest("/api/Coffee/favorites");
+}

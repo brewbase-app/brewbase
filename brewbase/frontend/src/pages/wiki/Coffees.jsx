@@ -10,12 +10,9 @@ import {
 } from "lucide-react";
 
 import {
-    getFavoriteCoffees,
-    toggleFavoriteCoffee
-} from "../../utils/favorites";
-
-import {
-    getCoffees
+    addCoffeeFavorite,
+    getCoffees,
+    removeCoffeeFavorite
 } from "../../api/coffeeApi";
 
 import { getArticles } from "../../api/articlesApi";
@@ -65,7 +62,6 @@ function Coffees() {
     const [selectedProcessing, setSelectedProcessing] = useState("");
     const [selectedVariety, setSelectedVariety] = useState("");
     const [selectedFlavorProfiles, setSelectedFlavorProfiles] = useState([]);
-    const [favorites, setFavorites] = useState(getFavoriteCoffees());
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -104,6 +100,7 @@ function Coffees() {
         isWikiArticle: false,
         coffeeId: coffee.id,
         articleId: null,
+        isFavorite: coffee.isFavorite ?? false,
     }));
 
     const articleItems = articles.map(mapCoffeeArticle);
@@ -133,12 +130,39 @@ function Coffees() {
         articleItems.flatMap((item) => item.flavorProfiles)
     );
 
-    const handleFavorite = (coffeeId, event) => {
+    const handleFavorite = async (coffeeId, event) => {
         event.stopPropagation();
 
-        const updated = toggleFavoriteCoffee(coffeeId);
+        const coffee = coffees.find((item) => item.id === coffeeId);
+        if (!coffee) {
+            return;
+        }
 
-        setFavorites(updated);
+        const wasFavorite = coffee.isFavorite ?? false;
+
+        setCoffees((previous) =>
+            previous.map((item) =>
+                item.id === coffeeId
+                    ? { ...item, isFavorite: !wasFavorite }
+                    : item
+            )
+        );
+
+        try {
+            if (wasFavorite) {
+                await removeCoffeeFavorite(coffeeId);
+            } else {
+                await addCoffeeFavorite(coffeeId);
+            }
+        } catch {
+            setCoffees((previous) =>
+                previous.map((item) =>
+                    item.id === coffeeId
+                        ? { ...item, isFavorite: wasFavorite }
+                        : item
+                )
+            );
+        }
     };
 
     const filteredItems = allItems.filter((item) => {
@@ -355,9 +379,7 @@ function Coffees() {
                                             <Heart
                                                 size={18}
                                                 fill={
-                                                    favorites.includes(
-                                                        item.coffeeId
-                                                    )
+                                                    item.isFavorite
                                                         ? "currentColor"
                                                         : "none"
                                                 }
