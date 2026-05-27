@@ -21,4 +21,6 @@ public class RecipeDetailResponseDto
     public double? AverageRating { get; set; }
 
     public int RatingCount { get; set; }
+
+    public bool IsFavorite { get; set; }
 }

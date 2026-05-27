@@ -11,7 +11,8 @@ public interface ICoffeeReadService
         string? sortBy,
         string? sortOrder,
         int? page,
-        int? pageSize);
+        int? pageSize,
+        int? currentUserId = null);
 
-    Task<CoffeeDetailResponseDto?> GetByIdAsync(int id);
+    Task<CoffeeDetailResponseDto?> GetByIdAsync(int id, int? currentUserId = null);
 }

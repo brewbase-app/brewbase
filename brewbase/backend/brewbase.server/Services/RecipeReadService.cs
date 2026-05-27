@@ -71,7 +71,9 @@ public class RecipeReadService : IRecipeReadService
                 IsPublic = r.IsPublic,
                 UserId = r.UserId,
                 BrewingMethod = r.BrewingMethod != null ? r.BrewingMethod.Name : null,
-                Coffee = r.Coffee != null ? r.Coffee.Name : null
+                Coffee = r.Coffee != null ? r.Coffee.Name : null,
+                IsFavorite = _context.UserRecipeFavorites.Any(f =>
+                    f.UserId == currentUserId && f.RecipeId == r.Id)
             })
             .ToListAsync();
     }
@@ -94,7 +96,9 @@ public class RecipeReadService : IRecipeReadService
                     .Where(rating => rating.RecipeId == r.Id)
                     .Average(rating => (double?)rating.Value),
                 RatingCount = _context.RecipeRatings
-                    .Count(rating => rating.RecipeId == r.Id)
+                    .Count(rating => rating.RecipeId == r.Id),
+                IsFavorite = _context.UserRecipeFavorites.Any(f =>
+                    f.UserId == currentUserId && f.RecipeId == r.Id)
             })
             .FirstOrDefaultAsync();
     }

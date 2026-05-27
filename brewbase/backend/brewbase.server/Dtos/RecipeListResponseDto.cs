@@ -17,4 +17,6 @@ public class RecipeListResponseDto
     public string? BrewingMethod { get; set; }
 
     public string? Coffee { get; set; }
+
+    public bool IsFavorite { get; set; }
 }
