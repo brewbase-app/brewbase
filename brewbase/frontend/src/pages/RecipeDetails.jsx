@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
     Globe,
@@ -8,18 +9,122 @@ import {
     Scale,
     Timer,
     FileText,
-    Download
+    Download,
+    Heart
 } from "lucide-react";
+
+import {
+    addRecipeFavorite,
+    getRecipeById,
+    removeRecipeFavorite
+} from "../api/recipeApi";
+
+function parseParameters(parameters) {
+    if (!parameters) {
+        return {};
+    }
+
+    if (typeof parameters === "object") {
+        return parameters;
+    }
+
+    try {
+        return JSON.parse(parameters);
+    } catch {
+        return {};
+    }
+}
+
+function formatParameter(params, keys, suffix = "") {
+    for (const key of keys) {
+        if (params[key] !== undefined && params[key] !== null && params[key] !== "") {
+            const value = params[key];
+            return suffix && typeof value === "number"
+                ? `${value}${suffix}`
+                : String(value);
+        }
+    }
+
+    return "—";
+}
 
 const RecipeDetails = () => {
     const { id } = useParams();
 
-    const recipes =
-        JSON.parse(localStorage.getItem("recipes")) || [];
+    const [recipe, setRecipe] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    const recipe = recipes.find((r) => r.id === id);
+    const loadRecipe = async () => {
+        try {
+            setIsLoading(true);
+            setError("");
 
-    if (!recipe) {
+            const data = await getRecipeById(id);
+            setRecipe(data);
+        } catch {
+            setError("Nie udało się pobrać receptury.");
+            setRecipe(null);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadRecipe();
+    }, [id]);
+
+    const handleFavorite = async () => {
+        const wasFavorite = recipe.isFavorite ?? false;
+
+        setRecipe((previous) => ({
+            ...previous,
+            isFavorite: !wasFavorite
+        }));
+
+        try {
+            if (wasFavorite) {
+                await removeRecipeFavorite(recipe.id);
+            } else {
+                await addRecipeFavorite(recipe.id);
+            }
+        } catch {
+            setRecipe((previous) => ({
+                ...previous,
+                isFavorite: wasFavorite
+            }));
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div
+                style={{
+                    width: "100%",
+                    minHeight: "100vh",
+                    backgroundColor: "#f3f3f3",
+                    padding: "55px 60px",
+                    boxSizing: "border-box"
+                }}
+            >
+                <div
+                    style={{
+                        backgroundColor: "#fafafa",
+                        borderRadius: "28px",
+                        border: "1px solid #e6e6e6",
+                        padding: "40px",
+                        maxWidth: "900px",
+                        color: "#707070",
+                        fontSize: "16px"
+                    }}
+                >
+                    Ładowanie...
+                </div>
+            </div>
+        );
+    }
+
+    if (error || !recipe) {
         return (
             <div
                 style={{
@@ -42,25 +147,51 @@ const RecipeDetails = () => {
                         fontWeight: "600"
                     }}
                 >
-                    Nie znaleziono receptury.
+                    {error || "Nie znaleziono receptury."}
                 </div>
             </div>
         );
     }
 
+    const parameters = parseParameters(recipe.parameters);
+    const coffeeAmount = formatParameter(
+        parameters,
+        ["coffee", "coffee_grams"],
+        "g"
+    );
+    const waterAmount = formatParameter(
+        parameters,
+        ["water", "water_ml"],
+        "ml"
+    );
+    const temperature = formatParameter(
+        parameters,
+        ["temperature"],
+        "°C"
+    );
+    const brewTime = formatParameter(
+        parameters,
+        ["brewTime", "brew_time"]
+    );
+    const grindSize = formatParameter(
+        parameters,
+        ["grindSize", "grind_size"]
+    );
+    const statusLabel = recipe.isPublic ? "PUBLISHED" : "DRAFT";
+
     const exportToTXT = () => {
         const content = `
 ${recipe.title}
 
-Metoda: ${recipe.brewingMethod}
-Status: ${recipe.status}
+Metoda: ${recipe.brewingMethod ?? "—"}
+Status: ${statusLabel}
 
 PARAMETRY
-- Kawa: ${recipe.parameters.coffee}
-- Woda: ${recipe.parameters.water}
-- Temperatura: ${recipe.parameters.temperature}
-- Czas: ${recipe.parameters.brewTime}
-- Mielenie: ${recipe.parameters.grindSize}
+- Kawa: ${coffeeAmount}
+- Woda: ${waterAmount}
+- Temperatura: ${temperature}
+- Czas: ${brewTime}
+- Mielenie: ${grindSize}
 
 OPIS
 ${recipe.steps}
@@ -85,7 +216,7 @@ ${recipe.steps}
     const exportToCSV = () => {
         const csvContent = `
 Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
-"${recipe.title}","${recipe.brewingMethod}","${recipe.status}","${recipe.parameters.coffee}","${recipe.parameters.water}","${recipe.parameters.temperature}","${recipe.parameters.brewTime}","${recipe.parameters.grindSize}","${recipe.steps.replace(/\n/g, " ")}"
+"${recipe.title}","${recipe.brewingMethod ?? ""}","${statusLabel}","${coffeeAmount}","${waterAmount}","${temperature}","${brewTime}","${grindSize}","${recipe.steps.replace(/\n/g, " ")}"
         `;
 
         const blob = new Blob([csvContent], {
@@ -151,12 +282,11 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                         >
                             <div style={badgeStyle}>
                                 <Coffee size={14} />
-                                {recipe.brewingMethod}
+                                {recipe.brewingMethod ?? "—"}
                             </div>
 
                             <div style={badgeStyle}>
-                                {recipe.status ===
-                                "PUBLISHED" ? (
+                                {recipe.isPublic ? (
                                     <>
                                         <Globe size={14} />
                                         Publiczna
@@ -170,13 +300,32 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                             </div>
                         </div>
 
-                        {/* EXPORT BUTTONS */}
                         <div
                             style={{
                                 display: "flex",
-                                gap: "10px"
+                                gap: "10px",
+                                alignItems: "center"
                             }}
                         >
+                            <button
+                                style={favoriteButtonStyle}
+                                onClick={handleFavorite}
+                                aria-label={
+                                    recipe.isFavorite
+                                        ? "Usuń z ulubionych"
+                                        : "Dodaj do ulubionych"
+                                }
+                            >
+                                <Heart
+                                    size={18}
+                                    fill={
+                                        recipe.isFavorite
+                                            ? "currentColor"
+                                            : "none"
+                                    }
+                                />
+                            </button>
+
                             <button
                                 style={exportButtonStyle}
                                 onClick={exportToTXT}
@@ -227,7 +376,7 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                 </p>
 
                                 <p style={infoValue}>
-                                    {recipe.parameters.coffee}
+                                    {coffeeAmount}
                                 </p>
                             </div>
                         </div>
@@ -241,7 +390,7 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                 </p>
 
                                 <p style={infoValue}>
-                                    {recipe.parameters.water}
+                                    {waterAmount}
                                 </p>
                             </div>
                         </div>
@@ -255,7 +404,7 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                 </p>
 
                                 <p style={infoValue}>
-                                    {recipe.parameters.temperature}
+                                    {temperature}
                                 </p>
                             </div>
                         </div>
@@ -269,7 +418,7 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                 </p>
 
                                 <p style={infoValue}>
-                                    {recipe.parameters.brewTime}
+                                    {brewTime}
                                 </p>
                             </div>
                         </div>
@@ -321,20 +470,20 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                     gap: "12px"
                                 }}
                             >
+                                {recipe.coffee && (
+                                    <div>
+                                        <span style={labelStyle}>
+                                            Kawa:
+                                        </span>{" "}
+                                        {recipe.coffee}
+                                    </div>
+                                )}
+
                                 <div>
                                     <span style={labelStyle}>
                                         Stopień mielenia:
                                     </span>{" "}
-                                    {recipe.parameters.grindSize}
-                                </div>
-
-                                <div>
-                                    <span style={labelStyle}>
-                                        Utworzono:
-                                    </span>{" "}
-                                    {new Date(
-                                        recipe.createdAt
-                                    ).toLocaleDateString()}
+                                    {grindSize}
                                 </div>
                             </div>
                         </div>
@@ -363,6 +512,18 @@ const badgeStyle = {
     borderRadius: "16px",
     fontSize: "14px",
     fontWeight: "600"
+};
+
+const favoriteButtonStyle = {
+    backgroundColor: "#efefef",
+    color: "#2f2f2f",
+    padding: "10px 14px",
+    borderRadius: "16px",
+    border: "1px solid #dddddd",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
 };
 
 const exportButtonStyle = {
