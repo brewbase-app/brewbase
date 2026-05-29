@@ -1,7 +1,10 @@
 import "../styles/Dashboard.css";
 
+import { useState } from "react";
 
-import { useNavigate } from "react-router-dom";
+import {
+    useNavigate
+} from "react-router-dom";
 
 import {
     Search,
@@ -18,6 +21,9 @@ import {
 function Dashboard() {
 
     const navigate = useNavigate();
+
+    const [showNotifications, setShowNotifications] =
+        useState(false);
 
     const recommendedCoffees = [
         {
@@ -96,9 +102,43 @@ function Dashboard() {
 
                     <div className="top-icons">
 
-                        <Bell size={20} />
+                        <div
+                            className="notification-wrapper"
+                            onClick={() =>
+                                setShowNotifications(
+                                    !showNotifications
+                                )
+                            }
+                        >
 
-                        <MessageCircle size={20} />
+                            <Bell size={20} />
+
+                            {showNotifications && (
+
+                                <div className="notifications-dropdown">
+
+                                    <div className="notification-item">
+                                        CoffeeLover dodał nową recepturę
+                                    </div>
+
+                                    <div className="notification-item">
+                                        AsiaBeans polubiła Twój cupping
+                                    </div>
+
+                                    <div className="notification-item">
+                                        Dodano nowy artykuł wiki
+                                    </div>
+
+                                    <div className="notification-item">
+                                        Twoja receptura została dodana do ulubionych
+                                    </div>
+
+                                </div>
+
+                            )}
+
+                        </div>
+                        
 
                     </div>
 
@@ -199,7 +239,9 @@ function Dashboard() {
                             <h3>Rekomendowane kawy</h3>
 
                             <span
-                                onClick={() => navigate("/wiki/coffees")}
+                                onClick={() =>
+                                    navigate("/wiki/coffees")
+                                }
                             >
                                 Zobacz wszystkie kawy
                             </span>
@@ -246,7 +288,9 @@ function Dashboard() {
                             <h3>Rekomendowane receptury</h3>
 
                             <span
-                                onClick={() => navigate("/recipes/all")}
+                                onClick={() =>
+                                    navigate("/recipes/all")
+                                }
                             >
                                 Zobacz wszystkie receptury
                             </span>
@@ -291,8 +335,6 @@ function Dashboard() {
                         <div className="card-header">
 
                             <h3>Obserwujesz</h3>
-
-                          
 
                         </div>
 
@@ -343,25 +385,33 @@ function Dashboard() {
                     <div className="quick-actions">
 
                         <button
-                            onClick={() => navigate("/recipes/new")}
+                            onClick={() =>
+                                navigate("/recipes/new")
+                            }
                         >
                             Dodaj recepturę
                         </button>
 
                         <button
-                            onClick={() => navigate("/cupping/new")}
+                            onClick={() =>
+                                navigate("/cupping/new")
+                            }
                         >
                             Dodaj cupping
                         </button>
 
                         <button
-                            onClick={() => navigate("/quicknotes")}
+                            onClick={() =>
+                                navigate("/quicknotes")
+                            }
                         >
                             Szybka notatka
                         </button>
 
                         <button
-                            onClick={() => navigate("/wiki/add")}
+                            onClick={() =>
+                                navigate("/wiki/add")
+                            }
                         >
                             Dodaj treść wiki
                         </button>
@@ -383,7 +433,9 @@ function Dashboard() {
                             <h3>Ulubione kawy</h3>
 
                             <span
-                                onClick={() => navigate("/favorite-coffees")}
+                                onClick={() =>
+                                    navigate("/favorite-coffees")
+                                }
                             >
                                 Zobacz wszystkie
                             </span>
@@ -437,7 +489,9 @@ function Dashboard() {
                             <h3>Ulubione receptury</h3>
 
                             <span
-                                onClick={() => navigate("/recipes/favorites")}
+                                onClick={() =>
+                                    navigate("/recipes/favorites")
+                                }
                             >
                                 Zobacz wszystkie
                             </span>
