@@ -7,13 +7,10 @@ import {
 } from "lucide-react";
 
 import {
-    getFavoriteCoffees,
-    toggleFavoriteCoffee
-} from "../../utils/favorites";
-
-import {
+    addCoffeeFavorite,
     getCoffeeById,
-    rateCoffee
+    rateCoffee,
+    removeCoffeeFavorite
 } from "../../api/coffeeApi";
 
 import "../../styles/wiki/CoffeeDetails.css";
@@ -22,7 +19,6 @@ function CoffeeDetails() {
     const { id } = useParams();
 
     const [coffee, setCoffee] = useState(null);
-    const [favorites, setFavorites] = useState(getFavoriteCoffees());
     const [selectedRating, setSelectedRating] = useState(0);
     const [hoveredRating, setHoveredRating] = useState(0);
     const [isRated, setIsRated] = useState(false);
@@ -48,10 +44,26 @@ function CoffeeDetails() {
         loadCoffee();
     }, [id]);
 
-    const handleFavorite = () => {
-        const updated = toggleFavoriteCoffee(coffee.id);
+    const handleFavorite = async () => {
+        const wasFavorite = coffee.isFavorite ?? false;
 
-        setFavorites(updated);
+        setCoffee((previous) => ({
+            ...previous,
+            isFavorite: !wasFavorite
+        }));
+
+        try {
+            if (wasFavorite) {
+                await removeCoffeeFavorite(coffee.id);
+            } else {
+                await addCoffeeFavorite(coffee.id);
+            }
+        } catch {
+            setCoffee((previous) => ({
+                ...previous,
+                isFavorite: wasFavorite
+            }));
+        }
     };
 
     const handleRating = async () => {
@@ -106,7 +118,7 @@ function CoffeeDetails() {
                             <Heart
                                 size={22}
                                 fill={
-                                    favorites.includes(coffee.id)
+                                    coffee.isFavorite
                                         ? "currentColor"
                                         : "none"
                                 }

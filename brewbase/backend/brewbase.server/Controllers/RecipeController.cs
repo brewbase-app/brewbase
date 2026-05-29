@@ -14,15 +14,18 @@ namespace brewbase.server.Controllers;
 public class RecipeController : ControllerBase
 {
     private readonly IRecipeReadService _recipeReadService;
+    private readonly IRecipeFavoriteService _recipeFavoriteService;
     private readonly BrewDbContext _context;
     private readonly ICurrentUserProvider _currentUserProvider;
 
     public RecipeController(
         IRecipeReadService recipeReadService,
+        IRecipeFavoriteService recipeFavoriteService,
         BrewDbContext context,
         ICurrentUserProvider currentUserProvider)
     {
         _recipeReadService = recipeReadService;
+        _recipeFavoriteService = recipeFavoriteService;
         _context = context;
         _currentUserProvider = currentUserProvider;
     }
@@ -61,6 +64,22 @@ public class RecipeController : ControllerBase
 
         return Ok(recipes);
     }
+
+    [Authorize]
+    [HttpGet("favorites")]
+    [ProducesResponseType(typeof(List<RecipeListResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetFavorites()
+    {
+        var favorites = await _recipeFavoriteService.GetMyFavoritesAsync();
+
+        if (favorites is null)
+        {
+            return Unauthorized();
+        }
+
+        return Ok(favorites);
+    }
     
     /// <summary>Returns a recipe if visible to the current user; otherwise 404.</summary>
     [Authorize]
@@ -84,6 +103,39 @@ public class RecipeController : ControllerBase
         }
 
         return Ok(recipe);
+    }
+
+    [Authorize]
+    [HttpPost("{id:int}/favorite")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AddFavorite(int id)
+    {
+        var result = await _recipeFavoriteService.AddAsync(id);
+
+        return result switch
+        {
+            FavoriteServiceStatus.Unauthorized => Unauthorized(),
+            FavoriteServiceStatus.NotFound => NotFound(new SimpleErrorResponseDto { Message = "Recipe not found." }),
+            _ => NoContent()
+        };
+    }
+
+    [Authorize]
+    [HttpDelete("{id:int}/favorite")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RemoveFavorite(int id)
+    {
+        var result = await _recipeFavoriteService.RemoveAsync(id);
+
+        if (result == FavoriteServiceStatus.Unauthorized)
+        {
+            return Unauthorized();
+        }
+
+        return NoContent();
     }
     
     [Authorize]
@@ -293,6 +345,10 @@ public class RecipeController : ControllerBase
         {
             return Forbid();
         }
+
+        await _context.UserRecipeFavorites
+            .Where(f => f.RecipeId == id)
+            .ExecuteDeleteAsync();
 
         _context.Recipes.Remove(recipe);
         await _context.SaveChangesAsync();

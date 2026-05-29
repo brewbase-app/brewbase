@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using System.Text.Json;
 using brewbase.server.Tests.Infrastructure;
@@ -328,5 +329,180 @@ public class CoffeeEndpointsTests : IDisposable
         var response = await client.PostAsJsonAsync("/api/Coffee/3/rating", new { value = 6 });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Unauthenticated_AddCoffeeFavorite_ReturnsUnauthorized()
+    {
+        var response = await _client.PostAsync("/api/Coffee/1/favorite", null);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldAddCoffeeFavorite()
+    {
+        var client = _factory.CreateAuthenticatedClient();
+
+        var response = await client.PostAsync("/api/Coffee/1/favorite", null);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        Assert.True(await context.UserCoffeeFavorites.AnyAsync(f => f.UserId == 1 && f.CoffeeId == 1));
+    }
+
+    [Fact]
+    public async Task DuplicateAddCoffeeFavorite_IsIdempotent()
+    {
+        var client = _factory.CreateAuthenticatedClient();
+
+        var first = await client.PostAsync("/api/Coffee/1/favorite", null);
+        var second = await client.PostAsync("/api/Coffee/1/favorite", null);
+
+        Assert.Equal(HttpStatusCode.NoContent, first.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, second.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        Assert.Equal(1, await context.UserCoffeeFavorites.CountAsync(f => f.UserId == 1 && f.CoffeeId == 1));
+    }
+
+    [Fact]
+    public async Task ShouldRemoveCoffeeFavorite()
+    {
+        var client = _factory.CreateAuthenticatedClient();
+
+        await client.PostAsync("/api/Coffee/2/favorite", null);
+
+        var response = await client.DeleteAsync("/api/Coffee/2/favorite");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        Assert.False(await context.UserCoffeeFavorites.AnyAsync(f => f.UserId == 1 && f.CoffeeId == 2));
+    }
+
+    [Fact]
+    public async Task RemoveMissingCoffeeFavorite_IsIdempotent()
+    {
+        var client = _factory.CreateAuthenticatedClient();
+
+        var response = await client.DeleteAsync("/api/Coffee/2/favorite");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldListFavoriteCoffees()
+    {
+        var client = _factory.CreateAuthenticatedClient();
+
+        await client.PostAsync("/api/Coffee/1/favorite", null);
+        await client.PostAsync("/api/Coffee/3/favorite", null);
+
+        var response = await client.GetAsync("/api/Coffee/favorites");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var favorites = document.RootElement.EnumerateArray().ToList();
+
+        Assert.Equal(2, favorites.Count);
+        Assert.All(favorites, item => Assert.True(item.GetProperty("isFavorite").GetBoolean()));
+    }
+
+    [Fact]
+    public async Task AddFavoriteForNonExistingCoffee_ReturnsNotFound()
+    {
+        var client = _factory.CreateAuthenticatedClient();
+
+        var response = await client.PostAsync("/api/Coffee/999999/favorite", null);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldReturnIsFavoriteOnCoffeeDetailWhenAuthenticated()
+    {
+        var client = _factory.CreateAuthenticatedClient();
+
+        await client.PostAsync("/api/Coffee/1/favorite", null);
+
+        var response = await client.GetAsync("/api/Coffee/1");
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+
+        Assert.True(document.RootElement.GetProperty("isFavorite").GetBoolean());
+    }
+
+    [Fact]
+    public async Task CoffeeFavorite_UnfavoriteAndRefavorite_UpdatesListAndDetail()
+    {
+        var client = _factory.CreateAuthenticatedClient();
+
+        await client.PostAsync("/api/Coffee/1/favorite", null);
+
+        var favorited = await client.GetAsync("/api/Coffee/favorites");
+        favorited.EnsureSuccessStatusCode();
+        var favoritedPayload = await favorited.Content.ReadAsStringAsync();
+        using (var favoritedDoc = JsonDocument.Parse(favoritedPayload))
+        {
+            Assert.Contains(
+                favoritedDoc.RootElement.EnumerateArray(),
+                c => c.GetProperty("id").GetInt32() == 1);
+        }
+
+        var unfavorite = await client.DeleteAsync("/api/Coffee/1/favorite");
+        Assert.Equal(HttpStatusCode.NoContent, unfavorite.StatusCode);
+
+        var afterRemove = await client.GetAsync("/api/Coffee/favorites");
+        afterRemove.EnsureSuccessStatusCode();
+        var afterRemovePayload = await afterRemove.Content.ReadAsStringAsync();
+        using (var afterRemoveDoc = JsonDocument.Parse(afterRemovePayload))
+        {
+            Assert.DoesNotContain(
+                afterRemoveDoc.RootElement.EnumerateArray(),
+                c => c.GetProperty("id").GetInt32() == 1);
+        }
+
+        var detailAfterRemove = await client.GetAsync("/api/Coffee/1");
+        detailAfterRemove.EnsureSuccessStatusCode();
+        var detailPayload = await detailAfterRemove.Content.ReadAsStringAsync();
+        using (var detailDoc = JsonDocument.Parse(detailPayload))
+        {
+            Assert.False(detailDoc.RootElement.GetProperty("isFavorite").GetBoolean());
+        }
+
+        var refavorite = await client.PostAsync("/api/Coffee/1/favorite", null);
+        Assert.Equal(HttpStatusCode.NoContent, refavorite.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+        Assert.True(await context.UserCoffeeFavorites.AnyAsync(f => f.UserId == 1 && f.CoffeeId == 1));
+    }
+
+    [Fact]
+    public async Task CoffeeFavoriteRowCount_MatchesRankingInputAfterAddAndRemove()
+    {
+        var client = _factory.CreateAuthenticatedClient(userId: 1);
+
+        await client.PostAsync("/api/Coffee/1/favorite", null);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+            Assert.Equal(1, await context.UserCoffeeFavorites.CountAsync(f => f.CoffeeId == 1));
+        }
+
+        await client.DeleteAsync("/api/Coffee/1/favorite");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+            Assert.Equal(0, await context.UserCoffeeFavorites.CountAsync(f => f.CoffeeId == 1));
+        }
     }
 }
