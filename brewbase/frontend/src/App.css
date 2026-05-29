@@ -1,37 +1,45 @@
 .global-back-button{
-    position:absolute;
+    position: fixed;
 
-    top:-10px;
-    left:30px;
+    top: 20px;
+    left: 115px;
 
-    z-index:1000;
+    height: 35px;
 
-    display:flex;
-    align-items:center;
-    gap:10px;
+    padding: 0 22px;
 
-    border:none;
+    border: none;
 
-    background:#1f1f1f;
+    border-radius: 18px;
 
-    color:white;
+    background: #111;
+    color: white;
 
-    padding:5px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 
-    border-radius:14px;
+    font-size: 15px;
+    font-weight: 700;
 
-    box-shadow:
-            0 4px 18px rgba(0,0,0,0.08);
+    cursor: pointer;
 
-    cursor:pointer;
+    z-index: 1000;
 
-    font-size:14px;
-    font-weight:600;
-
-    transition:0.2s ease;
+    transition: 0.2s ease;
 }
 
-.global-back-button:hover{
+    .back-button:hover {
+        background: #000;
+
+        transform: translateY(-1px);
+    }
+    
+
+    
+
+
+    .global-back-button:hover{
     transform:translateY(-2px);
 
     background:#2a2a2a;

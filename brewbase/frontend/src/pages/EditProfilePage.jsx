@@ -53,6 +53,34 @@ function EditProfilePage() {
     const [confirmPassword, setConfirmPassword] =
         useState("");
 
+    // PREFERENCES
+
+    const [preferences, setPreferences] =
+        useState({
+            experienceLevel: "",
+            brewingMethods: [],
+            flavorProfiles: [],
+            acidity: "",
+            body: "",
+            regions: [],
+            recommendationStyle: "",
+            allowExploration: false,
+        });
+
+    const toggleArrayValue = (field, value) => {
+
+        const current = preferences[field];
+
+        const exists = current.includes(value);
+
+        setPreferences({
+            ...preferences,
+            [field]: exists
+                ? current.filter((v) => v !== value)
+                : [...current, value],
+        });
+    };
+
     // ERRORS
 
     const [usernameError, setUsernameError] =
@@ -146,6 +174,7 @@ function EditProfilePage() {
             JSON.stringify({
                 username,
                 email,
+                preferences,
             })
         );
 
@@ -385,31 +414,317 @@ function EditProfilePage() {
 
                         </div>
 
-                        <div className="preferences-placeholder">
+                        {/* EXPERIENCE */}
 
-                            <p>
-                                W tej sekcji pojawią się preferencje użytkownika wybrane podczas rejestracji.
-                            </p>
+                        <div className="form-group">
 
-                            <div className="placeholder-tags">
+                            <label>
+                                Poziom doświadczenia
+                            </label>
 
-                                <span>
-                                    V60
-                                </span>
+                            <select
+                                value={preferences.experienceLevel}
+                                onChange={(e) =>
+                                    setPreferences({
+                                        ...preferences,
+                                        experienceLevel: e.target.value,
+                                    })
+                                }
+                            >
 
-                                <span>
-                                    Jasne palenie
-                                </span>
+                                <option value="">
+                                    Wybierz opcję
+                                </option>
 
-                                <span>
-                                    Ethiopia
-                                </span>
+                                <option value="Początkujący">
+                                    Początkujący
+                                </option>
 
-                                <span>
-                                    Specialty Coffee
-                                </span>
+                                <option value="Średniozaawansowany">
+                                    Średniozaawansowany
+                                </option>
+
+                                <option value="Zaawansowany">
+                                    Zaawansowany
+                                </option>
+
+                                <option value="Jeszcze nie wiem">
+                                    Jeszcze nie wiem
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        {/* BREWING */}
+
+                        <div className="form-group">
+
+                            <label>
+                                Preferowane metody parzenia
+                            </label>
+
+                            <div className="preferences-tags">
+
+                                {[
+                                    "Espresso",
+                                    "V60",
+                                    "Aeropress",
+                                    "French Press",
+                                    "Cold Brew",
+                                    "Jeszcze nie wiem",
+                                ].map((method) => (
+
+                                    <button
+                                        type="button"
+                                        key={method}
+                                        className={
+                                            preferences.brewingMethods.includes(method)
+                                                ? "preference-tag selected"
+                                                : "preference-tag"
+                                        }
+                                        onClick={() =>
+                                            toggleArrayValue(
+                                                "brewingMethods",
+                                                method
+                                            )
+                                        }
+                                    >
+                                        {method}
+                                    </button>
+
+                                ))}
 
                             </div>
+
+                        </div>
+
+                        {/* FLAVOR */}
+
+                        <div className="form-group">
+
+                            <label>
+                                Profil smakowy
+                            </label>
+
+                            <div className="preferences-tags">
+
+                                {[
+                                    "Czekoladowe",
+                                    "Orzechowe",
+                                    "Owocowe",
+                                    "Kwiatowe",
+                                    "Słodkie",
+                                    "Jeszcze nie wiem",
+                                ].map((flavor) => (
+
+                                    <button
+                                        type="button"
+                                        key={flavor}
+                                        className={
+                                            preferences.flavorProfiles.includes(flavor)
+                                                ? "preference-tag selected"
+                                                : "preference-tag"
+                                        }
+                                        onClick={() =>
+                                            toggleArrayValue(
+                                                "flavorProfiles",
+                                                flavor
+                                            )
+                                        }
+                                    >
+                                        {flavor}
+                                    </button>
+
+                                ))}
+
+                            </div>
+
+                        </div>
+
+                        {/* ACIDITY */}
+
+                        <div className="form-group">
+
+                            <label>
+                                Preferowana kwasowość
+                            </label>
+
+                            <select
+                                value={preferences.acidity}
+                                onChange={(e) =>
+                                    setPreferences({
+                                        ...preferences,
+                                        acidity: e.target.value,
+                                    })
+                                }
+                            >
+
+                                <option value="">
+                                    Wybierz opcję
+                                </option>
+
+                                <option value="Niska">
+                                    Niska
+                                </option>
+
+                                <option value="Średnia">
+                                    Średnia
+                                </option>
+
+                                <option value="Wysoka">
+                                    Wysoka
+                                </option>
+
+                                <option value="Nie mam zdania">
+                                    Nie mam zdania
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        {/* BODY */}
+
+                        <div className="form-group">
+
+                            <label>
+                                Preferowane body
+                            </label>
+
+                            <select
+                                value={preferences.body}
+                                onChange={(e) =>
+                                    setPreferences({
+                                        ...preferences,
+                                        body: e.target.value,
+                                    })
+                                }
+                            >
+
+                                <option value="">
+                                    Wybierz opcję
+                                </option>
+
+                                <option value="Lekkie">
+                                    Lekkie
+                                </option>
+
+                                <option value="Zbalansowane">
+                                    Zbalansowane
+                                </option>
+
+                                <option value="Ciężkie">
+                                    Ciężkie
+                                </option>
+
+                                <option value="Nie mam zdania">
+                                    Nie mam zdania
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        {/* REGIONS */}
+
+                        <div className="form-group">
+
+                            <label>
+                                Regiony pochodzenia kaw
+                            </label>
+
+                            <div className="preferences-tags">
+
+                                {[
+                                    "Etiopia",
+                                    "Kolumbia",
+                                    "Brazylia",
+                                    "Kenia",
+                                    "Gwatemala",
+                                    "Nie mam preferencji",
+                                ].map((region) => (
+
+                                    <button
+                                        type="button"
+                                        key={region}
+                                        className={
+                                            preferences.regions.includes(region)
+                                                ? "preference-tag selected"
+                                                : "preference-tag"
+                                        }
+                                        onClick={() =>
+                                            toggleArrayValue(
+                                                "regions",
+                                                region
+                                            )
+                                        }
+                                    >
+                                        {region}
+                                    </button>
+
+                                ))}
+
+                            </div>
+
+                        </div>
+
+                        {/* RECOMMENDATIONS */}
+
+                        <div className="form-group">
+
+                            <label>
+                                Styl rekomendacji
+                            </label>
+
+                            <select
+                                value={preferences.recommendationStyle}
+                                onChange={(e) =>
+                                    setPreferences({
+                                        ...preferences,
+                                        recommendationStyle: e.target.value,
+                                    })
+                                }
+                            >
+
+                                <option value="">
+                                    Wybierz opcję
+                                </option>
+
+                                <option value="Bezpieczne wybory">
+                                    Bezpieczne wybory
+                                </option>
+
+                                <option value="Zbalansowane">
+                                    Zbalansowane
+                                </option>
+
+                                <option value="Zaskocz mnie">
+                                    Zaskocz mnie
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        {/* EXPLORATION */}
+
+                        <div className="preferences-checkbox">
+
+                            <input
+                                type="checkbox"
+                                checked={preferences.allowExploration}
+                                onChange={(e) =>
+                                    setPreferences({
+                                        ...preferences,
+                                        allowExploration: e.target.checked,
+                                    })
+                                }
+                            />
+
+                            <span>
+                                Pokazuj rekomendacje spoza moich preferencji
+                            </span>
 
                         </div>
 
@@ -438,3 +753,4 @@ function EditProfilePage() {
 }
 
 export default EditProfilePage;
+

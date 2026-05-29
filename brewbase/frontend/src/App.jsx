@@ -32,6 +32,7 @@ import RecipeDetails from "./pages/RecipeDetails";
 
 import Login from "./pages/Login";
 import RegisterPage from "./pages/RegisterPage";
+import PreferencesOnboardingPage from "./pages/PreferencesOnboardingPage";
 
 /* CUPPING */
 
@@ -85,14 +86,20 @@ function Layout() {
     const [sidebarExpanded, setSidebarExpanded] =
         useState(false);
 
-    const isAuthPage =
-        location.pathname === "/login" ||
-        location.pathname === "/register";
+    
+const isAuthPage =
+    location.pathname === "/login" ||
+    location.pathname === "/register" ||
+    location.pathname === "/onboarding";
+
+
+
 
     const showBackButton =
         location.pathname !== "/home" &&
         location.pathname !== "/login" &&
-        location.pathname !== "/register";
+        location.pathname !== "/register" &&
+        location.pathname !== "/onboarding";
 
     const handleBackClick = () => {
         if (location.pathname.startsWith("/cupping/preview/")) {
@@ -175,6 +182,7 @@ function Layout() {
                         path="/register"
                         element={<RegisterPage />}
                     />
+                    <Route path="/onboarding" element={<PreferencesOnboardingPage />} />
 
                     {/* PROTECTED ROUTES */}
 
