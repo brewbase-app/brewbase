@@ -119,6 +119,9 @@ builder.Services.AddScoped<IRankingRefreshService, RankingRefreshService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 
+builder.Services.AddScoped<IRecipeFavoriteService, RecipeFavoriteService>();
+builder.Services.AddScoped<ICoffeeFavoriteService, CoffeeFavoriteService>();
+
 builder.Services.AddScoped<IArticleReadService, ArticleReadService>();
 builder.Services.AddScoped<IArticleWriteService, ArticleWriteService>();
 builder.Services.AddScoped<IAuthService, AuthService>();

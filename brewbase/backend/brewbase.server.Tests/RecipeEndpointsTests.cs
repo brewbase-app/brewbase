@@ -516,6 +516,179 @@ public class RecipeEndpointsTests : IDisposable
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Unauthenticated_AddRecipeFavorite_ReturnsUnauthorized()
+    {
+        var response = await _client.PostAsync("/api/Recipe/1/favorite", null);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldAddRecipeFavorite()
+    {
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/favorite", User1);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        Assert.True(await context.UserRecipeFavorites.AnyAsync(f => f.UserId == User1 && f.RecipeId == 1));
+    }
+
+    [Fact]
+    public async Task DuplicateAddRecipeFavorite_IsIdempotent()
+    {
+        var first = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/favorite", User1);
+        var second = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/favorite", User1);
+
+        Assert.Equal(HttpStatusCode.NoContent, first.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, second.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        Assert.Equal(1, await context.UserRecipeFavorites.CountAsync(f => f.UserId == User1 && f.RecipeId == 1));
+    }
+
+    [Fact]
+    public async Task ShouldRemoveRecipeFavorite()
+    {
+        await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/2/favorite", User1);
+
+        var response = await SendRecipeWriteAsync(HttpMethod.Delete, "/api/Recipe/2/favorite", User1);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        Assert.False(await context.UserRecipeFavorites.AnyAsync(f => f.UserId == User1 && f.RecipeId == 2));
+    }
+
+    [Fact]
+    public async Task RemoveMissingRecipeFavorite_IsIdempotent()
+    {
+        var response = await SendRecipeWriteAsync(HttpMethod.Delete, "/api/Recipe/2/favorite", User1);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldListFavoriteRecipes()
+    {
+        await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/favorite", User1);
+        await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/2/favorite", User1);
+
+        var response = await SendRecipeGetAsync("/api/Recipe/favorites", devUserId: User1);
+        response.EnsureSuccessStatusCode();
+
+        var root = await ParseResponseRootAsync(response);
+        var favorites = root.EnumerateArray().ToList();
+
+        Assert.Equal(2, favorites.Count);
+        Assert.All(favorites, item => Assert.True(item.GetProperty("isFavorite").GetBoolean()));
+    }
+
+    [Fact]
+    public async Task AddFavoriteForHiddenRecipe_ReturnsNotFound()
+    {
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/3/favorite", User1);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldReturnIsFavoriteOnRecipeDetail()
+    {
+        await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/favorite", User1);
+
+        var response = await SendRecipeGetAsync("/api/Recipe/1", devUserId: User1);
+        response.EnsureSuccessStatusCode();
+
+        var recipe = await ParseResponseRootAsync(response);
+        Assert.True(recipe.GetProperty("isFavorite").GetBoolean());
+    }
+
+    [Fact]
+    public async Task User1_Delete_OwnRecipeWithFavorites_RemovesFavoritesAndRecipe()
+    {
+        var createBody = """
+            {"title":"Delete With Favorites","parameters":{},"steps":"step","isPublic":true,"coffeeId":1,"brewingMethodId":1}
+            """;
+        var createResponse = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", User1, createBody);
+        createResponse.EnsureSuccessStatusCode();
+        var created = await ParseResponseRootAsync(createResponse);
+        var recipeId = created.GetProperty("id").GetInt32();
+
+        await SendRecipeWriteAsync(HttpMethod.Post, $"/api/Recipe/{recipeId}/favorite", User1);
+        await SendRecipeWriteAsync(HttpMethod.Post, $"/api/Recipe/{recipeId}/favorite", User2);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+            Assert.Equal(2, await context.UserRecipeFavorites.CountAsync(f => f.RecipeId == recipeId));
+        }
+
+        var response = await SendRecipeWriteAsync(HttpMethod.Delete, $"/api/Recipe/{recipeId}", devUserId: User1);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+            Assert.False(await context.Recipes.AnyAsync(r => r.Id == recipeId));
+            Assert.Equal(0, await context.UserRecipeFavorites.CountAsync(f => f.RecipeId == recipeId));
+        }
+    }
+
+    [Fact]
+    public async Task RecipeFavorite_UnfavoriteAndRefavorite_UpdatesListAndDetail()
+    {
+        await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/favorite", User1);
+
+        var favorited = await SendRecipeGetAsync("/api/Recipe/favorites", devUserId: User1);
+        favorited.EnsureSuccessStatusCode();
+        var favoritedRoot = await ParseResponseRootAsync(favorited);
+        Assert.Contains(favoritedRoot.EnumerateArray(), r => r.GetProperty("id").GetInt32() == 1);
+
+        await SendRecipeWriteAsync(HttpMethod.Delete, "/api/Recipe/1/favorite", User1);
+
+        var afterRemove = await SendRecipeGetAsync("/api/Recipe/favorites", devUserId: User1);
+        afterRemove.EnsureSuccessStatusCode();
+        var afterRemoveRoot = await ParseResponseRootAsync(afterRemove);
+        Assert.DoesNotContain(afterRemoveRoot.EnumerateArray(), r => r.GetProperty("id").GetInt32() == 1);
+
+        var detailAfterRemove = await SendRecipeGetAsync("/api/Recipe/1", devUserId: User1);
+        detailAfterRemove.EnsureSuccessStatusCode();
+        var detailRoot = await ParseResponseRootAsync(detailAfterRemove);
+        Assert.False(detailRoot.GetProperty("isFavorite").GetBoolean());
+
+        var refavorite = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/favorite", User1);
+        Assert.Equal(HttpStatusCode.NoContent, refavorite.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+        Assert.True(await context.UserRecipeFavorites.AnyAsync(f => f.UserId == User1 && f.RecipeId == 1));
+    }
+
+    [Fact]
+    public async Task RecipeFavoriteRowCount_MatchesRankingInputAfterAddAndRemove()
+    {
+        await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/favorite", User1);
+        await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/favorite", User2);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+            Assert.Equal(2, await context.UserRecipeFavorites.CountAsync(f => f.RecipeId == 1));
+        }
+
+        await SendRecipeWriteAsync(HttpMethod.Delete, "/api/Recipe/1/favorite", User1);
+        await SendRecipeWriteAsync(HttpMethod.Delete, "/api/Recipe/1/favorite", User2);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+            Assert.Equal(0, await context.UserRecipeFavorites.CountAsync(f => f.RecipeId == 1));
+        }
+    }
+
     private async Task<HttpResponseMessage> SendRecipeWriteAsync(HttpMethod method, string path, int devUserId, string? jsonBody = null)
     {
         using var request = new HttpRequestMessage(method, path);

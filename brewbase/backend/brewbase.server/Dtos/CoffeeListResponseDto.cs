@@ -17,4 +17,6 @@ public class CoffeeListResponseDto
     public string? Variety { get; set; }
 
     public int? CreatedByUserId { get; set; }
+
+    public bool IsFavorite { get; set; }
 }

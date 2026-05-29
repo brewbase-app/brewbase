@@ -21,7 +21,8 @@ public class CoffeeReadService : ICoffeeReadService
         string? sortBy,
         string? sortOrder,
         int? page,
-        int? pageSize)
+        int? pageSize,
+        int? currentUserId = null)
     {
         var query = _context.Coffees.AsQueryable();
 
@@ -63,12 +64,15 @@ public class CoffeeReadService : ICoffeeReadService
                 Roastery = c.Roastery != null ? c.Roastery.Name : null,
                 ProcessingMethod = c.ProcessingMethod != null ? c.ProcessingMethod.Name : null,
                 Variety = c.Variety != null ? c.Variety.Name : null,
-                CreatedByUserId = c.CreatedByUserId
+                CreatedByUserId = c.CreatedByUserId,
+                IsFavorite = currentUserId.HasValue
+                    && _context.UserCoffeeFavorites.Any(f =>
+                        f.UserId == currentUserId.Value && f.CoffeeId == c.Id)
             })
             .ToListAsync();
     }
 
-    public async Task<CoffeeDetailResponseDto?> GetByIdAsync(int id)
+    public async Task<CoffeeDetailResponseDto?> GetByIdAsync(int id, int? currentUserId = null)
     {
         return await _context.Coffees
             .Where(c => c.Id == id)
@@ -86,7 +90,10 @@ public class CoffeeReadService : ICoffeeReadService
                     .Where(rating => rating.CoffeeId == c.Id)
                     .Average(rating => (double?)rating.Value),
                 RatingCount = _context.CoffeeRatings
-                    .Count(rating => rating.CoffeeId == c.Id)
+                    .Count(rating => rating.CoffeeId == c.Id),
+                IsFavorite = currentUserId.HasValue
+                    && _context.UserCoffeeFavorites.Any(f =>
+                        f.UserId == currentUserId.Value && f.CoffeeId == c.Id)
             })
             .FirstOrDefaultAsync();
     }
