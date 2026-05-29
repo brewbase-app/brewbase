@@ -1,10 +1,12 @@
-/* PAGE */
+
+    /* PAGE */
 
 .edit-profile-page {
     min-height: 100vh;
+
     background: #f5f5f5;
 
-    padding: 24px 28px;
+    padding: 28px;
 }
 
 /* LAYOUT */
@@ -17,12 +19,13 @@
 /* HEADER */
 
 .edit-profile-header {
-    margin-bottom: 28px;
+    margin-bottom: 30px;
 }
 
 .edit-profile-label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
+
     letter-spacing: 0.14em;
 
     color: #8a8a8a;
@@ -35,6 +38,8 @@
     font-weight: 800;
 
     color: #111;
+
+    letter-spacing: -1px;
 }
 
 /* FORM */
@@ -43,7 +48,7 @@
     display: flex;
     flex-direction: column;
 
-    gap: 22px;
+    gap: 24px;
 }
 
 /* CARD */
@@ -51,11 +56,14 @@
 .settings-card {
     background: white;
 
-    border: 1px solid #ececec;
+    border: 1px solid #ebebeb;
 
-    border-radius: 24px;
+    border-radius: 28px;
 
-    padding: 24px;
+    padding: 28px;
+
+    box-shadow:
+            0 6px 18px rgba(0, 0, 0, 0.03);
 }
 
 /* CARD HEADER */
@@ -66,11 +74,15 @@
 
     gap: 10px;
 
-    margin-bottom: 24px;
+    margin-bottom: 26px;
+}
+
+.settings-card-header svg {
+    color: #555;
 }
 
 .settings-card-header h2 {
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 700;
 
     color: #111;
@@ -84,7 +96,7 @@
 
     gap: 10px;
 
-    margin-bottom: 20px;
+    margin-bottom: 22px;
 }
 
 .form-group:last-child {
@@ -101,11 +113,11 @@
 /* INPUT */
 
 .input-wrapper {
-    height: 52px;
+    height: 54px;
 
     border: 1px solid #e5e5e5;
 
-    border-radius: 16px;
+    border-radius: 18px;
 
     background: #fafafa;
 
@@ -116,12 +128,16 @@
 
     gap: 12px;
 
-    transition: 0.2s;
+    transition: 0.2s ease;
 }
 
 .input-wrapper:focus-within {
     border-color: #111;
+
     background: white;
+
+    box-shadow:
+            0 0 0 4px rgba(0, 0, 0, 0.03);
 }
 
 .input-wrapper svg {
@@ -143,6 +159,37 @@
     color: #111;
 }
 
+/* SELECT */
+
+select {
+    height: 54px;
+
+    border: 1px solid #e5e5e5;
+
+    border-radius: 18px;
+
+    background: #fafafa;
+
+    padding: 0 16px;
+
+    font-size: 14px;
+
+    color: #111;
+
+    outline: none;
+
+    transition: 0.2s ease;
+}
+
+select:focus {
+    border-color: #111;
+
+    background: white;
+
+    box-shadow:
+            0 0 0 4px rgba(0, 0, 0, 0.03);
+}
+
 /* ERRORS */
 
 .form-error {
@@ -152,52 +199,82 @@
     color: #c0392b;
 }
 
-/* PREFERENCES */
+/* PREFERENCES TAGS */
 
-.preferences-placeholder {
-    display: flex;
-    flex-direction: column;
-
-    gap: 18px;
-}
-
-.preferences-placeholder p {
-    font-size: 14px;
-    line-height: 1.6;
-
-    color: #666;
-}
-
-/* TAGS */
-
-.placeholder-tags {
+.preferences-tags {
     display: flex;
     flex-wrap: wrap;
 
     gap: 10px;
 }
 
-.placeholder-tags span {
-    padding: 10px 14px;
+.preference-tag {
+    padding: 12px 16px;
 
     border-radius: 999px;
 
-    background: #f3f3f3;
+    border: 1px solid #e5e5e5;
+
+    background: #f7f7f7;
 
     font-size: 13px;
     font-weight: 600;
 
     color: #333;
+
+    cursor: pointer;
+
+    transition: 0.2s ease;
+}
+
+.preference-tag:hover {
+    background: #efefef;
+
+    transform: translateY(-1px);
+}
+
+.preference-tag.selected {
+    background: #111;
+
+    border-color: #111;
+
+    color: white;
+}
+
+/* CHECKBOX */
+
+.preferences-checkbox {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    margin-top: 6px;
+
+    color: #555;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+}
+
+.preferences-checkbox input {
+    width: 18px;
+    height: 18px;
+
+    accent-color: #111;
+
+    cursor: pointer;
 }
 
 /* SAVE BUTTON */
 
 .save-button {
-    height: 52px;
+    height: 56px;
 
     border: none;
 
-    border-radius: 18px;
+    border-radius: 20px;
 
     background: #111;
     color: white;
@@ -208,18 +285,23 @@
 
     gap: 10px;
 
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
 
     cursor: pointer;
 
-    transition: 0.2s;
+    transition: 0.2s ease;
 
-    margin-top: 6px;
+    margin-top: 4px;
 }
 
 .save-button:hover {
     background: #000;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+            0 10px 20px rgba(0, 0, 0, 0.08);
 }
 
 /* RESPONSIVE */
@@ -235,6 +317,17 @@
     }
 
     .settings-card {
-        padding: 20px;
+        padding: 22px;
+        border-radius: 24px;
+    }
+
+    .preferences-tags {
+        gap: 8px;
+    }
+
+    .preference-tag {
+        width: 100%;
+        text-align: center;
     }
 }
+
