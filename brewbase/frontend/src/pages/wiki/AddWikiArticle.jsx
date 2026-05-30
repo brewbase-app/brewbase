@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { createArticle } from "../../api/articlesApi";
+import { lookupCoffeesByName } from "../../api/coffeeApi";
 
 import ComboBoxInput from "../../components/ComboBoxInput";
 import MultiSelectInput from "../../components/MultiSelectInput";
@@ -60,6 +61,55 @@ function AddWikiArticle() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [submitError, setSubmitError] = useState("");
+
+    const [linkedCoffeeId, setLinkedCoffeeId] = useState(null);
+
+    const [linkedCoffeeName, setLinkedCoffeeName] = useState("");
+
+    const [coffeeSuggestions, setCoffeeSuggestions] = useState([]);
+
+    const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+
+    useEffect(() => {
+        if (category !== "coffee") {
+            setCoffeeSuggestions([]);
+            return undefined;
+        }
+
+        const trimmedTitle = title.trim();
+
+        if (trimmedTitle.length < 2) {
+            setCoffeeSuggestions([]);
+            return undefined;
+        }
+
+        const timeoutId = setTimeout(async () => {
+            try {
+                setSuggestionsLoading(true);
+
+                const matches = await lookupCoffeesByName(trimmedTitle);
+
+                setCoffeeSuggestions(Array.isArray(matches) ? matches : []);
+            } catch {
+                setCoffeeSuggestions([]);
+            } finally {
+                setSuggestionsLoading(false);
+            }
+        }, 400);
+
+        return () => clearTimeout(timeoutId);
+    }, [category, title]);
+
+    const handleSelectLinkedCoffee = (coffee) => {
+        setLinkedCoffeeId(coffee.id);
+        setLinkedCoffeeName(coffee.name);
+        setCoffeeSuggestions([]);
+    };
+
+    const handleClearLinkedCoffee = () => {
+        setLinkedCoffeeId(null);
+        setLinkedCoffeeName("");
+    };
 
     const handleSubmit = async () => {
         const module = CATEGORY_TO_MODULE[category];
@@ -168,6 +218,7 @@ function AddWikiArticle() {
                 title: articleTitle,
                 content: articleContent,
                 module,
+                coffeeId: linkedCoffeeId ?? undefined,
             });
 
             navigate("/wiki", {
@@ -266,10 +317,77 @@ function AddWikiArticle() {
                                     type="text"
                                     placeholder="Np. Geisha z Panamy"
                                     value={title}
-                                    onChange={(e) =>
-                                        setTitle(e.target.value)
-                                    }
+                                    onChange={(e) => {
+                                        setTitle(e.target.value);
+
+                                        if (
+                                            linkedCoffeeId &&
+                                            e.target.value.trim() !== linkedCoffeeName
+                                        ) {
+                                            handleClearLinkedCoffee();
+                                        }
+                                    }}
                                 />
+
+                                {linkedCoffeeId && (
+                                    <p className="linked-coffee-notice">
+                                        Powiązana kawa w katalogu:{" "}
+                                        <strong>{linkedCoffeeName}</strong>
+                                        <button
+                                            type="button"
+                                            className="link-button"
+                                            onClick={handleClearLinkedCoffee}
+                                        >
+                                            Usuń powiązanie
+                                        </button>
+                                    </p>
+                                )}
+
+                                {!linkedCoffeeId &&
+                                    title.trim().length >= 2 && (
+                                        <div className="coffee-suggestions">
+                                            {suggestionsLoading ? (
+                                                <p>Szukam podobnych kaw...</p>
+                                            ) : coffeeSuggestions.length > 0 ? (
+                                                <>
+                                                    <p>
+                                                        Podobne kawy w katalogu:
+                                                    </p>
+                                                    <ul>
+                                                        {coffeeSuggestions.map(
+                                                            (coffee) => (
+                                                                <li
+                                                                    key={
+                                                                        coffee.id
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        coffee.name
+                                                                    }
+                                                                    <button
+                                                                        type="button"
+                                                                        className="link-button"
+                                                                        onClick={() =>
+                                                                            handleSelectLinkedCoffee(
+                                                                                coffee
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        Powiąż
+                                                                    </button>
+                                                                </li>
+                                                            )
+                                                        )}
+                                                    </ul>
+                                                    <p>
+                                                        Możesz też pominąć
+                                                        sugestie i wysłać artykuł
+                                                        bez powiązania.
+                                                    </p>
+                                                </>
+                                            ) : null}
+                                        </div>
+                                    )}
 
                             </div>
 

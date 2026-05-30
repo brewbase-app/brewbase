@@ -23,4 +23,6 @@ public class CoffeeDetailResponseDto
     public int RatingCount { get; set; }
 
     public bool IsFavorite { get; set; }
+
+    public LinkedCoffeeArticleDto? WikiArticle { get; set; }
 }

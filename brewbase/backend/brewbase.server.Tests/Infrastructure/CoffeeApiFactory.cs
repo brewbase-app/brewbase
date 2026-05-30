@@ -57,7 +57,7 @@ public sealed class CoffeeApiFactory : WebApplicationFactory<Program>
         });
     }
     
-    public HttpClient CreateAuthenticatedClient(int userId = 1)
+    public HttpClient CreateAuthenticatedClient(int userId = 1, string role = "User")
     {
         var client = CreateClient();
 
@@ -66,9 +66,9 @@ public sealed class CoffeeApiFactory : WebApplicationFactory<Program>
             new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new Claim("user_id", userId.ToString()),
-            new Claim("login", "coffee.tester"),
-            new Claim(ClaimTypes.Role, "User"),
-            new Claim("role", "User"),
+            new Claim("login", role == "Admin" ? "admin.tester" : "coffee.tester"),
+            new Claim(ClaimTypes.Role, role),
+            new Claim("role", role),
             new Claim("uid", userId.ToString())
         };
 
@@ -110,6 +110,16 @@ public sealed class CoffeeApiFactory : WebApplicationFactory<Program>
             Email = "coffee.tester@brewbase.local",
             PasswordHash = "test-hash",
             Role = "User",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var admin = new AppUser
+        {
+            Id = 2,
+            Login = "admin.tester",
+            Email = "admin.tester@brewbase.local",
+            PasswordHash = "test-hash",
+            Role = "Admin",
             CreatedAt = DateTime.UtcNow
         };
 
@@ -182,7 +192,7 @@ public sealed class CoffeeApiFactory : WebApplicationFactory<Program>
             CreatedByUserId = user.Id
         };
 
-        context.AppUsers.Add(user);
+        context.AppUsers.AddRange(user, admin);
         context.Countries.Add(country);
         context.Regions.AddRange(northRegion, southRegion);
         context.Roasteries.AddRange(roasteryOne, roasteryTwo);

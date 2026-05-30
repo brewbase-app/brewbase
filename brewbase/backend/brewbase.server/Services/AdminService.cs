@@ -78,7 +78,7 @@ public class AdminService : IAdminService
         return true;
     }
     
-    public async Task<bool> ApproveArticleAsync(int articleId)
+    public async Task<ArticleApproveResultDto> ApproveArticleAsync(int articleId)
     {
         var moderatorId = _currentUserProvider.GetUserId();
 
@@ -86,7 +86,31 @@ public class AdminService : IAdminService
             .FirstOrDefaultAsync(a => a.Id == articleId);
 
         if (article == null)
-            return false;
+        {
+            return new ArticleApproveResultDto
+            {
+                Status = ArticleApproveStatus.NotFound
+            };
+        }
+
+        if (string.Equals(article.Module, "coffee", StringComparison.Ordinal)
+            && article.CoffeeId.HasValue
+            && !string.Equals(article.Status, "Approved", StringComparison.Ordinal))
+        {
+            var coffeeAlreadyHasApprovedWiki = await _context.Articles.AnyAsync(existing =>
+                existing.Id != article.Id
+                && existing.Module == "coffee"
+                && existing.Status == "Approved"
+                && existing.CoffeeId == article.CoffeeId);
+
+            if (coffeeAlreadyHasApprovedWiki)
+            {
+                return new ArticleApproveResultDto
+                {
+                    Status = ArticleApproveStatus.CoffeeAlreadyHasApprovedWiki
+                };
+            }
+        }
 
         article.Status = "Approved";
         article.ModeratedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
@@ -102,7 +126,10 @@ public class AdminService : IAdminService
 
         await _context.SaveChangesAsync();
         
-        return true;
+        return new ArticleApproveResultDto
+        {
+            Status = ArticleApproveStatus.Approved
+        };
     }
     
     public async Task<bool> RejectArticleAsync(int articleId, ModerateArticleRequestDto dto)

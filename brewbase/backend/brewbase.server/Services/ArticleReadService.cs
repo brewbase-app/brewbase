@@ -8,6 +8,7 @@ namespace brewbase.server.Services;
 public sealed class ArticleReadService : IArticleReadService
 {
     private const string ApprovedStatus = "Approved";
+    private const string CoffeeModule = "coffee";
 
     private readonly BrewDbContext _context;
 
@@ -20,7 +21,10 @@ public sealed class ArticleReadService : IArticleReadService
     {
         var query = _context.Articles
             .AsNoTracking()
-            .Where(article => article.Status == ApprovedStatus);
+            .Where(article => article.Status == ApprovedStatus)
+            .Where(article =>
+                article.Module != CoffeeModule
+                || article.CoffeeId == null);
 
         if (!string.IsNullOrWhiteSpace(module))
         {
@@ -44,7 +48,8 @@ public sealed class ArticleReadService : IArticleReadService
                 article.Module,
                 article.Content,
                 AuthorLogin = article.User.Login,
-                article.PublishedAt
+                article.PublishedAt,
+                article.CoffeeId
             })
             .ToListAsync();
 
@@ -81,7 +86,8 @@ public sealed class ArticleReadService : IArticleReadService
                     Variety = variety,
                     ProcessingMethod = processingMethod,
                     Region = region,
-                    FlavorProfiles = flavorProfiles
+                    FlavorProfiles = flavorProfiles,
+                    CoffeeId = article.CoffeeId
                 };
             })
             .ToList();
@@ -99,7 +105,8 @@ public sealed class ArticleReadService : IArticleReadService
                 Content = article.Content,
                 Module = article.Module,
                 AuthorLogin = article.User.Login,
-                PublishedAt = article.PublishedAt
+                PublishedAt = article.PublishedAt,
+                CoffeeId = article.CoffeeId
             })
             .FirstOrDefaultAsync();
     }
@@ -125,7 +132,8 @@ public sealed class ArticleReadService : IArticleReadService
                 Status = article.Status,
                 CreatedAt = article.CreatedAt,
                 PublishedAt = article.PublishedAt,
-                ModerationComment = article.ModerationComment
+                ModerationComment = article.ModerationComment,
+                CoffeeId = article.CoffeeId
             })
             .ToListAsync();
     }
@@ -144,7 +152,8 @@ public sealed class ArticleReadService : IArticleReadService
                 Status = article.Status,
                 CreatedAt = article.CreatedAt,
                 PublishedAt = article.PublishedAt,
-                ModerationComment = article.ModerationComment
+                ModerationComment = article.ModerationComment,
+                CoffeeId = article.CoffeeId
             })
             .FirstOrDefaultAsync();
     }

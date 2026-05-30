@@ -17,4 +17,6 @@ public sealed class MyArticleDetailResponseDto
     public DateTime? PublishedAt { get; init; }
 
     public string? ModerationComment { get; init; }
+
+    public int? CoffeeId { get; init; }
 }

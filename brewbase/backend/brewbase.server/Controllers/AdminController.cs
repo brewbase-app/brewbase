@@ -1,4 +1,5 @@
 ﻿using brewbase.server.Dtos;
+using brewbase.server.Services;
 using brewbase.server.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -72,13 +73,19 @@ public class AdminController : ControllerBase
     [HttpPatch("articles/{id}/approve")]
     public async Task<IActionResult> ApproveArticle(int id)
     {
-        var result = await _adminService
-            .ApproveArticleAsync(id);
+        var result = await _adminService.ApproveArticleAsync(id);
 
-        if (!result)
-            return NotFound();
-
-        return Ok();
+        return result.Status switch
+        {
+            ArticleApproveStatus.Approved => Ok(),
+            ArticleApproveStatus.NotFound => NotFound(),
+            ArticleApproveStatus.CoffeeAlreadyHasApprovedWiki => BadRequest(
+                new SimpleErrorResponseDto
+                {
+                    Message = "This coffee already has an approved wiki article."
+                }),
+            _ => BadRequest()
+        };
     }
     
     [HttpPatch("articles/{id}/reject")]

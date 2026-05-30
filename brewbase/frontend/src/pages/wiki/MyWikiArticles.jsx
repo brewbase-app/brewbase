@@ -10,6 +10,7 @@ import {
     getArticleModuleLabel,
     getArticleStatusLabel,
 } from "../../utils/articleLabels";
+import { getApprovedArticlePublicPath } from "../../utils/articleRouting";
 
 import "../../styles/wiki/MyWikiArticles.css";
 
@@ -65,7 +66,7 @@ function MyWikiArticles() {
 
     const handleArticleClick = (article) => {
         if (article.status === "Approved") {
-            navigate(`/wiki/articles/${article.id}`);
+            navigate(getApprovedArticlePublicPath(article));
             return;
         }
 
