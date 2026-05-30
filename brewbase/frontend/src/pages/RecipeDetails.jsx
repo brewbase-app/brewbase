@@ -31,9 +31,7 @@ const RecipeDetails = () => {
     
 
     const navigate = useNavigate();
-
     const { id } = useParams();
-    const navigate = useNavigate();
 
     const [recipe, setRecipe] = useState(null);
 
