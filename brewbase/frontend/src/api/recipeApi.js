@@ -8,9 +8,28 @@ export function createRecipe(recipeData) {
     });
 }
 
-export function getRecipes() {
+export function getRecipes(params = {}) {
 
-    return apiRequest("/api/Recipe");
+    const searchParams = new URLSearchParams();
+
+    if (params.userId != null) {
+        searchParams.set("userId", String(params.userId));
+    }
+
+    const query = searchParams.toString();
+
+    return apiRequest(query ? `/api/Recipe?${query}` : "/api/Recipe");
+}
+
+export async function getMyRecipes() {
+
+    const currentUser = await apiRequest("/api/CurrentUser");
+
+    if (currentUser?.userId == null) {
+        throw new Error("Nie udało się pobrać danych użytkownika.");
+    }
+
+    return getRecipes({ userId: currentUser.userId });
 }
 
 export function getFavoriteRecipes() {
