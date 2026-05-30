@@ -14,6 +14,10 @@ public class RecipeDetailResponseDto
 
     public int UserId { get; set; }
 
+    public int? CoffeeId { get; set; }
+
+    public int? BrewingMethodId { get; set; }
+
     public string? BrewingMethod { get; set; }
 
     public string? Coffee { get; set; }

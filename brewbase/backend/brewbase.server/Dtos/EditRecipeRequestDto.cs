@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 
 namespace brewbase.server.Dtos;
@@ -8,23 +7,18 @@ namespace brewbase.server.Dtos;
 /// </summary>
 public sealed class EditRecipeRequestDto
 {
-    [Required]
-    [MaxLength(255)]
-    public string Title { get; set; } = null!;
+    public string? Title { get; set; }
 
     /// <summary>
     /// JSON value stored in <c>recipe.parameters</c> (jsonb).
     /// </summary>
     public JsonElement Parameters { get; set; }
 
-    [Required]
-    public string Steps { get; set; } = null!;
+    public string? Steps { get; set; }
 
     public bool IsPublic { get; set; }
 
-    [Range(1, int.MaxValue)]
-    public int CoffeeId { get; set; }
+    public int? CoffeeId { get; set; }
 
-    [Range(1, int.MaxValue)]
-    public int BrewingMethodId { get; set; }
+    public int? BrewingMethodId { get; set; }
 }

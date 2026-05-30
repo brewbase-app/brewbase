@@ -489,11 +489,13 @@ public partial class BrewDbContext : DbContext
 
             entity.HasOne(d => d.BrewingMethod).WithMany(p => p.Recipes)
                 .HasForeignKey(d => d.BrewingMethodId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("recipes_brewing_methods");
 
             entity.HasOne(d => d.Coffee).WithMany(p => p.Recipes)
                 .HasForeignKey(d => d.CoffeeId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("recipes_coffee");
 
