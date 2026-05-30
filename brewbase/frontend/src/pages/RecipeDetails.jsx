@@ -15,12 +15,21 @@ import {
     Scale,
     Timer,
     FileText,
-    Download
+    Download,
+    Heart,
+    Star
 } from "lucide-react";
 
-import { getRecipeById } from "../api/recipeApi";
+import {
+    getRecipeById,
+    addFavorite,
+    removeFavorite,
+    rateRecipe
+} from "../api/recipeApi";
 
 const RecipeDetails = () => {
+
+    const navigate = useNavigate();
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -28,6 +37,10 @@ const RecipeDetails = () => {
     const [recipe, setRecipe] = useState(null);
 
     const [loading, setLoading] = useState(true);
+
+    const [userRating, setUserRating] = useState(0);
+
+    const [isFavorite, setIsFavorite] = useState(false);
 
     useEffect(() => {
 
@@ -49,6 +62,8 @@ const RecipeDetails = () => {
 
                 setRecipe(parsedRecipe);
 
+                setIsFavorite(data.isFavorite || false);
+
             } catch (error) {
 
                 console.error(error);
@@ -62,6 +77,51 @@ const RecipeDetails = () => {
         fetchRecipe();
 
     }, [id]);
+
+    const handleFavorite = async () => {
+
+        try {
+
+            if (isFavorite) {
+
+                await removeFavorite(recipe.id);
+
+                setIsFavorite(false);
+
+            } else {
+
+                await addFavorite(recipe.id);
+
+                setIsFavorite(true);
+            }
+
+        } catch (error) {
+
+            console.error(error);
+
+            alert(
+                "Nie udało się zaktualizować ulubionych."
+            );
+        }
+    };
+
+    const handleRating = async (value) => {
+
+        try {
+
+            await rateRecipe(recipe.id, value);
+
+            setUserRating(value);
+
+        } catch (error) {
+
+            console.error(error);
+
+            alert(
+                "Nie udało się zapisać oceny."
+            );
+        }
+    };
 
     if (loading) {
 
@@ -231,43 +291,152 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                         }}
                     >
 
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "12px",
-                                flexWrap: "wrap"
-                            }}
-                        >
+                        <div>
 
-                            <div style={badgeStyle}>
-                                <Coffee size={14} />
-                                {recipe.brewingMethod}
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "12px",
+                                    flexWrap: "wrap"
+                                }}
+                            >
+
+                                <div style={badgeStyle}>
+                                    <Coffee size={14} />
+                                    {recipe.brewingMethod}
+                                </div>
+
+                                <div style={badgeStyle}>
+
+                                    {recipe.isPublic ? (
+
+                                        <>
+                                            <Globe size={14} />
+                                            Publiczna
+                                        </>
+
+                                    ) : (
+
+                                        <>
+                                            <Lock size={14} />
+                                            Wersja robocza
+                                        </>
+
+                                    )}
+
+                                </div>
+
                             </div>
 
-                            <div style={badgeStyle}>
+                            {/* FAVORITES + RATING */}
 
-                                {recipe.isPublic ? (
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "20px",
+                                    marginTop: "18px",
+                                    flexWrap: "wrap"
+                                }}
+                            >
 
-                                    <>
-                                        <Globe size={14} />
-                                        Publiczna
-                                    </>
+                                {/* FAVORITE */}
 
-                                ) : (
+                                <button
+                                    onClick={handleFavorite}
+                                    style={{
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "10px",
+                                        fontSize: "15px",
+                                        fontWeight: "600",
+                                        color: "#2f2f2f",
+                                        padding: 0
+                                    }}
+                                >
 
-                                    <>
-                                        <Lock size={14} />
-                                        Wersja robocza
-                                    </>
+                                    <Heart
+                                        size={20}
+                                        fill={
+                                            isFavorite
+                                                ? "#1f1f1f"
+                                                : "none"
+                                        }
+                                    />
 
-                                )}
+                                    {isFavorite
+                                        ? "Dodano do ulubionych"
+                                        : "Dodaj do ulubionych"}
+
+                                </button>
+
+                                {/* RATING */}
+
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "10px"
+                                    }}
+                                >
+
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            gap: "4px"
+                                        }}
+                                    >
+
+                                        {[1, 2, 3, 4, 5].map((star) => (
+
+                                            <Star
+                                                key={star}
+                                                size={20}
+                                                style={{
+                                                    cursor: "pointer"
+                                                }}
+                                                fill={
+                                                    star <= userRating
+                                                        ? "#1f1f1f"
+                                                        : "none"
+                                                }
+                                                onClick={() =>
+                                                    handleRating(star)
+                                                }
+                                            />
+
+                                        ))}
+
+                                    </div>
+
+                                    <span
+                                        style={{
+                                            fontSize: "14px",
+                                            color: "#666"
+                                        }}
+                                    >
+
+                                        {recipe.averageRating
+                                            ? recipe.averageRating.toFixed(1)
+                                            : "Brak ocen"}
+
+                                        {" · "}
+
+                                        {recipe.ratingCount || 0} ocen
+
+                                    </span>
+
+                                </div>
 
                             </div>
 
                         </div>
 
-                        {/* EXPORT BUTTONS */}
+                        {/* ACTIONS */}
 
                         <div
                             style={{
@@ -275,6 +444,7 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                 gap: "10px"
                             }}
                         >
+
                             <button
                                 style={editButtonStyle}
                                 onClick={() =>
@@ -490,16 +660,13 @@ const badgeStyle = {
     fontWeight: "600"
 };
 
-const exportButtonStyle = {
-    backgroundColor: "#efefef",
-    color: "#2f2f2f",
-    padding: "10px 14px",
+const editButtonStyle = {
+    backgroundColor: "#1f1f1f",
+    color: "white",
+    padding: "10px 16px",
     borderRadius: "16px",
-    border: "1px solid #dddddd",
+    border: "none",
     cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
     fontSize: "14px",
     fontWeight: "600"
 };

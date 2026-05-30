@@ -1,5 +1,4 @@
 import { apiRequest } from "./apiClient";
-
 export function createRecipe(recipeData) {
 
     return apiRequest("/api/Recipe", {
@@ -31,4 +30,36 @@ export function updateRecipe(id, recipeData) {
 
         body: JSON.stringify(recipeData),
     });
+}
+export function addFavorite(recipeId) {
+
+    return apiRequest(
+        `/api/Recipe/${recipeId}/favorite`,
+        {
+            method: "POST",
+        }
+    );
+}
+
+export function removeFavorite(recipeId) {
+
+    return apiRequest(
+        `/api/Recipe/${recipeId}/favorite`,
+        {
+            method: "DELETE",
+        }
+    );
+}
+export function rateRecipe(recipeId, value) {
+
+    return apiRequest(
+        `/api/Recipe/${recipeId}/rating`,
+        {
+            method: "POST",
+
+            body: JSON.stringify({
+                value
+            }),
+        }
+    );
 }
