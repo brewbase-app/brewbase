@@ -28,6 +28,7 @@ import {
 } from "../api/recipeApi";
 
 const RecipeDetails = () => {
+    
 
     const navigate = useNavigate();
 
@@ -660,16 +661,7 @@ const badgeStyle = {
     fontWeight: "600"
 };
 
-const editButtonStyle = {
-    backgroundColor: "#1f1f1f",
-    color: "white",
-    padding: "10px 16px",
-    borderRadius: "16px",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: "600"
-};
+
 const editButtonStyle = {
     backgroundColor: "#1f1f1f",
     color: "white",

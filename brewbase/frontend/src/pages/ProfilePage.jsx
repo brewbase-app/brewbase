@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
     Link,
@@ -19,49 +18,86 @@ import {
     MoreVertical
 } from "lucide-react";
 
+import { getProfile } from "../api/profileApi";
+
 import "../styles/profile.css";
 
 function ProfilePage() {
-
-    // LOCAL STORAGE USER
-
-    const savedUser =
-        JSON.parse(
-            localStorage.getItem("brewbaseUser")
-        ) || {
-            username: "kontotestowe",
-            email: "konto@brewbase.com",
-        };
-
-    // LOGGED USER
-
-    const currentLoggedUser =
-        savedUser.username;
 
     // URL PARAM
 
     const { username } = useParams();
 
-    // CURRENT PROFILE
+    // PROFILE
 
-    const viewedUsername =
-        username || currentLoggedUser;
+    const [profile, setProfile] =
+        useState(null);
+
+    const [loading, setLoading] =
+        useState(true);
 
     // MODAL
 
     const [openModal, setOpenModal] =
         useState(null);
 
+    useEffect(() => {
+
+        const fetchProfile = async () => {
+
+            try {
+
+                const data =
+                    await getProfile();
+
+                console.log(data);
+
+                setProfile(data);
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "Nie udało się pobrać profilu."
+                );
+
+            } finally {
+
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
+
+    }, []);
+
+    // CURRENT PROFILE
+
+    const viewedUsername =
+        username || profile?.login;
+
     // USERS
 
     const users = [
         {
-            username: savedUser.username,
-            ranking: 27,
-            points: 1248,
-            recipes: 34,
-            followers: 248,
-            following: 96,
+            username:
+                profile?.login || "user",
+
+            ranking:
+                profile?.activityPoints || 0,
+
+            points:
+                profile?.activityPoints || 0,
+
+            recipes:
+                profile?.recipesCount || 0,
+
+            followers:
+                profile?.followersCount || 0,
+
+            following:
+                profile?.followingCount || 0,
         },
 
         {
@@ -135,7 +171,7 @@ function ProfilePage() {
 
     const isOwnProfile =
         viewedUsername ===
-        currentLoggedUser;
+        profile?.login;
 
     // DISCOVER USERS
 
@@ -182,6 +218,26 @@ function ProfilePage() {
         },
     ];
 
+    if (loading) {
+
+        return (
+
+            <div className="profile-page">
+
+                <div
+                    style={{
+                        color: "white",
+                        padding: "40px",
+                        fontSize: "20px"
+                    }}
+                >
+                    Ładowanie profilu...
+                </div>
+
+            </div>
+        );
+    }
+
     return (
 
         <div className="profile-page">
@@ -197,7 +253,6 @@ function ProfilePage() {
                     <div className="profile-topbar">
 
                         <div className="profile-heading">
-                            
 
                             <h1 className="profile-username">
                                 @{viewedUsername}
@@ -331,7 +386,6 @@ function ProfilePage() {
                             </div>
 
                         </div>
-                        
 
                         {/* FOLLOWERS */}
 
@@ -625,8 +679,8 @@ function ProfilePage() {
                         <div className="followers-list">
 
                             {(openModal === "followers"
-                                ? followersList
-                                : followingList
+                                    ? followersList
+                                    : followingList
                             ).map((user) => (
 
                                 <Link
@@ -653,9 +707,7 @@ function ProfilePage() {
             )}
 
         </div>
-
     );
 }
 
 export default ProfilePage;
-
