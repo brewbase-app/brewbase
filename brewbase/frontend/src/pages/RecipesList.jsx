@@ -14,6 +14,7 @@ import {
 
 import {
     getRecipes,
+    getMyRecipes,
     getFavoriteRecipes,
     deleteRecipe
 } from "../api/recipeApi";
@@ -46,7 +47,9 @@ const RecipesList = ({ title }) => {
 
                 const data = title === "Ulubione receptury"
                     ? await getFavoriteRecipes()
-                    : await getRecipes();
+                    : title === "Twoje receptury"
+                        ? await getMyRecipes()
+                        : await getRecipes();
 
                 setRecipes(data);
 
