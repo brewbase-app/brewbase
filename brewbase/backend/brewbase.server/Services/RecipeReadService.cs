@@ -72,6 +72,7 @@ public class RecipeReadService : IRecipeReadService
                 UserId = r.UserId,
                 BrewingMethod = r.BrewingMethod != null ? r.BrewingMethod.Name : null,
                 Coffee = r.Coffee != null ? r.Coffee.Name : null,
+                CreatedAt = r.CreatedAt,
                 IsFavorite = _context.UserRecipeFavorites.Any(f =>
                     f.UserId == currentUserId && f.RecipeId == r.Id)
             })
@@ -92,6 +93,7 @@ public class RecipeReadService : IRecipeReadService
                 UserId = r.UserId,
                 BrewingMethod = r.BrewingMethod != null ? r.BrewingMethod.Name : null,
                 Coffee = r.Coffee != null ? r.Coffee.Name : null,
+                CreatedAt = r.CreatedAt,
                 AverageRating = _context.RecipeRatings
                     .Where(rating => rating.RecipeId == r.Id)
                     .Average(rating => (double?)rating.Value),

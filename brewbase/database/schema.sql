@@ -146,6 +146,7 @@ CREATE TABLE recipe (
                         user_id int  NOT NULL,
                         brewing_method_id int  NOT NULL,
                         coffee_id int  NOT NULL,
+                        created_at timestamp  NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         CONSTRAINT recipe_pk PRIMARY KEY (id)
 );
 

@@ -13,6 +13,11 @@ export function getRecipes() {
     return apiRequest("/api/Recipe");
 }
 
+export function getFavoriteRecipes() {
+
+    return apiRequest("/api/Recipe/favorites");
+}
+
 export function deleteRecipe(id) {
 
     return apiRequest(`/api/Recipe/${id}`, {

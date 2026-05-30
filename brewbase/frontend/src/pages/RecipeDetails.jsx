@@ -63,7 +63,7 @@ const RecipeDetails = () => {
 
                 setRecipe(parsedRecipe);
 
-                setIsFavorite(data.isFavorite || false);
+                setIsFavorite(data.isFavorite ?? false);
 
             } catch (error) {
 
@@ -113,6 +113,14 @@ const RecipeDetails = () => {
             await rateRecipe(recipe.id, value);
 
             setUserRating(value);
+
+            const updated = await getRecipeById(recipe.id);
+
+            setRecipe((prev) => ({
+                ...prev,
+                averageRating: updated.averageRating,
+                ratingCount: updated.ratingCount ?? 0
+            }));
 
         } catch (error) {
 
@@ -421,13 +429,13 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                         }}
                                     >
 
-                                        {recipe.averageRating
+                                        {recipe.averageRating != null
                                             ? recipe.averageRating.toFixed(1)
                                             : "Brak ocen"}
 
                                         {" · "}
 
-                                        {recipe.ratingCount || 0} ocen
+                                        {recipe.ratingCount ?? 0} ocen
 
                                     </span>
 

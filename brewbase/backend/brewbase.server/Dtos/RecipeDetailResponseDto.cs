@@ -18,6 +18,8 @@ public class RecipeDetailResponseDto
 
     public string? Coffee { get; set; }
     
+    public DateTime CreatedAt { get; set; }
+
     public double? AverageRating { get; set; }
 
     public int RatingCount { get; set; }

@@ -18,5 +18,7 @@ public class RecipeListResponseDto
 
     public string? Coffee { get; set; }
 
+    public DateTime CreatedAt { get; set; }
+
     public bool IsFavorite { get; set; }
 }

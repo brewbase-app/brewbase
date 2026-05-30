@@ -463,6 +463,9 @@ public partial class BrewDbContext : DbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.BrewingMethodId).HasColumnName("brewing_method_id");
             entity.Property(e => e.CoffeeId).HasColumnName("coffee_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
             entity.Property(e => e.IsPublic).HasColumnName("is_public");
             entity.Property(e => e.Parameters)
                 .HasColumnType("jsonb")
