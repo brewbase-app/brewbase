@@ -229,23 +229,18 @@ public class RecipeController : ControllerBase
             IsPublic = request.IsPublic,
             UserId = userId.Value,
             CoffeeId = request.CoffeeId,
-            BrewingMethodId = request.BrewingMethodId
+            BrewingMethodId = request.BrewingMethodId,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
 
         _context.Recipes.Add(entity);
         await _context.SaveChangesAsync();
 
-        var detailEntity = await _context.Recipes
-            .Include(r => r.BrewingMethod)
-            .Include(r => r.Coffee)
-            .Where(r => r.Id == entity.Id)
-            .FirstOrDefaultAsync();
-        if (detailEntity is null)
+        var detail = await _recipeReadService.GetByIdAsync(entity.Id, userId.Value);
+        if (detail is null)
         {
             return NotFound(new SimpleErrorResponseDto { Message = "Recipe not found." });
         }
-
-        var detail = MapToRecipeDetailResponseDto(detailEntity);
 
         return CreatedAtAction(nameof(GetById), new { id = entity.Id }, detail);
     }
@@ -304,17 +299,11 @@ public class RecipeController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        var detailEntity = await _context.Recipes
-            .Include(r => r.BrewingMethod)
-            .Include(r => r.Coffee)
-            .Where(r => r.Id == id)
-            .FirstOrDefaultAsync();
-        if (detailEntity is null)
+        var detail = await _recipeReadService.GetByIdAsync(id, userId.Value);
+        if (detail is null)
         {
             return NotFound(new SimpleErrorResponseDto { Message = "Recipe not found." });
         }
-
-        var detail = MapToRecipeDetailResponseDto(detailEntity);
 
         return Ok(detail);
     }
@@ -374,20 +363,5 @@ public class RecipeController : ControllerBase
         }
 
         return ModelState.IsValid;
-    }
-
-    private static RecipeDetailResponseDto MapToRecipeDetailResponseDto(Recipe recipe)
-    {
-        return new RecipeDetailResponseDto
-        {
-            Id = recipe.Id,
-            Title = recipe.Title,
-            Parameters = recipe.Parameters,
-            Steps = recipe.Steps,
-            IsPublic = recipe.IsPublic,
-            UserId = recipe.UserId,
-            BrewingMethod = recipe.BrewingMethod?.Name,
-            Coffee = recipe.Coffee?.Name
-        };
     }
 }

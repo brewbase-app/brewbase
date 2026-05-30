@@ -76,6 +76,8 @@ public class RecipeEndpointsTests : IDisposable
         Assert.True(first.TryGetProperty("userId", out _));
         Assert.True(first.TryGetProperty("brewingMethod", out _));
         Assert.True(first.TryGetProperty("coffee", out _));
+        Assert.True(first.TryGetProperty("createdAt", out var createdAt));
+        Assert.Equal(JsonValueKind.String, createdAt.ValueKind);
     }
 
     [Fact]
@@ -96,6 +98,11 @@ public class RecipeEndpointsTests : IDisposable
         Assert.True(recipe.TryGetProperty("userId", out _));
         Assert.True(recipe.TryGetProperty("brewingMethod", out _));
         Assert.True(recipe.TryGetProperty("coffee", out _));
+        Assert.True(recipe.TryGetProperty("createdAt", out var createdAt));
+        Assert.Equal(JsonValueKind.String, createdAt.ValueKind);
+        Assert.True(recipe.TryGetProperty("averageRating", out _));
+        Assert.True(recipe.TryGetProperty("ratingCount", out _));
+        Assert.True(recipe.TryGetProperty("isFavorite", out _));
     }
 
     [Fact]
@@ -377,6 +384,31 @@ public class RecipeEndpointsTests : IDisposable
         var recipe = await ParseResponseRootAsync(response);
         Assert.True(recipe.GetProperty("id").GetInt32() > 0);
         Assert.Equal("Created Via Test", recipe.GetProperty("title").GetString());
+        Assert.True(recipe.TryGetProperty("createdAt", out var createdAt));
+        Assert.Equal(JsonValueKind.String, createdAt.ValueKind);
+        Assert.Equal(JsonValueKind.Null, recipe.GetProperty("averageRating").ValueKind);
+        Assert.Equal(0, recipe.GetProperty("ratingCount").GetInt32());
+        Assert.False(recipe.GetProperty("isFavorite").GetBoolean());
+    }
+
+    [Fact]
+    public async Task User1_UpdateRecipe_ReturnsConsistentDetailResponse()
+    {
+        var body = """
+            {"title":"Updated Via Test","parameters":{},"steps":"updated step","isPublic":true,"coffeeId":1,"brewingMethodId":1}
+            """;
+        var response = await SendRecipeWriteAsync(HttpMethod.Put, "/api/Recipe/1", devUserId: User1, body);
+
+        response.EnsureSuccessStatusCode();
+
+        var recipe = await ParseResponseRootAsync(response);
+        Assert.Equal(1, recipe.GetProperty("id").GetInt32());
+        Assert.Equal("Updated Via Test", recipe.GetProperty("title").GetString());
+        Assert.True(recipe.TryGetProperty("createdAt", out var createdAt));
+        Assert.Equal(JsonValueKind.String, createdAt.ValueKind);
+        Assert.True(recipe.TryGetProperty("averageRating", out _));
+        Assert.True(recipe.TryGetProperty("ratingCount", out _));
+        Assert.True(recipe.TryGetProperty("isFavorite", out _));
     }
     
     [Fact]
@@ -398,6 +430,8 @@ public class RecipeEndpointsTests : IDisposable
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
 
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
         var recipe = new Recipe
         {
             Title = $"Rated Recipe {Guid.NewGuid()}",
@@ -406,13 +440,12 @@ public class RecipeEndpointsTests : IDisposable
             IsPublic = true,
             UserId = User1,
             CoffeeId = 1,
-            BrewingMethodId = 1
+            BrewingMethodId = 1,
+            CreatedAt = now
         };
 
         context.Recipes.Add(recipe);
         await context.SaveChangesAsync();
-
-        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         context.RecipeRatings.AddRange(
             new RecipeRating
@@ -585,6 +618,11 @@ public class RecipeEndpointsTests : IDisposable
 
         Assert.Equal(2, favorites.Count);
         Assert.All(favorites, item => Assert.True(item.GetProperty("isFavorite").GetBoolean()));
+        Assert.All(favorites, item =>
+        {
+            Assert.True(item.TryGetProperty("createdAt", out var createdAt));
+            Assert.Equal(JsonValueKind.String, createdAt.ValueKind);
+        });
     }
 
     [Fact]
@@ -864,6 +902,8 @@ public sealed class RecipeApiFactory : WebApplicationFactory<Program>
             CreatedByUserId = user1.Id
         };
 
+        var recipeSeedTime = DateTime.SpecifyKind(new DateTime(2024, 3, 1, 10, 0, 0), DateTimeKind.Unspecified);
+
         var recipe1 = new Recipe
         {
             Id = 1,
@@ -873,7 +913,8 @@ public sealed class RecipeApiFactory : WebApplicationFactory<Program>
             IsPublic = true,
             UserId = user1.Id,
             BrewingMethodId = brewingMethod1.Id,
-            CoffeeId = coffee1.Id
+            CoffeeId = coffee1.Id,
+            CreatedAt = recipeSeedTime
         };
 
         var recipe2 = new Recipe
@@ -885,7 +926,8 @@ public sealed class RecipeApiFactory : WebApplicationFactory<Program>
             IsPublic = true,
             UserId = user1.Id,
             BrewingMethodId = brewingMethod2.Id,
-            CoffeeId = coffee2.Id
+            CoffeeId = coffee2.Id,
+            CreatedAt = recipeSeedTime
         };
 
         var recipe3 = new Recipe
@@ -897,7 +939,8 @@ public sealed class RecipeApiFactory : WebApplicationFactory<Program>
             IsPublic = false,
             UserId = user2.Id,
             BrewingMethodId = brewingMethod1.Id,
-            CoffeeId = coffee1.Id
+            CoffeeId = coffee1.Id,
+            CreatedAt = recipeSeedTime
         };
 
         var user3Admin = new AppUser

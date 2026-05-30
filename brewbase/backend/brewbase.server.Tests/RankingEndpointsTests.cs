@@ -560,7 +560,8 @@ public class RankingEndpointsTests : IDisposable
             IsPublic = isPublic,
             UserId = userId,
             CoffeeId = 1,
-            BrewingMethodId = 1
+            BrewingMethodId = 1,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
 
         context.Recipes.Add(recipe);

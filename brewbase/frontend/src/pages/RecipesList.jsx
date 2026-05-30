@@ -14,8 +14,24 @@ import {
 
 import {
     getRecipes,
+    getFavoriteRecipes,
     deleteRecipe
 } from "../api/recipeApi";
+
+const formatDate = (date) => {
+
+    if (!date) {
+        return "Brak daty";
+    }
+
+    const parsed = new Date(date);
+
+    if (Number.isNaN(parsed.getTime())) {
+        return "Brak daty";
+    }
+
+    return parsed.toLocaleDateString("pl-PL");
+};
 
 const RecipesList = ({ title }) => {
 
@@ -28,9 +44,9 @@ const RecipesList = ({ title }) => {
 
             try {
 
-                const data = await getRecipes();
-
-                console.log(data);
+                const data = title === "Ulubione receptury"
+                    ? await getFavoriteRecipes()
+                    : await getRecipes();
 
                 setRecipes(data);
 
@@ -42,15 +58,13 @@ const RecipesList = ({ title }) => {
 
         fetchRecipes();
 
-    }, []);
+    }, [title]);
 
     let data = [];
 
     if (title === "Ulubione receptury") {
 
-        data = recipes.filter(
-            (r) => r.isFavorite
-        );
+        data = recipes;
 
     } else if (title === "Wszystkie receptury") {
 
@@ -285,9 +299,7 @@ const RecipesList = ({ title }) => {
 
                                     <span>
 
-                                        {new Date(
-                                            r.createdAt
-                                        ).toLocaleDateString()}
+                                        {formatDate(r.createdAt)}
 
                                     </span>
 

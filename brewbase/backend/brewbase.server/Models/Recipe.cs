@@ -21,6 +21,8 @@ public partial class Recipe
 
     public int CoffeeId { get; set; }
 
+    public DateTime CreatedAt { get; set; }
+
     public virtual BrewingMethod BrewingMethod { get; set; } = null!;
 
     public virtual Coffee Coffee { get; set; } = null!;
