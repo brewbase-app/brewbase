@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import "../styles/Quicknotes.css";
-import { Pencil, Trash2 } from "lucide-react";
+import {
+    Pencil,
+    Trash2,
+    Download
+} from "lucide-react";
 
 function Quicknotes() {
 
@@ -113,6 +117,26 @@ function Quicknotes() {
         }
     };
 
+    const handleDownloadTXT = (note) => {
+
+        const blob = new Blob(
+            [note.content],
+            { type: "text/plain" }
+        );
+
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+
+        a.href = url;
+
+        a.download = `note-${note.id}.txt`;
+
+        a.click();
+
+        URL.revokeObjectURL(url);
+    };
+
     return (
 
         <div className="quicknotes-page">
@@ -134,7 +158,9 @@ function Quicknotes() {
                         className="save-note-button"
                         onClick={handleSaveNote}
                     >
-                        {selectedNote ? "Zapisz zmiany" : "Zapisz notatkę"}
+                        {selectedNote
+                            ? "Zapisz zmiany"
+                            : "Zapisz notatkę"}
                     </button>
 
                 </div>
@@ -166,13 +192,25 @@ function Quicknotes() {
                                         <Pencil
                                             size={16}
                                             strokeWidth={2}
-                                            onClick={() => handleEdit(note)}
+                                            onClick={() =>
+                                                handleEdit(note)
+                                            }
+                                        />
+
+                                        <Download
+                                            size={16}
+                                            strokeWidth={2}
+                                            onClick={() =>
+                                                handleDownloadTXT(note)
+                                            }
                                         />
 
                                         <Trash2
                                             size={16}
                                             strokeWidth={2}
-                                            onClick={() => handleDelete(note.id)}
+                                            onClick={() =>
+                                                handleDelete(note.id)
+                                            }
                                         />
 
                                     </div>
@@ -182,7 +220,9 @@ function Quicknotes() {
                                 <p>{getPreview(note.content)}</p>
 
                                 <span>
-                                    Ostatnia aktualizacja: {note.date}
+                                    Ostatnia aktualizacja:
+                                    {" "}
+                                    {note.date}
                                 </span>
 
                             </div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/CreateCupping.css";
+import { createTastingSession } from "../../api/tastingSessionsApi";
 
 const CreateCupping = () => {
     const navigate = useNavigate();
@@ -18,13 +19,20 @@ const CreateCupping = () => {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        console.log("Nowa sesja:", form);
+        try {
+            const createdSession = await createTastingSession({
+                name: form.name,
+                description: form.description || null,
+                sessionDate: form.date ? `${form.date}T00:00:00` : null,
+            });
 
-        // później tutaj będzie request do backendu
-        navigate("/cupping/1");
+            navigate(`/cupping/${createdSession.id}`);
+        } catch (error) {
+            alert(error.message || "Nie udało się utworzyć sesji.");
+        }
     };
 
     return (

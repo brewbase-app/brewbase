@@ -13,6 +13,8 @@ public partial class Article
 
     public string Status { get; set; } = null!;
 
+    public string Module { get; set; } = null!;
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
@@ -27,7 +29,13 @@ public partial class Article
 
     public int UserId { get; set; }
 
+    public int? CoffeeId { get; set; }
+
+    public virtual Coffee? Coffee { get; set; }
+
     public virtual AppUser? ModeratedByUser { get; set; }
+
+    public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
 
     public virtual AppUser User { get; set; } = null!;
 }

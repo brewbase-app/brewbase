@@ -1,0 +1,46 @@
+.global-back-button{
+    position: fixed;
+
+    top: 20px;
+    left: 115px;
+
+    height: 35px;
+
+    padding: 0 22px;
+
+    border: none;
+
+    border-radius: 18px;
+
+    background: #111;
+    color: white;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    z-index: 1000;
+
+    transition: 0.2s ease;
+}
+
+    .back-button:hover {
+        background: #000;
+
+        transform: translateY(-1px);
+    }
+    
+
+    
+
+
+    .global-back-button:hover{
+    transform:translateY(-2px);
+
+    background:#2a2a2a;
+}

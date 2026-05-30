@@ -2,6 +2,7 @@
 //using Microsoft.AspNetCore.Authentication;
 using brewbase.server.Models;
 using brewbase.server.Services;
+using brewbase.server.Services.Validation;
 using Microsoft.EntityFrameworkCore;
 using brewbase.server.Services.Interfaces;
 
@@ -57,7 +58,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("frontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins(
+                "http://localhost:5173",
+                "http://127.0.0.1:5173")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -105,13 +108,24 @@ builder.Services.AddDbContext<BrewDbContext>(opt =>
 
 builder.Services.AddScoped<ICoffeeReadService, CoffeeReadService>();
 builder.Services.AddScoped<IRecipeReadService, RecipeReadService>();
+builder.Services.AddScoped<IRankingReadService, RankingReadService>();
 builder.Services.AddScoped<IBrewingMethodReadService, BrewingMethodReadService>();
 builder.Services.AddScoped<ITastingSessionWriteService, TastingSessionWriteService>();
 builder.Services.AddScoped<ITastingSessionReadService, TastingSessionReadService>();
 builder.Services.AddScoped<IQuickNoteService, QuickNoteService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<ICommunityService, CommunityService>();
+builder.Services.AddScoped<IRankingRefreshService, RankingRefreshService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
+builder.Services.AddScoped<IRecipeFavoriteService, RecipeFavoriteService>();
+builder.Services.AddScoped<IRecipeValidationService, RecipeValidationService>();
+builder.Services.AddScoped<ICoffeeFavoriteService, CoffeeFavoriteService>();
+
+builder.Services.AddScoped<IArticleReadService, ArticleReadService>();
+builder.Services.AddScoped<IArticleWriteService, ArticleWriteService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();

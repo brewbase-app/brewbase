@@ -102,17 +102,17 @@ public class TastingSessionsController : ControllerBase
         };
     }
 	
-	[HttpPut("{sessionId:int}/coffees/{coffeeId:int}")]
+	[HttpPut("{sessionId:int}/coffees/{sessionCoffeeId:int}")]
 	[ProducesResponseType(typeof(TastingSessionCoffeeResponseDto), StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> UpdateCoffee(
 		int sessionId,
-		int coffeeId,
+		int sessionCoffeeId,
 		[FromBody] UpdateTastingSessionCoffeeRequestDto request)
 	{
-		var result = await _tastingSessionWriteService.UpdateCoffeeAsync(sessionId, coffeeId, request);
+		var result = await _tastingSessionWriteService.UpdateCoffeeAsync(sessionId, sessionCoffeeId, request);
 
 		return result.Status switch
 		{
@@ -123,5 +123,26 @@ public class TastingSessionsController : ControllerBase
 			_ => BadRequest()
 		};
 	}
-	
+
+	[HttpPut("{sessionId:int}/coffees/{sessionCoffeeId:int}/note")]
+	[ProducesResponseType(typeof(TastingSessionCoffeeResponseDto), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status404NotFound)]
+	public async Task<IActionResult> UpdateCoffeeNote(
+    	int sessionId,
+    	int sessionCoffeeId,
+    	[FromBody] UpdateTastingSessionCoffeeNoteRequestDto request)
+	{
+    	var result = await _tastingSessionWriteService.UpdateCoffeeNoteAsync(sessionId, sessionCoffeeId, request);
+
+    	return result.Status switch
+    	{
+        	TastingSessionWriteStatus.Success => Ok(result.Data),
+        	TastingSessionWriteStatus.Unauthorized => Unauthorized(),
+        	TastingSessionWriteStatus.TastingSessionNotFound => NotFound(new SimpleErrorResponseDto { Message = "Tasting session not found." }),
+        	TastingSessionWriteStatus.CoffeeNotInSession => NotFound(new SimpleErrorResponseDto { Message = "Coffee is not added to this tasting session." }),
+        	_ => BadRequest()
+    	};
+	}
 }

@@ -14,11 +14,19 @@ public class RecipeDetailResponseDto
 
     public int UserId { get; set; }
 
+    public int? CoffeeId { get; set; }
+
+    public int? BrewingMethodId { get; set; }
+
     public string? BrewingMethod { get; set; }
 
     public string? Coffee { get; set; }
     
+    public DateTime CreatedAt { get; set; }
+
     public double? AverageRating { get; set; }
 
     public int RatingCount { get; set; }
+
+    public bool IsFavorite { get; set; }
 }

@@ -70,8 +70,13 @@ public class RecipeReadService : IRecipeReadService
                 Steps = r.Steps,
                 IsPublic = r.IsPublic,
                 UserId = r.UserId,
+                CoffeeId = r.CoffeeId,
+                BrewingMethodId = r.BrewingMethodId,
                 BrewingMethod = r.BrewingMethod != null ? r.BrewingMethod.Name : null,
-                Coffee = r.Coffee != null ? r.Coffee.Name : null
+                Coffee = r.Coffee != null ? r.Coffee.Name : null,
+                CreatedAt = r.CreatedAt,
+                IsFavorite = _context.UserRecipeFavorites.Any(f =>
+                    f.UserId == currentUserId && f.RecipeId == r.Id)
             })
             .ToListAsync();
     }
@@ -88,13 +93,18 @@ public class RecipeReadService : IRecipeReadService
                 Steps = r.Steps,
                 IsPublic = r.IsPublic,
                 UserId = r.UserId,
+                CoffeeId = r.CoffeeId,
+                BrewingMethodId = r.BrewingMethodId,
                 BrewingMethod = r.BrewingMethod != null ? r.BrewingMethod.Name : null,
                 Coffee = r.Coffee != null ? r.Coffee.Name : null,
+                CreatedAt = r.CreatedAt,
                 AverageRating = _context.RecipeRatings
                     .Where(rating => rating.RecipeId == r.Id)
                     .Average(rating => (double?)rating.Value),
                 RatingCount = _context.RecipeRatings
-                    .Count(rating => rating.RecipeId == r.Id)
+                    .Count(rating => rating.RecipeId == r.Id),
+                IsFavorite = _context.UserRecipeFavorites.Any(f =>
+                    f.UserId == currentUserId && f.RecipeId == r.Id)
             })
             .FirstOrDefaultAsync();
     }

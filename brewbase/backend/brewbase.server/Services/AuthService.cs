@@ -64,6 +64,9 @@ public class AuthService : IAuthService
         if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
             return null;
 
+        if (user.IsBlocked)
+            throw new Exception("User account is blocked");        
+        
         return GenerateJwt(user);
     }
     

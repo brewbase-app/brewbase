@@ -1,29 +1,62 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { getTastingSessionDetails } from "../../api/tastingSessionsApi";
 import "../../styles/CuppingPreview.css";
 
 const CuppingPreview = () => {
     const { id } = useParams();
 
     const [session, setSession] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState("");
 
     useEffect(() => {
-        const savedSessions =
-            JSON.parse(
-                localStorage.getItem("cuppingSessions")
-            ) || [];
+        const loadSession = async () => {
+            try {
+                const data = await getTastingSessionDetails(id);
+                setSession(data);
+            } catch (error) {
+                setError("Nie udało się pobrać sesji.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-        const foundSession = savedSessions.find(
-            (s) => s.id.toString() === id
-        );
-
-        setSession(foundSession);
+        loadSession();
     }, [id]);
 
-    if (!session) {
+    const formatDate = (date) => {
+        if (!date) {
+            return "Brak daty";
+        }
+
+        return new Date(date).toLocaleDateString("pl-PL");
+    };
+
+    const formatCleanCup = (value) => {
+        if (value === true) {
+            return "Tak";
+        }
+
+        if (value === false) {
+            return "Nie";
+        }
+
+        return "Brak";
+    };
+
+    if (isLoading) {
         return (
             <div className="preview-container">
-                <h2>Nie znaleziono sesji</h2>
+                <h2>Ładowanie sesji...</h2>
+            </div>
+        );
+    }
+
+    if (error || !session) {
+        return (
+            <div className="preview-container">
+                <h2>{error || "Nie znaleziono sesji"}</h2>
             </div>
         );
     }
@@ -37,82 +70,74 @@ const CuppingPreview = () => {
             <div className="session-info">
                 <p>
                     <strong>Data:</strong>{" "}
-                    {session.date}
+                    {formatDate(session.sessionDate ?? session.createdAt)}
                 </p>
 
                 <p>
                     <strong>Ilość kaw:</strong>{" "}
-                    {session.cuppings.length}
+                    {session.coffees.length}
                 </p>
             </div>
 
-            {session.cuppings.map((cup, index) => (
+            {session.coffees.map((coffee, index) => (
                 <div
-                    key={cup.id}
+                    key={coffee.sessionCoffeeId}
                     className="preview-card"
                 >
                     <h2>
                         Degustacja {index + 1}
                     </h2>
 
-                    <h3>{cup.coffeeName}</h3>
+                    <h3>{coffee.coffeeName}</h3>
 
                     <div className="preview-grid">
                         <div>
                             <p>
                                 <strong>Aroma:</strong>{" "}
-                                {cup.aroma}
+                                {coffee.aromaScore ?? "Brak"}
                             </p>
 
                             <p>
                                 <strong>Słodycz:</strong>{" "}
-                                {cup.sweetness}
+                                {coffee.sweetnessScore ?? "Brak"}
                             </p>
 
                             <p>
                                 <strong>Kwasowość:</strong>{" "}
-                                {cup.acidity}
+                                {coffee.acidityScore ?? "Brak"}
                             </p>
 
                             <p>
                                 <strong>Body:</strong>{" "}
-                                {cup.body}
+                                {coffee.bodyScore ?? "Brak"}
                             </p>
 
                             <p>
-                                <strong>
-                                    Ogólna ocena:
-                                </strong>{" "}
-                                {cup.overall}
+                                <strong>Ogólna ocena:</strong>{" "}
+                                {coffee.overallScore ?? "Brak"}
                             </p>
                         </div>
 
                         <div>
                             <p>
-                                <strong>
-                                    Profile smakowe:
-                                </strong>
+                                <strong>Profile smakowe:</strong>
                             </p>
 
                             <p>
-                                {cup.flavorNotes}
+                                {coffee.flavorProfileNotes || "Brak"}
                             </p>
 
                             <p>
-                                <strong>
-                                    Komentarz:
-                                </strong>
+                                <strong>Komentarz:</strong>
                             </p>
 
                             <p>
-                                {cup.comments}
+                                {coffee.notes || "Brak"}
                             </p>
 
                             <p>
-                                <strong>
-                                    Czysta filiżanka:
-                                </strong>{" "}
-                                {cup.cleanCup}
+                                <strong>Czysta filiżanka:</strong>{" "}
+                                {formatCleanCup(coffee.cleanCup)}
                             </p>
                         </div>
                     </div>

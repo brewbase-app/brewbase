@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { apiRequest } from "../api/apiClient";
+
 function Login() {
     const [login, setLogin] = useState("");
     const [password, setPassword] = useState("");
@@ -22,31 +24,23 @@ function Login() {
         e.preventDefault();
 
         try {
-            const response = await fetch(
-                "https://localhost:44314/api/auth/login",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        login: login,
-                        password: password,
-                    }),
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error("Nieprawidłowe dane logowania");
-            }
-
-            const data = await response.json();
+            const data = await apiRequest("/api/Auth/login", {
+                method: "POST",
+                body: JSON.stringify({
+                    login: login,
+                    password: password,
+                }),
+            });
 
             localStorage.setItem("token", data.token);
 
             navigate("/home");
         } catch (error) {
-            alert(error.message);
+            alert(
+                error instanceof Error
+                    ? error.message
+                    : "Nieprawidłowe dane logowania"
+            );
         }
     };
 

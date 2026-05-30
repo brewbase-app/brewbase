@@ -8,10 +8,12 @@ namespace brewbase.server.Services;
 public class AdminService : IAdminService
 {
     private readonly BrewDbContext _context;
+    private readonly ICurrentUserProvider _currentUserProvider;
 
-    public AdminService(BrewDbContext context)
+    public AdminService(BrewDbContext context, ICurrentUserProvider currentUserProvider)
     {
         _context = context;
+        _currentUserProvider = currentUserProvider;
     }
 
     public async Task<List<AdminUserListResponseDto>> GetUsersAsync()
@@ -44,5 +46,148 @@ public class AdminService : IAdminService
         await _context.SaveChangesAsync();
 
         return true;
+    }
+    
+    public async Task<bool> BlockUserAsync(int userId)
+    {
+        var user = await _context.AppUsers
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+            return false;
+
+        user.IsBlocked = true;
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<bool> UnblockUserAsync(int userId)
+    {
+        var user = await _context.AppUsers
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+            return false;
+
+        user.IsBlocked = false;
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+    
+    public async Task<ArticleApproveResultDto> ApproveArticleAsync(int articleId)
+    {
+        var moderatorId = _currentUserProvider.GetUserId();
+
+        var article = await _context.Articles
+            .FirstOrDefaultAsync(a => a.Id == articleId);
+
+        if (article == null)
+        {
+            return new ArticleApproveResultDto
+            {
+                Status = ArticleApproveStatus.NotFound
+            };
+        }
+
+        if (string.Equals(article.Module, "coffee", StringComparison.Ordinal)
+            && article.CoffeeId.HasValue
+            && !string.Equals(article.Status, "Approved", StringComparison.Ordinal))
+        {
+            var coffeeAlreadyHasApprovedWiki = await _context.Articles.AnyAsync(existing =>
+                existing.Id != article.Id
+                && existing.Module == "coffee"
+                && existing.Status == "Approved"
+                && existing.CoffeeId == article.CoffeeId);
+
+            if (coffeeAlreadyHasApprovedWiki)
+            {
+                return new ArticleApproveResultDto
+                {
+                    Status = ArticleApproveStatus.CoffeeAlreadyHasApprovedWiki
+                };
+            }
+        }
+
+        article.Status = "Approved";
+        article.ModeratedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        article.ModeratedByUserId = moderatorId;
+        article.PublishedAt = article.ModeratedAt;
+        
+        _context.Notifications.Add(new Notification
+        {
+            UserId = article.UserId,
+            Content = "Twój artykuł został zatwierdzony.",
+            CreatedAt = DateTime.Now
+        });
+
+        await _context.SaveChangesAsync();
+        
+        return new ArticleApproveResultDto
+        {
+            Status = ArticleApproveStatus.Approved
+        };
+    }
+    
+    public async Task<bool> RejectArticleAsync(int articleId, ModerateArticleRequestDto dto)
+    {
+        var moderatorId = _currentUserProvider.GetUserId();
+
+        var article = await _context.Articles
+            .FirstOrDefaultAsync(a => a.Id == articleId);
+
+        if (article == null)
+            return false;
+
+        article.Status = "Rejected";
+        article.ModeratedAt = DateTime.Now;
+        article.ModeratedByUserId = moderatorId;
+        article.ModerationComment = dto.Comment;
+        
+        _context.Notifications.Add(new Notification
+        {
+            UserId = article.UserId,
+            Content = "Twój artykuł został odrzucony.",
+            CreatedAt = DateTime.Now
+        });
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+    
+    public async Task<List<PendingArticleResponseDto>> GetPendingArticlesAsync()
+    {
+        return await _context.Articles
+            .Where(a => a.Status == "Pending")
+            .OrderByDescending(a => a.CreatedAt)
+            .Select(a => new PendingArticleResponseDto
+            {
+                Id = a.Id,
+                Title = a.Title,
+                Content = a.Content,
+                AuthorLogin = a.User.Login,
+                CreatedAt = a.CreatedAt
+            })
+            .ToListAsync();
+    }
+    
+    public async Task<List<ReportedArticleResponseDto>> GetReportsAsync()
+    {
+        return await _context.Reports
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => new ReportedArticleResponseDto
+            {
+                ReportId = r.Id,
+                ArticleId = r.ArticleId,
+                ArticleTitle = r.Article.Title,
+                ReportedBy = r.ReportedByUser.Login,
+                Reason = r.Reason,
+                CreatedAt = r.CreatedAt
+            })
+            .ToListAsync();
     }
 }
