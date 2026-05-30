@@ -1,3 +1,12 @@
+export class ApiError extends Error {
+    constructor(message, status, errors = {}) {
+        super(message);
+        this.name = "ApiError";
+        this.status = status;
+        this.errors = errors;
+    }
+}
+
 export async function apiRequest(path, options = {}) {
     const token = localStorage.getItem("token");
 
@@ -12,7 +21,22 @@ export async function apiRequest(path, options = {}) {
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || "Request failed");
+        let message = errorText || "Request failed";
+        let errors = {};
+
+        try {
+            const parsed = JSON.parse(errorText);
+            if (parsed?.title) {
+                message = parsed.title;
+            }
+            if (parsed?.errors && typeof parsed.errors === "object") {
+                errors = parsed.errors;
+            }
+        } catch {
+            // keep raw text
+        }
+
+        throw new ApiError(message, response.status, errors);
     }
 
     if (response.status === 204) {

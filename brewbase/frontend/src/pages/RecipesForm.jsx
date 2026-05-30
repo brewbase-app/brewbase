@@ -10,6 +10,15 @@ import {
     getRecipeById,
     updateRecipe
 } from "../api/recipeApi";
+import { getCoffees } from "../api/coffeeApi";
+import { getBrewingMethods } from "../api/brewingMethodApi";
+import { ApiError } from "../api/apiClient";
+import {
+    hasValidationErrors,
+    mapBackendErrors,
+    validateRecipeDraft,
+    validateRecipePublish
+} from "../utils/recipeValidation";
 
 const RecipesForm = () => {
 
@@ -22,7 +31,8 @@ const RecipesForm = () => {
     const [formData, setFormData] = useState({
         title: "",
         description: "",
-        brewingMethod: "",
+        coffeeId: "",
+        brewingMethodId: "",
         coffee: "",
         water: "",
         temperature: "",
@@ -31,98 +41,66 @@ const RecipesForm = () => {
         seconds: ""
     });
 
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [coffees, setCoffees] = useState([]);
+    const [brewingMethods, setBrewingMethods] = useState([]);
+    const [catalogLoading, setCatalogLoading] = useState(true);
+
     const handleChange = (e) => {
 
         setFormData({
             ...formData,
             [e.target.name]: e.target.value
         });
+
+        if (fieldErrors[e.target.name]) {
+            setFieldErrors((currentErrors) => {
+                const nextErrors = { ...currentErrors };
+                delete nextErrors[e.target.name];
+                return nextErrors;
+            });
+        }
     };
 
-    useEffect(() => {
+    const buildPayload = (status) => {
+        const isPublishing = status === "PUBLISHED";
+        const coffeeId = formData.coffeeId ? Number(formData.coffeeId) : null;
+        const brewingMethodId = formData.brewingMethodId
+            ? Number(formData.brewingMethodId)
+            : null;
 
-        if (!isEditing) return;
-
-        const fetchRecipe = async () => {
-
-            try {
-
-                const data = await getRecipeById(id);
-
-                console.log(data);
-
-                const parameters =
-                    typeof data.parameters === "string"
-                        ? JSON.parse(data.parameters)
-                        : data.parameters;
-
-                setFormData({
-                    title: data.title || "",
-
-                    description: data.steps || "",
-
-                    brewingMethod:
-                        data.brewingMethod || "",
-
-                    coffee:
-                        parameters.coffee
-                            ?.replace("g", "") || "",
-
-                    water:
-                        parameters.water
-                            ?.replace("ml", "") || "",
-
-                    temperature:
-                        parameters.temperature
-                            ?.replace("°C", "") || "",
-
-                    grindSize:
-                        parameters.grindSize || "",
-
-                    minutes:
-                        parameters.brewTime
-                            ?.split(":")[0] || "",
-
-                    seconds:
-                        parameters.brewTime
-                            ?.split(":")[1] || ""
-                });
-
-            } catch (error) {
-
-                console.error(error);
-            }
+        return {
+            title: formData.title,
+            steps: formData.description,
+            parameters: {
+                coffee: formData.coffee ? `${formData.coffee}g` : "",
+                water: formData.water ? `${formData.water}ml` : "",
+                temperature: formData.temperature ? `${formData.temperature}°C` : "",
+                grindSize: formData.grindSize,
+                brewTime: `${formData.minutes || "0"}:${formData.seconds || "0"}`
+            },
+            isPublic: isPublishing,
+            coffeeId,
+            brewingMethodId
         };
-
-        fetchRecipe();
-
-    }, [id, isEditing]);
+    };
 
     const saveRecipe = async (status) => {
 
+        const validationErrors = status === "PUBLISHED"
+            ? validateRecipePublish(formData)
+            : validateRecipeDraft(formData);
+
+        if (hasValidationErrors(validationErrors)) {
+            setFieldErrors(validationErrors);
+            return;
+        }
+
+        setFieldErrors({});
+
         try {
 
-            const payload = {
-
-                title: formData.title,
-
-                steps: formData.description,
-
-                parameters: {
-                    coffee: `${formData.coffee}g`,
-                    water: `${formData.water}ml`,
-                    temperature: `${formData.temperature}°C`,
-                    grindSize: formData.grindSize,
-                    brewTime:
-                        `${formData.minutes}:${formData.seconds}`
-                },
-
-                isPublic: status === "PUBLISHED",
-
-                coffeeId: 1,
-
-                brewingMethodId: 1
-            };
+            const payload = buildPayload(status);
 
             console.log(payload);
 
@@ -141,9 +119,99 @@ const RecipesForm = () => {
 
             console.error(error);
 
+            if (error instanceof ApiError && Object.keys(error.errors).length > 0) {
+                setFieldErrors(mapBackendErrors(error.errors));
+                return;
+            }
+
             alert("Nie udało się zapisać receptury.");
         }
     };
+
+    const renderFieldError = (fieldName) => {
+        if (!fieldErrors[fieldName]) {
+            return null;
+        }
+
+        return (
+            <p style={errorTextStyle}>
+                {fieldErrors[fieldName]}
+            </p>
+        );
+    };
+
+    useEffect(() => {
+
+        const loadCatalog = async () => {
+            try {
+                const [coffeeList, methodList] = await Promise.all([
+                    getCoffees(),
+                    getBrewingMethods()
+                ]);
+
+                setCoffees(Array.isArray(coffeeList) ? coffeeList : []);
+                setBrewingMethods(Array.isArray(methodList) ? methodList : []);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setCatalogLoading(false);
+            }
+        };
+
+        loadCatalog();
+
+    }, []);
+
+    useEffect(() => {
+
+        if (!isEditing) return;
+
+        const fetchRecipe = async () => {
+
+            try {
+
+                const data = await getRecipeById(id);
+
+                const parameters =
+                    typeof data.parameters === "string"
+                        ? JSON.parse(data.parameters)
+                        : data.parameters;
+
+                setFormData({
+                    title: data.title || "",
+                    description: data.steps || "",
+                    coffeeId: data.coffeeId ? String(data.coffeeId) : "",
+                    brewingMethodId: data.brewingMethodId
+                        ? String(data.brewingMethodId)
+                        : "",
+                    coffee:
+                        parameters.coffee
+                            ?.replace("g", "") || "",
+                    water:
+                        parameters.water
+                            ?.replace("ml", "") || "",
+                    temperature:
+                        parameters.temperature
+                            ?.replace("°C", "") || "",
+                    grindSize:
+                        parameters.grindSize || "",
+                    minutes:
+                        parameters.brewTime
+                            ?.split(":")[0] || "",
+                    seconds:
+                        parameters.brewTime
+                            ?.split(":")[1] || ""
+                });
+
+            } catch (error) {
+
+                console.error(error);
+            }
+        };
+
+        fetchRecipe();
+
+    }, [id, isEditing]);
 
     return (
 
@@ -224,6 +292,12 @@ const RecipesForm = () => {
                                 Podstawowe informacje
                             </p>
 
+                            {fieldErrors.form && (
+                                <p style={errorTextStyle}>
+                                    {fieldErrors.form}
+                                </p>
+                            )}
+
                             <div
                                 style={{
                                     display: "flex",
@@ -235,10 +309,14 @@ const RecipesForm = () => {
                                 <input
                                     name="title"
                                     placeholder="Nazwa receptury"
-                                    style={inputStyle}
+                                    style={{
+                                        ...inputStyle,
+                                        borderColor: fieldErrors.title ? "#d14343" : inputStyle.border
+                                    }}
                                     value={formData.title}
                                     onChange={handleChange}
                                 />
+                                {renderFieldError("title")}
 
                                 <textarea
                                     name="description"
@@ -249,17 +327,55 @@ const RecipesForm = () => {
                                         ...inputStyle,
                                         height: "110px",
                                         resize: "none",
-                                        paddingTop: "14px"
+                                        paddingTop: "14px",
+                                        borderColor: fieldErrors.description ? "#d14343" : inputStyle.border
                                     }}
                                 />
+                                {renderFieldError("description")}
 
-                                <input
-                                    name="brewingMethod"
-                                    placeholder="Metoda parzenia"
-                                    value={formData.brewingMethod}
+                                <select
+                                    name="coffeeId"
+                                    value={formData.coffeeId}
                                     onChange={handleChange}
-                                    style={inputStyle}
-                                />
+                                    disabled={catalogLoading}
+                                    style={{
+                                        ...inputStyle,
+                                        borderColor: fieldErrors.coffeeId ? "#d14343" : inputStyle.border
+                                    }}
+                                >
+                                    <option value="">
+                                        {catalogLoading ? "Ładowanie kaw..." : "Wybierz kawę (opcjonalnie w roboczej)"}
+                                    </option>
+                                    {coffees.map((coffee) => (
+                                        <option key={coffee.id} value={coffee.id}>
+                                            {coffee.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {renderFieldError("coffeeId")}
+
+                                <select
+                                    name="brewingMethodId"
+                                    value={formData.brewingMethodId}
+                                    onChange={handleChange}
+                                    disabled={catalogLoading}
+                                    style={{
+                                        ...inputStyle,
+                                        borderColor: fieldErrors.brewingMethodId ? "#d14343" : inputStyle.border
+                                    }}
+                                >
+                                    <option value="">
+                                        {catalogLoading
+                                            ? "Ładowanie metod..."
+                                            : "Wybierz metodę parzenia (opcjonalnie w roboczej)"}
+                                    </option>
+                                    {brewingMethods.map((method) => (
+                                        <option key={method.id} value={method.id}>
+                                            {method.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {renderFieldError("brewingMethodId")}
 
                             </div>
 
@@ -286,24 +402,36 @@ const RecipesForm = () => {
                                     placeholder="Ilość kawy (g)"
                                     value={formData.coffee}
                                     onChange={handleChange}
-                                    style={inputStyle}
+                                    style={{
+                                        ...inputStyle,
+                                        borderColor: fieldErrors.coffee ? "#d14343" : inputStyle.border
+                                    }}
                                 />
+                                {renderFieldError("coffee")}
 
                                 <input
                                     name="water"
                                     placeholder="Ilość wody (ml)"
                                     value={formData.water}
                                     onChange={handleChange}
-                                    style={inputStyle}
+                                    style={{
+                                        ...inputStyle,
+                                        borderColor: fieldErrors.water ? "#d14343" : inputStyle.border
+                                    }}
                                 />
+                                {renderFieldError("water")}
 
                                 <input
                                     name="temperature"
                                     placeholder="Temperatura wody (°C)"
                                     value={formData.temperature}
                                     onChange={handleChange}
-                                    style={inputStyle}
+                                    style={{
+                                        ...inputStyle,
+                                        borderColor: fieldErrors.temperature ? "#d14343" : inputStyle.border
+                                    }}
                                 />
+                                {renderFieldError("temperature")}
 
                                 <input
                                     name="grindSize"
@@ -338,16 +466,24 @@ const RecipesForm = () => {
                                     placeholder="Minuty"
                                     value={formData.minutes}
                                     onChange={handleChange}
-                                    style={inputStyle}
+                                    style={{
+                                        ...inputStyle,
+                                        borderColor: fieldErrors.minutes ? "#d14343" : inputStyle.border
+                                    }}
                                 />
+                                {renderFieldError("minutes")}
 
                                 <input
                                     name="seconds"
                                     placeholder="Sekundy"
                                     value={formData.seconds}
                                     onChange={handleChange}
-                                    style={inputStyle}
+                                    style={{
+                                        ...inputStyle,
+                                        borderColor: fieldErrors.seconds ? "#d14343" : inputStyle.border
+                                    }}
                                 />
+                                {renderFieldError("seconds")}
 
                             </div>
 
@@ -437,6 +573,12 @@ const publishButtonStyle = {
     fontSize: "15px",
     fontWeight: "600",
     cursor: "pointer"
+};
+
+const errorTextStyle = {
+    margin: "6px 0 0 0",
+    fontSize: "13px",
+    color: "#d14343"
 };
 
 export default RecipesForm;

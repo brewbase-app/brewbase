@@ -2,6 +2,7 @@
 //using Microsoft.AspNetCore.Authentication;
 using brewbase.server.Models;
 using brewbase.server.Services;
+using brewbase.server.Services.Validation;
 using Microsoft.EntityFrameworkCore;
 using brewbase.server.Services.Interfaces;
 
@@ -120,6 +121,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 
 builder.Services.AddScoped<IRecipeFavoriteService, RecipeFavoriteService>();
+builder.Services.AddScoped<IRecipeValidationService, RecipeValidationService>();
 builder.Services.AddScoped<ICoffeeFavoriteService, CoffeeFavoriteService>();
 
 builder.Services.AddScoped<IArticleReadService, ArticleReadService>();

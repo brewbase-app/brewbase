@@ -26,6 +26,9 @@ public class RecipeEndpointsTests : IDisposable
     private const int User2 = 2;
     private const int Admin = 3;
 
+    private const string ValidPublishBody =
+        """{"title":"Valid Publish Title","parameters":{"coffee":"18g","water":"300ml","temperature":"94°C","brewTime":"3:30"},"steps":"1. Bloom with water. 2. Pour slowly. 3. Finish.","isPublic":true,"coffeeId":1,"brewingMethodId":1}""";
+
     private readonly RecipeApiFactory _factory;
     private readonly HttpClient _client;
 
@@ -347,9 +350,7 @@ public class RecipeEndpointsTests : IDisposable
     [Fact]
     public async Task User1_Put_NonExistingRecipe_ReturnsNotFound()
     {
-        var body = """
-            {"title":"X","parameters":{},"steps":"y","isPublic":true,"coffeeId":1,"brewingMethodId":1}
-            """;
+        var body = ValidPublishBody.Replace("Valid Publish Title", "Missing Recipe");
         var response = await SendRecipeWriteAsync(HttpMethod.Put, "/api/Recipe/999999", devUserId: User1, body);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -364,9 +365,7 @@ public class RecipeEndpointsTests : IDisposable
     [Fact]
     public async Task User2_Put_OthersPublicRecipe_ReturnsForbidden()
     {
-        var body = """
-            {"title":"X","parameters":{},"steps":"y","isPublic":true,"coffeeId":1,"brewingMethodId":1}
-            """;
+        var body = ValidPublishBody.Replace("Valid Publish Title", "Updated Title");
         var response = await SendRecipeWriteAsync(HttpMethod.Put, "/api/Recipe/1", devUserId: User2, body);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -374,9 +373,7 @@ public class RecipeEndpointsTests : IDisposable
     [Fact]
     public async Task User1_CreateRecipe_ReturnsCreated()
     {
-        var body = """
-            {"title":"Created Via Test","parameters":{},"steps":"step","isPublic":true,"coffeeId":1,"brewingMethodId":1}
-            """;
+        var body = ValidPublishBody.Replace("Valid Publish Title", "Created Via Test");
         var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", devUserId: User1, body);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -392,11 +389,98 @@ public class RecipeEndpointsTests : IDisposable
     }
 
     [Fact]
-    public async Task User1_UpdateRecipe_ReturnsConsistentDetailResponse()
+    public async Task User1_CreateDraft_WithOnlyTitle_ReturnsCreated()
     {
         var body = """
-            {"title":"Updated Via Test","parameters":{},"steps":"updated step","isPublic":true,"coffeeId":1,"brewingMethodId":1}
+            {"title":"Draft Title Only","parameters":{},"steps":"","isPublic":false,"coffeeId":null,"brewingMethodId":null}
             """;
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", devUserId: User1, body);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var recipe = await ParseResponseRootAsync(response);
+        Assert.Equal("Draft Title Only", recipe.GetProperty("title").GetString());
+        Assert.False(recipe.GetProperty("isPublic").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, recipe.GetProperty("coffeeId").ValueKind);
+        Assert.Equal(JsonValueKind.Null, recipe.GetProperty("brewingMethodId").ValueKind);
+    }
+
+    [Fact]
+    public async Task User1_CreateDraft_CompletelyEmpty_ReturnsBadRequest()
+    {
+        var body = """
+            {"title":"","parameters":{},"steps":"","isPublic":false,"coffeeId":null,"brewingMethodId":null}
+            """;
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", devUserId: User1, body);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var root = await ParseResponseRootAsync(response);
+        Assert.True(root.TryGetProperty("errors", out var errors));
+        Assert.True(errors.EnumerateObject().Any());
+    }
+
+    [Fact]
+    public async Task User1_Publish_IncompleteRecipe_ReturnsBadRequest()
+    {
+        var body = """
+            {"title":"Only Title","parameters":{},"steps":"","isPublic":true,"coffeeId":1,"brewingMethodId":1}
+            """;
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", devUserId: User1, body);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var root = await ParseResponseRootAsync(response);
+        var errors = root.GetProperty("errors");
+        Assert.True(errors.TryGetProperty("Steps", out _));
+    }
+
+    [Fact]
+    public async Task User1_Publish_ValidRecipe_ReturnsCreated()
+    {
+        var body = """
+            {"title":"Valid Published Recipe","parameters":{"coffee":"18g","water":"300ml","temperature":"94°C","brewTime":"3:30"},"steps":"1. Bloom with water\n2. Pour slowly\n3. Finish","isPublic":true,"coffeeId":1,"brewingMethodId":1}
+            """;
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", devUserId: User1, body);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var recipe = await ParseResponseRootAsync(response);
+        Assert.True(recipe.GetProperty("isPublic").GetBoolean());
+        Assert.Equal("Valid Published Recipe", recipe.GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task User1_Publish_TemperatureOutOfRange_ReturnsBadRequest()
+    {
+        var body = """
+            {"title":"Hot Recipe","parameters":{"coffee":"18g","water":"300ml","temperature":"120°C","brewTime":"3:30"},"steps":"1. Bloom with water\n2. Pour slowly\n3. Finish","isPublic":true,"coffeeId":1,"brewingMethodId":1}
+            """;
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", devUserId: User1, body);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var root = await ParseResponseRootAsync(response);
+        var errors = root.GetProperty("errors");
+        Assert.True(errors.TryGetProperty("Parameters.Temperature", out _));
+    }
+
+    [Fact]
+    public async Task User1_RateOtherUsersPrivateRecipe_ReturnsNotFound()
+    {
+        var body = """
+            {"value":4}
+            """;
+
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/3/rating", User1, body);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task User1_UpdateRecipe_ReturnsConsistentDetailResponse()
+    {
+        var body = ValidPublishBody.Replace("Valid Publish Title", "Updated Via Test");
         var response = await SendRecipeWriteAsync(HttpMethod.Put, "/api/Recipe/1", devUserId: User1, body);
 
         response.EnsureSuccessStatusCode();
@@ -647,9 +731,7 @@ public class RecipeEndpointsTests : IDisposable
     [Fact]
     public async Task User1_Delete_OwnRecipeWithFavorites_RemovesFavoritesAndRecipe()
     {
-        var createBody = """
-            {"title":"Delete With Favorites","parameters":{},"steps":"step","isPublic":true,"coffeeId":1,"brewingMethodId":1}
-            """;
+        var createBody = ValidPublishBody.Replace("Valid Publish Title", "Delete With Favorites");
         var createResponse = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", User1, createBody);
         createResponse.EnsureSuccessStatusCode();
         var created = await ParseResponseRootAsync(createResponse);
