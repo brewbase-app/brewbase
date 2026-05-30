@@ -26,6 +26,9 @@ public class RecipeEndpointsTests : IDisposable
     private const int User2 = 2;
     private const int Admin = 3;
 
+    private const string ValidPublishBody =
+        """{"title":"Valid Publish Title","parameters":{"coffee":"18g","water":"300ml","temperature":"94°C","brewTime":"3:30"},"steps":"1. Bloom with water. 2. Pour slowly. 3. Finish.","isPublic":true,"coffeeId":1,"brewingMethodId":1}""";
+
     private readonly RecipeApiFactory _factory;
     private readonly HttpClient _client;
 
@@ -76,6 +79,8 @@ public class RecipeEndpointsTests : IDisposable
         Assert.True(first.TryGetProperty("userId", out _));
         Assert.True(first.TryGetProperty("brewingMethod", out _));
         Assert.True(first.TryGetProperty("coffee", out _));
+        Assert.True(first.TryGetProperty("createdAt", out var createdAt));
+        Assert.Equal(JsonValueKind.String, createdAt.ValueKind);
     }
 
     [Fact]
@@ -96,6 +101,11 @@ public class RecipeEndpointsTests : IDisposable
         Assert.True(recipe.TryGetProperty("userId", out _));
         Assert.True(recipe.TryGetProperty("brewingMethod", out _));
         Assert.True(recipe.TryGetProperty("coffee", out _));
+        Assert.True(recipe.TryGetProperty("createdAt", out var createdAt));
+        Assert.Equal(JsonValueKind.String, createdAt.ValueKind);
+        Assert.True(recipe.TryGetProperty("averageRating", out _));
+        Assert.True(recipe.TryGetProperty("ratingCount", out _));
+        Assert.True(recipe.TryGetProperty("isFavorite", out _));
     }
 
     [Fact]
@@ -340,9 +350,7 @@ public class RecipeEndpointsTests : IDisposable
     [Fact]
     public async Task User1_Put_NonExistingRecipe_ReturnsNotFound()
     {
-        var body = """
-            {"title":"X","parameters":{},"steps":"y","isPublic":true,"coffeeId":1,"brewingMethodId":1}
-            """;
+        var body = ValidPublishBody.Replace("Valid Publish Title", "Missing Recipe");
         var response = await SendRecipeWriteAsync(HttpMethod.Put, "/api/Recipe/999999", devUserId: User1, body);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -357,9 +365,7 @@ public class RecipeEndpointsTests : IDisposable
     [Fact]
     public async Task User2_Put_OthersPublicRecipe_ReturnsForbidden()
     {
-        var body = """
-            {"title":"X","parameters":{},"steps":"y","isPublic":true,"coffeeId":1,"brewingMethodId":1}
-            """;
+        var body = ValidPublishBody.Replace("Valid Publish Title", "Updated Title");
         var response = await SendRecipeWriteAsync(HttpMethod.Put, "/api/Recipe/1", devUserId: User2, body);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -367,9 +373,7 @@ public class RecipeEndpointsTests : IDisposable
     [Fact]
     public async Task User1_CreateRecipe_ReturnsCreated()
     {
-        var body = """
-            {"title":"Created Via Test","parameters":{},"steps":"step","isPublic":true,"coffeeId":1,"brewingMethodId":1}
-            """;
+        var body = ValidPublishBody.Replace("Valid Publish Title", "Created Via Test");
         var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", devUserId: User1, body);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -377,6 +381,129 @@ public class RecipeEndpointsTests : IDisposable
         var recipe = await ParseResponseRootAsync(response);
         Assert.True(recipe.GetProperty("id").GetInt32() > 0);
         Assert.Equal("Created Via Test", recipe.GetProperty("title").GetString());
+        Assert.True(recipe.TryGetProperty("createdAt", out var createdAt));
+        Assert.Equal(JsonValueKind.String, createdAt.ValueKind);
+        Assert.Equal(JsonValueKind.Null, recipe.GetProperty("averageRating").ValueKind);
+        Assert.Equal(0, recipe.GetProperty("ratingCount").GetInt32());
+        Assert.False(recipe.GetProperty("isFavorite").GetBoolean());
+    }
+
+    [Fact]
+    public async Task User1_CreateDraft_WithOnlyTitle_ReturnsCreated()
+    {
+        var body = """
+            {"title":"Draft Title Only","parameters":{},"steps":"","isPublic":false,"coffeeId":null,"brewingMethodId":null}
+            """;
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", devUserId: User1, body);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var recipe = await ParseResponseRootAsync(response);
+        Assert.Equal("Draft Title Only", recipe.GetProperty("title").GetString());
+        Assert.False(recipe.GetProperty("isPublic").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, recipe.GetProperty("coffeeId").ValueKind);
+        Assert.Equal(JsonValueKind.Null, recipe.GetProperty("brewingMethodId").ValueKind);
+    }
+
+    [Fact]
+    public async Task User1_CreateDraft_WithPlaceholderParameters_ReturnsCreated()
+    {
+        var body = """
+            {"title":"Draft Title Only","parameters":{"coffee":"","water":"","temperature":"","grindSize":"","brewTime":"0:0"},"steps":"","isPublic":false,"coffeeId":null,"brewingMethodId":null}
+            """;
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", devUserId: User1, body);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task User1_CreateDraft_CompletelyEmpty_ReturnsBadRequest()
+    {
+        var body = """
+            {"title":"","parameters":{},"steps":"","isPublic":false,"coffeeId":null,"brewingMethodId":null}
+            """;
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", devUserId: User1, body);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var root = await ParseResponseRootAsync(response);
+        Assert.True(root.TryGetProperty("errors", out var errors));
+        Assert.True(errors.EnumerateObject().Any());
+    }
+
+    [Fact]
+    public async Task User1_Publish_IncompleteRecipe_ReturnsBadRequest()
+    {
+        var body = """
+            {"title":"Only Title","parameters":{},"steps":"","isPublic":true,"coffeeId":1,"brewingMethodId":1}
+            """;
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", devUserId: User1, body);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var root = await ParseResponseRootAsync(response);
+        var errors = root.GetProperty("errors");
+        Assert.True(errors.TryGetProperty("Steps", out _));
+    }
+
+    [Fact]
+    public async Task User1_Publish_ValidRecipe_ReturnsCreated()
+    {
+        var body = """
+            {"title":"Valid Published Recipe","parameters":{"coffee":"18g","water":"300ml","temperature":"94°C","brewTime":"3:30"},"steps":"1. Bloom with water\n2. Pour slowly\n3. Finish","isPublic":true,"coffeeId":1,"brewingMethodId":1}
+            """;
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", devUserId: User1, body);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var recipe = await ParseResponseRootAsync(response);
+        Assert.True(recipe.GetProperty("isPublic").GetBoolean());
+        Assert.Equal("Valid Published Recipe", recipe.GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task User1_Publish_TemperatureOutOfRange_ReturnsBadRequest()
+    {
+        var body = """
+            {"title":"Hot Recipe","parameters":{"coffee":"18g","water":"300ml","temperature":"120°C","brewTime":"3:30"},"steps":"1. Bloom with water\n2. Pour slowly\n3. Finish","isPublic":true,"coffeeId":1,"brewingMethodId":1}
+            """;
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", devUserId: User1, body);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var root = await ParseResponseRootAsync(response);
+        var errors = root.GetProperty("errors");
+        Assert.True(errors.TryGetProperty("Parameters.Temperature", out _));
+    }
+
+    [Fact]
+    public async Task User1_RateOtherUsersPrivateRecipe_ReturnsNotFound()
+    {
+        var body = """
+            {"value":4}
+            """;
+
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/3/rating", User1, body);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task User1_UpdateRecipe_ReturnsConsistentDetailResponse()
+    {
+        var body = ValidPublishBody.Replace("Valid Publish Title", "Updated Via Test");
+        var response = await SendRecipeWriteAsync(HttpMethod.Put, "/api/Recipe/1", devUserId: User1, body);
+
+        response.EnsureSuccessStatusCode();
+
+        var recipe = await ParseResponseRootAsync(response);
+        Assert.Equal(1, recipe.GetProperty("id").GetInt32());
+        Assert.Equal("Updated Via Test", recipe.GetProperty("title").GetString());
+        Assert.True(recipe.TryGetProperty("createdAt", out var createdAt));
+        Assert.Equal(JsonValueKind.String, createdAt.ValueKind);
+        Assert.True(recipe.TryGetProperty("averageRating", out _));
+        Assert.True(recipe.TryGetProperty("ratingCount", out _));
+        Assert.True(recipe.TryGetProperty("isFavorite", out _));
     }
     
     [Fact]
@@ -398,6 +525,8 @@ public class RecipeEndpointsTests : IDisposable
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
 
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
         var recipe = new Recipe
         {
             Title = $"Rated Recipe {Guid.NewGuid()}",
@@ -406,13 +535,12 @@ public class RecipeEndpointsTests : IDisposable
             IsPublic = true,
             UserId = User1,
             CoffeeId = 1,
-            BrewingMethodId = 1
+            BrewingMethodId = 1,
+            CreatedAt = now
         };
 
         context.Recipes.Add(recipe);
         await context.SaveChangesAsync();
-
-        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         context.RecipeRatings.AddRange(
             new RecipeRating
@@ -585,6 +713,11 @@ public class RecipeEndpointsTests : IDisposable
 
         Assert.Equal(2, favorites.Count);
         Assert.All(favorites, item => Assert.True(item.GetProperty("isFavorite").GetBoolean()));
+        Assert.All(favorites, item =>
+        {
+            Assert.True(item.TryGetProperty("createdAt", out var createdAt));
+            Assert.Equal(JsonValueKind.String, createdAt.ValueKind);
+        });
     }
 
     [Fact]
@@ -609,9 +742,7 @@ public class RecipeEndpointsTests : IDisposable
     [Fact]
     public async Task User1_Delete_OwnRecipeWithFavorites_RemovesFavoritesAndRecipe()
     {
-        var createBody = """
-            {"title":"Delete With Favorites","parameters":{},"steps":"step","isPublic":true,"coffeeId":1,"brewingMethodId":1}
-            """;
+        var createBody = ValidPublishBody.Replace("Valid Publish Title", "Delete With Favorites");
         var createResponse = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", User1, createBody);
         createResponse.EnsureSuccessStatusCode();
         var created = await ParseResponseRootAsync(createResponse);
@@ -864,6 +995,8 @@ public sealed class RecipeApiFactory : WebApplicationFactory<Program>
             CreatedByUserId = user1.Id
         };
 
+        var recipeSeedTime = DateTime.SpecifyKind(new DateTime(2024, 3, 1, 10, 0, 0), DateTimeKind.Unspecified);
+
         var recipe1 = new Recipe
         {
             Id = 1,
@@ -873,7 +1006,8 @@ public sealed class RecipeApiFactory : WebApplicationFactory<Program>
             IsPublic = true,
             UserId = user1.Id,
             BrewingMethodId = brewingMethod1.Id,
-            CoffeeId = coffee1.Id
+            CoffeeId = coffee1.Id,
+            CreatedAt = recipeSeedTime
         };
 
         var recipe2 = new Recipe
@@ -885,7 +1019,8 @@ public sealed class RecipeApiFactory : WebApplicationFactory<Program>
             IsPublic = true,
             UserId = user1.Id,
             BrewingMethodId = brewingMethod2.Id,
-            CoffeeId = coffee2.Id
+            CoffeeId = coffee2.Id,
+            CreatedAt = recipeSeedTime
         };
 
         var recipe3 = new Recipe
@@ -897,7 +1032,8 @@ public sealed class RecipeApiFactory : WebApplicationFactory<Program>
             IsPublic = false,
             UserId = user2.Id,
             BrewingMethodId = brewingMethod1.Id,
-            CoffeeId = coffee1.Id
+            CoffeeId = coffee1.Id,
+            CreatedAt = recipeSeedTime
         };
 
         var user3Admin = new AppUser

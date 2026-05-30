@@ -15,4 +15,6 @@ public interface ICoffeeReadService
         int? currentUserId = null);
 
     Task<CoffeeDetailResponseDto?> GetByIdAsync(int id, int? currentUserId = null);
+
+    Task<List<CoffeeLookupResponseDto>> LookupByNameAsync(string name, int limit = 10);
 }

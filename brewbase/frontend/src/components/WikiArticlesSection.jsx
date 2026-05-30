@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { getArticles } from "../api/articlesApi";
+import { getApprovedArticlePublicPath } from "../utils/articleRouting";
 
 import "../styles/wiki/Coffees.css";
 
@@ -37,7 +38,10 @@ function WikiArticlesSection({ module, gridClassName, cardClassName }) {
                         key={article.id}
                         className={cardClassName}
                         onClick={() =>
-                            navigate(`/wiki/articles/${article.id}`)
+                            navigate(getApprovedArticlePublicPath({
+                                ...article,
+                                status: "Approved",
+                            }))
                         }
                     >
                         <div className="coffee-card-content">

@@ -97,8 +97,11 @@ public class RecipeFavoriteService : IRecipeFavoriteService
                 Steps = r.Steps,
                 IsPublic = r.IsPublic,
                 UserId = r.UserId,
+                CoffeeId = r.CoffeeId,
+                BrewingMethodId = r.BrewingMethodId,
                 BrewingMethod = r.BrewingMethod != null ? r.BrewingMethod.Name : null,
                 Coffee = r.Coffee != null ? r.Coffee.Name : null,
+                CreatedAt = r.CreatedAt,
                 IsFavorite = true
             })
             .ToListAsync();

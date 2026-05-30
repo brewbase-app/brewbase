@@ -69,6 +69,14 @@ public class CoffeeController : ControllerBase
 
         return Ok(favorites);
     }
+
+    [HttpGet("lookup")]
+    [ProducesResponseType(typeof(List<CoffeeLookupResponseDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> LookupByName([FromQuery] string name, [FromQuery] int limit = 10)
+    {
+        var matches = await _coffeeReadService.LookupByNameAsync(name, limit);
+        return Ok(matches);
+    }
     
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)

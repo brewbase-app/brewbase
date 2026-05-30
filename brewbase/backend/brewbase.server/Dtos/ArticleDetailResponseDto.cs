@@ -13,4 +13,6 @@ public sealed class ArticleDetailResponseDto
     public string AuthorLogin { get; init; } = null!;
 
     public DateTime? PublishedAt { get; init; }
+
+    public int? CoffeeId { get; init; }
 }

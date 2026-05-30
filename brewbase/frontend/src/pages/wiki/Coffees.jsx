@@ -47,7 +47,7 @@ function mapCoffeeArticle(article) {
         roastery: null,
         authorLogin: article.authorLogin ?? null,
         isWikiArticle: true,
-        coffeeId: null,
+        coffeeId: article.coffeeId ?? null,
         articleId: article.id,
     };
 }

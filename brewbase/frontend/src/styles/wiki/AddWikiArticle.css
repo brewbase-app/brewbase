@@ -93,7 +93,8 @@
     box-sizing:border-box;
 }
 
-.form-group > input{
+.form-group > input,
+.combobox input{
     height:64px;
 
     padding:0 22px;
@@ -106,10 +107,6 @@
 .combobox{
     position:relative;
 
-    width:100%;
-}
-
-.combobox input{
     width:100%;
 }
 

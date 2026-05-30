@@ -15,17 +15,20 @@ public class RecipeController : ControllerBase
 {
     private readonly IRecipeReadService _recipeReadService;
     private readonly IRecipeFavoriteService _recipeFavoriteService;
+    private readonly IRecipeValidationService _recipeValidationService;
     private readonly BrewDbContext _context;
     private readonly ICurrentUserProvider _currentUserProvider;
 
     public RecipeController(
         IRecipeReadService recipeReadService,
         IRecipeFavoriteService recipeFavoriteService,
+        IRecipeValidationService recipeValidationService,
         BrewDbContext context,
         ICurrentUserProvider currentUserProvider)
     {
         _recipeReadService = recipeReadService;
         _recipeFavoriteService = recipeFavoriteService;
+        _recipeValidationService = recipeValidationService;
         _context = context;
         _currentUserProvider = currentUserProvider;
     }
@@ -153,7 +156,8 @@ public class RecipeController : ControllerBase
             return Unauthorized();
         }
 
-        var recipeExists = await _context.Recipes.AnyAsync(r => r.Id == id);
+        var recipeExists = await RecipeReadService.WhereVisibleTo(_context.Recipes, userId.Value)
+            .AnyAsync(r => r.Id == id);
 
         if (!recipeExists)
         {
@@ -163,7 +167,7 @@ public class RecipeController : ControllerBase
         var rating = await _context.RecipeRatings
             .FirstOrDefaultAsync(r => r.RecipeId == id && r.UserId == userId.Value);
 
-        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        var now = DateTime.UtcNow;
 
         if (rating is null)
         {
@@ -204,48 +208,38 @@ public class RecipeController : ControllerBase
             return Unauthorized();
         }
 
-        if (!ValidateRecipeRequest(request.Title, request.Steps, request.Parameters))
+        var validationError = ApplyValidation(request.IsPublic, request.Title, request.Steps, request.Parameters, request.CoffeeId, request.BrewingMethodId);
+        if (validationError is not null)
         {
-            return ValidationProblem(ModelState);
+            return validationError;
         }
 
-        var coffeeExists = await _context.Coffees.AnyAsync(c => c.Id == request.CoffeeId);
-        if (!coffeeExists)
+        var foreignKeyError = await ValidateForeignKeysAsync(request.CoffeeId, request.BrewingMethodId);
+        if (foreignKeyError is not null)
         {
-            return NotFound(new SimpleErrorResponseDto { Message = "Coffee not found." });
-        }
-
-        var brewingMethodExists = await _context.BrewingMethods.AnyAsync(b => b.Id == request.BrewingMethodId);
-        if (!brewingMethodExists)
-        {
-            return NotFound(new SimpleErrorResponseDto { Message = "Brewing method not found." });
+            return foreignKeyError;
         }
 
         var entity = new Recipe
         {
-            Title = request.Title.Trim(),
-            Parameters = request.Parameters.GetRawText(),
-            Steps = request.Steps.Trim(),
+            Title = request.Title?.Trim() ?? string.Empty,
+            Parameters = NormalizeParameters(request.Parameters),
+            Steps = request.Steps?.Trim() ?? string.Empty,
             IsPublic = request.IsPublic,
             UserId = userId.Value,
-            CoffeeId = request.CoffeeId,
-            BrewingMethodId = request.BrewingMethodId
+            CoffeeId = NormalizeForeignKey(request.CoffeeId),
+            BrewingMethodId = NormalizeForeignKey(request.BrewingMethodId),
+            CreatedAt = DateTime.UtcNow
         };
 
         _context.Recipes.Add(entity);
         await _context.SaveChangesAsync();
 
-        var detailEntity = await _context.Recipes
-            .Include(r => r.BrewingMethod)
-            .Include(r => r.Coffee)
-            .Where(r => r.Id == entity.Id)
-            .FirstOrDefaultAsync();
-        if (detailEntity is null)
+        var detail = await _recipeReadService.GetByIdAsync(entity.Id, userId.Value);
+        if (detail is null)
         {
             return NotFound(new SimpleErrorResponseDto { Message = "Recipe not found." });
         }
-
-        var detail = MapToRecipeDetailResponseDto(detailEntity);
 
         return CreatedAtAction(nameof(GetById), new { id = entity.Id }, detail);
     }
@@ -266,9 +260,10 @@ public class RecipeController : ControllerBase
             return Unauthorized();
         }
 
-        if (!ValidateRecipeRequest(request.Title, request.Steps, request.Parameters))
+        var validationError = ApplyValidation(request.IsPublic, request.Title, request.Steps, request.Parameters, request.CoffeeId, request.BrewingMethodId);
+        if (validationError is not null)
         {
-            return ValidationProblem(ModelState);
+            return validationError;
         }
 
         var recipe = await RecipeReadService.WhereVisibleTo(_context.Recipes, userId.Value)
@@ -283,38 +278,26 @@ public class RecipeController : ControllerBase
             return Forbid();
         }
 
-        var coffeeExists = await _context.Coffees.AnyAsync(c => c.Id == request.CoffeeId);
-        if (!coffeeExists)
+        var foreignKeyError = await ValidateForeignKeysAsync(request.CoffeeId, request.BrewingMethodId);
+        if (foreignKeyError is not null)
         {
-            return NotFound(new SimpleErrorResponseDto { Message = "Coffee not found." });
+            return foreignKeyError;
         }
 
-        var brewingMethodExists = await _context.BrewingMethods.AnyAsync(b => b.Id == request.BrewingMethodId);
-        if (!brewingMethodExists)
-        {
-            return NotFound(new SimpleErrorResponseDto { Message = "Brewing method not found." });
-        }
-
-        recipe.Title = request.Title.Trim();
-        recipe.Parameters = request.Parameters.GetRawText();
-        recipe.Steps = request.Steps.Trim();
+        recipe.Title = request.Title?.Trim() ?? string.Empty;
+        recipe.Parameters = NormalizeParameters(request.Parameters);
+        recipe.Steps = request.Steps?.Trim() ?? string.Empty;
         recipe.IsPublic = request.IsPublic;
-        recipe.CoffeeId = request.CoffeeId;
-        recipe.BrewingMethodId = request.BrewingMethodId;
+        recipe.CoffeeId = NormalizeForeignKey(request.CoffeeId);
+        recipe.BrewingMethodId = NormalizeForeignKey(request.BrewingMethodId);
 
         await _context.SaveChangesAsync();
 
-        var detailEntity = await _context.Recipes
-            .Include(r => r.BrewingMethod)
-            .Include(r => r.Coffee)
-            .Where(r => r.Id == id)
-            .FirstOrDefaultAsync();
-        if (detailEntity is null)
+        var detail = await _recipeReadService.GetByIdAsync(id, userId.Value);
+        if (detail is null)
         {
             return NotFound(new SimpleErrorResponseDto { Message = "Recipe not found." });
         }
-
-        var detail = MapToRecipeDetailResponseDto(detailEntity);
 
         return Ok(detail);
     }
@@ -356,38 +339,59 @@ public class RecipeController : ControllerBase
         return NoContent();
     }
 
-    private bool ValidateRecipeRequest(string? title, string? steps, JsonElement parameters)
+    private IActionResult? ApplyValidation(
+        bool isPublic,
+        string? title,
+        string? steps,
+        JsonElement parameters,
+        int? coffeeId,
+        int? brewingMethodId)
+    {
+        var validationResult = isPublic
+            ? _recipeValidationService.ValidateForPublish(title, steps, parameters, coffeeId, brewingMethodId)
+            : _recipeValidationService.ValidateDraft(title, steps, parameters, coffeeId, brewingMethodId);
+
+        if (validationResult.IsValid)
+        {
+            return null;
+        }
+
+        foreach (var (field, messages) in validationResult.Errors)
+        {
+            foreach (var message in messages)
+            {
+                ModelState.AddModelError(field, message);
+            }
+        }
+
+        return ValidationProblem(ModelState);
+    }
+
+    private async Task<IActionResult?> ValidateForeignKeysAsync(int? coffeeId, int? brewingMethodId)
+    {
+        if (coffeeId is > 0 && !await _context.Coffees.AnyAsync(c => c.Id == coffeeId.Value))
+        {
+            return NotFound(new SimpleErrorResponseDto { Message = "Coffee not found." });
+        }
+
+        if (brewingMethodId is > 0 && !await _context.BrewingMethods.AnyAsync(b => b.Id == brewingMethodId.Value))
+        {
+            return NotFound(new SimpleErrorResponseDto { Message = "Brewing method not found." });
+        }
+
+        return null;
+    }
+
+    private static int? NormalizeForeignKey(int? foreignKey) =>
+        foreignKey is > 0 ? foreignKey : null;
+
+    private static string NormalizeParameters(JsonElement parameters)
     {
         if (parameters.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
         {
-            ModelState.AddModelError("Parameters", "Parameters must be a JSON value.");
+            return "{}";
         }
 
-        if (string.IsNullOrWhiteSpace(steps))
-        {
-            ModelState.AddModelError("Steps", "Steps are required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(title))
-        {
-            ModelState.AddModelError("Title", "Title is required.");
-        }
-
-        return ModelState.IsValid;
-    }
-
-    private static RecipeDetailResponseDto MapToRecipeDetailResponseDto(Recipe recipe)
-    {
-        return new RecipeDetailResponseDto
-        {
-            Id = recipe.Id,
-            Title = recipe.Title,
-            Parameters = recipe.Parameters,
-            Steps = recipe.Steps,
-            IsPublic = recipe.IsPublic,
-            UserId = recipe.UserId,
-            BrewingMethod = recipe.BrewingMethod?.Name,
-            Coffee = recipe.Coffee?.Name
-        };
+        return parameters.GetRawText();
     }
 }

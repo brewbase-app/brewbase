@@ -62,13 +62,30 @@ public class ArticlesController : ControllerBase
         }
 
         var created = await _articleWriteService.CreateAsync(userId.Value, request);
-        if (created is null)
-        {
-            ModelState.AddModelError(nameof(request.Module), "Invalid module.");
-            return ValidationProblem(ModelState);
-        }
 
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        return created.Status switch
+        {
+            ArticleCreateStatus.Success => CreatedAtAction(
+                nameof(GetById),
+                new { id = created.Response!.Id },
+                created.Response),
+            ArticleCreateStatus.InvalidModule => ValidationProblem(new ValidationProblemDetails(
+                new Dictionary<string, string[]>
+                {
+                    [nameof(request.Module)] = ["Invalid module."]
+                })),
+            ArticleCreateStatus.CoffeeIdNotAllowedForModule => ValidationProblem(new ValidationProblemDetails(
+                new Dictionary<string, string[]>
+                {
+                    [nameof(request.CoffeeId)] = ["CoffeeId is only allowed for coffee module articles."]
+                })),
+            ArticleCreateStatus.CoffeeNotFound => ValidationProblem(new ValidationProblemDetails(
+                new Dictionary<string, string[]>
+                {
+                    [nameof(request.CoffeeId)] = ["Referenced coffee does not exist."]
+                })),
+            _ => BadRequest()
+        };
     }
 
     [HttpGet]

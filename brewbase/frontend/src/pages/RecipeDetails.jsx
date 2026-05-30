@@ -30,8 +30,6 @@ import {
 const RecipeDetails = () => {
     
 
-    const navigate = useNavigate();
-
     const { id } = useParams();
     const navigate = useNavigate();
 
@@ -667,7 +665,7 @@ const editButtonStyle = {
     color: "white",
     padding: "10px 16px",
     borderRadius: "16px",
-    border: "none",
+    border: "1px solid #d9d9d9",
     cursor: "pointer",
     fontSize: "14px",
     fontWeight: "600"

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { getArticleById } from "../../api/articlesApi";
+import { shouldUseCoffeeDetailRoute } from "../../utils/articleRouting";
 
 import "../../styles/wiki/CoffeeDetails.css";
 
 function WikiArticleDetails() {
     const { id } = useParams();
+    const navigate = useNavigate();
 
     const [article, setArticle] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -29,6 +31,12 @@ function WikiArticleDetails() {
 
         loadArticle();
     }, [id]);
+
+    useEffect(() => {
+        if (article && shouldUseCoffeeDetailRoute(article)) {
+            navigate(`/wiki/coffees/${article.coffeeId}`, { replace: true });
+        }
+    }, [article, navigate]);
 
     if (isLoading) {
         return <h1>Ładowanie...</h1>;

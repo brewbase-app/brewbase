@@ -14,4 +14,6 @@ public sealed class CreateArticleRequestDto
     [Required]
     [MaxLength(50)]
     public string Module { get; set; } = null!;
+
+    public int? CoffeeId { get; set; }
 }

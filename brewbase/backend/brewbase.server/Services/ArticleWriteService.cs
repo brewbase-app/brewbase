@@ -23,11 +23,36 @@ public sealed class ArticleWriteService : IArticleWriteService
         _context = context;
     }
 
-    public async Task<CreateArticleResponseDto?> CreateAsync(int userId, CreateArticleRequestDto request)
+    public async Task<ArticleCreateResultDto> CreateAsync(int userId, CreateArticleRequestDto request)
     {
         if (!AllowedModules.Contains(request.Module))
         {
-            return null;
+            return new ArticleCreateResultDto
+            {
+                Status = ArticleCreateStatus.InvalidModule
+            };
+        }
+
+        if (request.CoffeeId.HasValue)
+        {
+            if (!string.Equals(request.Module, "coffee", StringComparison.Ordinal))
+            {
+                return new ArticleCreateResultDto
+                {
+                    Status = ArticleCreateStatus.CoffeeIdNotAllowedForModule
+                };
+            }
+
+            var coffeeExists = await _context.Coffees
+                .AnyAsync(coffee => coffee.Id == request.CoffeeId.Value);
+
+            if (!coffeeExists)
+            {
+                return new ArticleCreateResultDto
+                {
+                    Status = ArticleCreateStatus.CoffeeNotFound
+                };
+            }
         }
 
         var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
@@ -40,15 +65,22 @@ public sealed class ArticleWriteService : IArticleWriteService
             Status = "Pending",
             CreatedAt = now,
             UpdatedAt = now,
-            UserId = userId
+            UserId = userId,
+            CoffeeId = string.Equals(request.Module, "coffee", StringComparison.Ordinal)
+                ? request.CoffeeId
+                : null
         };
 
         _context.Articles.Add(entity);
         await _context.SaveChangesAsync();
 
-        return new CreateArticleResponseDto
+        return new ArticleCreateResultDto
         {
-            Id = entity.Id
+            Status = ArticleCreateStatus.Success,
+            Response = new CreateArticleResponseDto
+            {
+                Id = entity.Id
+            }
         };
     }
 

@@ -115,6 +115,12 @@ public partial class BrewDbContext : DbContext
 
             entity.HasIndex(e => e.UserId, "idx_article_user_id");
 
+            entity.HasIndex(e => e.CoffeeId, "idx_article_coffee_id");
+
+            entity.HasIndex(e => e.CoffeeId, "uq_article_coffee_wiki")
+                .IsUnique()
+                .HasFilter("module = 'coffee' AND status = 'Approved' AND coffee_id IS NOT NULL");
+
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Content).HasColumnName("content");
             entity.Property(e => e.CreatedAt)
@@ -142,6 +148,11 @@ public partial class BrewDbContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.CoffeeId).HasColumnName("coffee_id");
+
+            entity.HasOne(d => d.Coffee).WithMany(p => p.Articles)
+                .HasForeignKey(d => d.CoffeeId)
+                .HasConstraintName("article_coffee_fk");
 
             entity.HasOne(d => d.ModeratedByUser).WithMany(p => p.ArticleModeratedByUsers)
                 .HasForeignKey(d => d.ModeratedByUserId)
@@ -463,6 +474,9 @@ public partial class BrewDbContext : DbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.BrewingMethodId).HasColumnName("brewing_method_id");
             entity.Property(e => e.CoffeeId).HasColumnName("coffee_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
             entity.Property(e => e.IsPublic).HasColumnName("is_public");
             entity.Property(e => e.Parameters)
                 .HasColumnType("jsonb")
@@ -475,11 +489,13 @@ public partial class BrewDbContext : DbContext
 
             entity.HasOne(d => d.BrewingMethod).WithMany(p => p.Recipes)
                 .HasForeignKey(d => d.BrewingMethodId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("recipes_brewing_methods");
 
             entity.HasOne(d => d.Coffee).WithMany(p => p.Recipes)
                 .HasForeignKey(d => d.CoffeeId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("recipes_coffee");
 
