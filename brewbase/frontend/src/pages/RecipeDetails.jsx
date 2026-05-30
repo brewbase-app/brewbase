@@ -32,6 +32,7 @@ const RecipeDetails = () => {
     const navigate = useNavigate();
 
     const { id } = useParams();
+    const navigate = useNavigate();
 
     const [recipe, setRecipe] = useState(null);
 
@@ -669,17 +670,13 @@ const editButtonStyle = {
     fontSize: "14px",
     fontWeight: "600"
 };
-
-const exportButtonStyle = {
-    backgroundColor: "#efefef",
-    color: "#2f2f2f",
-    padding: "10px 14px",
+const editButtonStyle = {
+    backgroundColor: "#1f1f1f",
+    color: "white",
+    padding: "10px 16px",
     borderRadius: "16px",
-    border: "1px solid #dddddd",
+    border: "none",
     cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
     fontSize: "14px",
     fontWeight: "600"
 };
