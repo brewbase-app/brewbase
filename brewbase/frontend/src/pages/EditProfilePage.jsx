@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
     User,
@@ -9,40 +9,25 @@ import {
     ShieldCheck
 } from "lucide-react";
 
+import {
+    getProfile,
+    updateProfile
+} from "../api/profileApi";
+
 import "../styles/editProfile.css";
 
 function EditProfilePage() {
 
-    // SAVED USER
-
-    const savedUser =
-        JSON.parse(
-            localStorage.getItem("brewbaseUser")
-        ) || {
-            username: "kontotestowe",
-            email: "konto@brewbase.com",
-        };
-
-    // MOCK EXISTING USERS
-
-    const existingUsers = [
-        "dailybrew",
-        "coffeenerd",
-        "brew_king"
-    ];
-
-    const existingEmails = [
-        "test@test.com",
-        "coffee@gmail.com"
-    ];
+    const [loading, setLoading] =
+        useState(true);
 
     // FORM STATE
 
     const [username, setUsername] =
-        useState(savedUser.username);
+        useState("");
 
     const [email, setEmail] =
-        useState(savedUser.email);
+        useState("");
 
     const [currentPassword, setCurrentPassword] =
         useState("");
@@ -53,7 +38,7 @@ function EditProfilePage() {
     const [confirmPassword, setConfirmPassword] =
         useState("");
 
-    // PREFERENCES
+    // PREFERENCES (LOCAL ONLY FOR NOW)
 
     const [preferences, setPreferences] =
         useState({
@@ -67,20 +52,6 @@ function EditProfilePage() {
             allowExploration: false,
         });
 
-    const toggleArrayValue = (field, value) => {
-
-        const current = preferences[field];
-
-        const exists = current.includes(value);
-
-        setPreferences({
-            ...preferences,
-            [field]: exists
-                ? current.filter((v) => v !== value)
-                : [...current, value],
-        });
-    };
-
     // ERRORS
 
     const [usernameError, setUsernameError] =
@@ -92,49 +63,74 @@ function EditProfilePage() {
     const [passwordError, setPasswordError] =
         useState("");
 
+    useEffect(() => {
+
+        const fetchProfile = async () => {
+
+            try {
+
+                const data =
+                    await getProfile();
+
+                console.log(data);
+
+                setUsername(
+                    data.login || ""
+                );
+
+                setEmail(
+                    data.email || ""
+                );
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "Nie udało się pobrać profilu."
+                );
+
+            } finally {
+
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
+
+    }, []);
+
+    const toggleArrayValue = (
+        field,
+        value
+    ) => {
+
+        const current =
+            preferences[field];
+
+        const exists =
+            current.includes(value);
+
+        setPreferences({
+            ...preferences,
+
+            [field]: exists
+                ? current.filter(
+                    (v) => v !== value
+                )
+                : [...current, value],
+        });
+    };
+
     // SAVE
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
 
         e.preventDefault();
 
         setUsernameError("");
         setEmailError("");
         setPasswordError("");
-
-        // USERNAME VALIDATION
-
-        if (
-            existingUsers.includes(
-                username.toLowerCase()
-            ) &&
-            username.toLowerCase() !==
-            savedUser.username.toLowerCase()
-        ) {
-
-            setUsernameError(
-                "Ta nazwa użytkownika jest już zajęta."
-            );
-
-            return;
-        }
-
-        // EMAIL VALIDATION
-
-        if (
-            existingEmails.includes(
-                email.toLowerCase()
-            ) &&
-            email.toLowerCase() !==
-            savedUser.email.toLowerCase()
-        ) {
-
-            setEmailError(
-                "Ten adres e-mail jest już używany."
-            );
-
-            return;
-        }
 
         // PASSWORD VALIDATION
 
@@ -144,7 +140,8 @@ function EditProfilePage() {
         ) {
 
             if (
-                newPassword !== confirmPassword
+                newPassword !==
+                confirmPassword
             ) {
 
                 setPasswordError(
@@ -166,22 +163,56 @@ function EditProfilePage() {
             }
         }
 
-        // SAVE TO LOCAL STORAGE
+        try {
 
-        localStorage.setItem(
-            "brewbaseUser",
+            await updateProfile({
 
-            JSON.stringify({
-                username,
+                login: username,
+
                 email,
-                preferences,
-            })
-        );
 
-        alert(
-            "Zmiany zostały zapisane."
-        );
+                currentPassword,
+
+                newPassword
+            });
+
+            alert(
+                "Zmiany zostały zapisane."
+            );
+
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+
+        } catch (error) {
+
+            console.error(error);
+
+            alert(
+                "Nie udało się zapisać zmian."
+            );
+        }
     };
+
+    if (loading) {
+
+        return (
+
+            <div className="edit-profile-page">
+
+                <div
+                    style={{
+                        color: "white",
+                        fontSize: "20px",
+                        padding: "40px"
+                    }}
+                >
+                    Ładowanie profilu...
+                </div>
+
+            </div>
+        );
+    }
 
     return (
 
@@ -414,319 +445,15 @@ function EditProfilePage() {
 
                         </div>
 
-                        {/* EXPERIENCE */}
-
-                        <div className="form-group">
-
-                            <label>
-                                Poziom doświadczenia
-                            </label>
-
-                            <select
-                                value={preferences.experienceLevel}
-                                onChange={(e) =>
-                                    setPreferences({
-                                        ...preferences,
-                                        experienceLevel: e.target.value,
-                                    })
-                                }
-                            >
-
-                                <option value="">
-                                    Wybierz opcję
-                                </option>
-
-                                <option value="Początkujący">
-                                    Początkujący
-                                </option>
-
-                                <option value="Średniozaawansowany">
-                                    Średniozaawansowany
-                                </option>
-
-                                <option value="Zaawansowany">
-                                    Zaawansowany
-                                </option>
-
-                                <option value="Jeszcze nie wiem">
-                                    Jeszcze nie wiem
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        {/* BREWING */}
-
-                        <div className="form-group">
-
-                            <label>
-                                Preferowane metody parzenia
-                            </label>
-
-                            <div className="preferences-tags">
-
-                                {[
-                                    "Espresso",
-                                    "V60",
-                                    "Aeropress",
-                                    "French Press",
-                                    "Cold Brew",
-                                    "Jeszcze nie wiem",
-                                ].map((method) => (
-
-                                    <button
-                                        type="button"
-                                        key={method}
-                                        className={
-                                            preferences.brewingMethods.includes(method)
-                                                ? "preference-tag selected"
-                                                : "preference-tag"
-                                        }
-                                        onClick={() =>
-                                            toggleArrayValue(
-                                                "brewingMethods",
-                                                method
-                                            )
-                                        }
-                                    >
-                                        {method}
-                                    </button>
-
-                                ))}
-
-                            </div>
-
-                        </div>
-
-                        {/* FLAVOR */}
-
-                        <div className="form-group">
-
-                            <label>
-                                Profil smakowy
-                            </label>
-
-                            <div className="preferences-tags">
-
-                                {[
-                                    "Czekoladowe",
-                                    "Orzechowe",
-                                    "Owocowe",
-                                    "Kwiatowe",
-                                    "Słodkie",
-                                    "Jeszcze nie wiem",
-                                ].map((flavor) => (
-
-                                    <button
-                                        type="button"
-                                        key={flavor}
-                                        className={
-                                            preferences.flavorProfiles.includes(flavor)
-                                                ? "preference-tag selected"
-                                                : "preference-tag"
-                                        }
-                                        onClick={() =>
-                                            toggleArrayValue(
-                                                "flavorProfiles",
-                                                flavor
-                                            )
-                                        }
-                                    >
-                                        {flavor}
-                                    </button>
-
-                                ))}
-
-                            </div>
-
-                        </div>
-
-                        {/* ACIDITY */}
-
-                        <div className="form-group">
-
-                            <label>
-                                Preferowana kwasowość
-                            </label>
-
-                            <select
-                                value={preferences.acidity}
-                                onChange={(e) =>
-                                    setPreferences({
-                                        ...preferences,
-                                        acidity: e.target.value,
-                                    })
-                                }
-                            >
-
-                                <option value="">
-                                    Wybierz opcję
-                                </option>
-
-                                <option value="Niska">
-                                    Niska
-                                </option>
-
-                                <option value="Średnia">
-                                    Średnia
-                                </option>
-
-                                <option value="Wysoka">
-                                    Wysoka
-                                </option>
-
-                                <option value="Nie mam zdania">
-                                    Nie mam zdania
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        {/* BODY */}
-
-                        <div className="form-group">
-
-                            <label>
-                                Preferowane body
-                            </label>
-
-                            <select
-                                value={preferences.body}
-                                onChange={(e) =>
-                                    setPreferences({
-                                        ...preferences,
-                                        body: e.target.value,
-                                    })
-                                }
-                            >
-
-                                <option value="">
-                                    Wybierz opcję
-                                </option>
-
-                                <option value="Lekkie">
-                                    Lekkie
-                                </option>
-
-                                <option value="Zbalansowane">
-                                    Zbalansowane
-                                </option>
-
-                                <option value="Ciężkie">
-                                    Ciężkie
-                                </option>
-
-                                <option value="Nie mam zdania">
-                                    Nie mam zdania
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        {/* REGIONS */}
-
-                        <div className="form-group">
-
-                            <label>
-                                Regiony pochodzenia kaw
-                            </label>
-
-                            <div className="preferences-tags">
-
-                                {[
-                                    "Etiopia",
-                                    "Kolumbia",
-                                    "Brazylia",
-                                    "Kenia",
-                                    "Gwatemala",
-                                    "Nie mam preferencji",
-                                ].map((region) => (
-
-                                    <button
-                                        type="button"
-                                        key={region}
-                                        className={
-                                            preferences.regions.includes(region)
-                                                ? "preference-tag selected"
-                                                : "preference-tag"
-                                        }
-                                        onClick={() =>
-                                            toggleArrayValue(
-                                                "regions",
-                                                region
-                                            )
-                                        }
-                                    >
-                                        {region}
-                                    </button>
-
-                                ))}
-
-                            </div>
-
-                        </div>
-
-                        {/* RECOMMENDATIONS */}
-
-                        <div className="form-group">
-
-                            <label>
-                                Styl rekomendacji
-                            </label>
-
-                            <select
-                                value={preferences.recommendationStyle}
-                                onChange={(e) =>
-                                    setPreferences({
-                                        ...preferences,
-                                        recommendationStyle: e.target.value,
-                                    })
-                                }
-                            >
-
-                                <option value="">
-                                    Wybierz opcję
-                                </option>
-
-                                <option value="Bezpieczne wybory">
-                                    Bezpieczne wybory
-                                </option>
-
-                                <option value="Zbalansowane">
-                                    Zbalansowane
-                                </option>
-
-                                <option value="Zaskocz mnie">
-                                    Zaskocz mnie
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        {/* EXPLORATION */}
-
-                        <div className="preferences-checkbox">
-
-                            <input
-                                type="checkbox"
-                                checked={preferences.allowExploration}
-                                onChange={(e) =>
-                                    setPreferences({
-                                        ...preferences,
-                                        allowExploration: e.target.checked,
-                                    })
-                                }
-                            />
-
-                            <span>
-                                Pokazuj rekomendacje spoza moich preferencji
-                            </span>
-
-                        </div>
+                        <p
+                            style={{
+                                color: "#8a8a8a",
+                                fontSize: "14px",
+                                marginBottom: "10px"
+                            }}
+                        >
+                            Preferencje są obecnie dostępne tylko lokalnie po stronie frontendu.
+                        </p>
 
                     </div>
 
@@ -748,7 +475,6 @@ function EditProfilePage() {
             </div>
 
         </div>
-
     );
 }
 
