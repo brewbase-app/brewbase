@@ -14,11 +14,18 @@ import { getCoffees } from "../api/coffeeApi";
 import { getBrewingMethods } from "../api/brewingMethodApi";
 import { ApiError } from "../api/apiClient";
 import {
+    buildRecipeParameters,
     hasValidationErrors,
     mapBackendErrors,
     validateRecipeDraft,
     validateRecipePublish
 } from "../utils/recipeValidation";
+import {
+    formatBrewingMethodSelectLabel,
+    formatCoffeeSelectLabel,
+    getBrewingMethodSelectPlaceholder,
+    getCoffeeSelectPlaceholder
+} from "../utils/recipeCatalog";
 
 const RecipesForm = () => {
 
@@ -42,21 +49,31 @@ const RecipesForm = () => {
     });
 
     const [fieldErrors, setFieldErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [coffees, setCoffees] = useState([]);
     const [brewingMethods, setBrewingMethods] = useState([]);
     const [catalogLoading, setCatalogLoading] = useState(true);
+    const [catalogError, setCatalogError] = useState("");
+    const [linkedCoffeeLabel, setLinkedCoffeeLabel] = useState("");
+    const [linkedBrewingMethodLabel, setLinkedBrewingMethodLabel] = useState("");
 
     const handleChange = (e) => {
+        const { name, value } = e.target;
 
         setFormData({
             ...formData,
-            [e.target.name]: e.target.value
+            [name]: value
         });
 
-        if (fieldErrors[e.target.name]) {
+        if (fieldErrors[name] || fieldErrors.brewTime) {
             setFieldErrors((currentErrors) => {
                 const nextErrors = { ...currentErrors };
-                delete nextErrors[e.target.name];
+                delete nextErrors[name];
+
+                if (name === "minutes" || name === "seconds") {
+                    delete nextErrors.brewTime;
+                }
+
                 return nextErrors;
             });
         }
@@ -72,13 +89,7 @@ const RecipesForm = () => {
         return {
             title: formData.title,
             steps: formData.description,
-            parameters: {
-                coffee: formData.coffee ? `${formData.coffee}g` : "",
-                water: formData.water ? `${formData.water}ml` : "",
-                temperature: formData.temperature ? `${formData.temperature}°C` : "",
-                grindSize: formData.grindSize,
-                brewTime: `${formData.minutes || "0"}:${formData.seconds || "0"}`
-            },
+            parameters: buildRecipeParameters(formData),
             isPublic: isPublishing,
             coffeeId,
             brewingMethodId
@@ -86,6 +97,9 @@ const RecipesForm = () => {
     };
 
     const saveRecipe = async (status) => {
+        if (isSubmitting) {
+            return;
+        }
 
         const validationErrors = status === "PUBLISHED"
             ? validateRecipePublish(formData)
@@ -99,24 +113,18 @@ const RecipesForm = () => {
         setFieldErrors({});
 
         try {
+            setIsSubmitting(true);
 
             const payload = buildPayload(status);
 
-            console.log(payload);
-
             if (isEditing) {
-
                 await updateRecipe(id, payload);
-
             } else {
-
                 await createRecipe(payload);
             }
 
             navigate("/recipes/my");
-
         } catch (error) {
-
             console.error(error);
 
             if (error instanceof ApiError && Object.keys(error.errors).length > 0) {
@@ -125,6 +133,8 @@ const RecipesForm = () => {
             }
 
             alert("Nie udało się zapisać receptury.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -140,26 +150,42 @@ const RecipesForm = () => {
         );
     };
 
+    const loadCatalog = async () => {
+        setCatalogLoading(true);
+        setCatalogError("");
+
+        try {
+            const [coffeeList, methodList] = await Promise.all([
+                getCoffees(),
+                getBrewingMethods()
+            ]);
+
+            setCoffees(Array.isArray(coffeeList) ? coffeeList : []);
+            setBrewingMethods(Array.isArray(methodList) ? methodList : []);
+        } catch (error) {
+            console.error(error);
+            setCatalogError("Nie udało się pobrać katalogu kaw i metod parzenia.");
+            setCoffees([]);
+            setBrewingMethods([]);
+        } finally {
+            setCatalogLoading(false);
+        }
+    };
+
+    const coffeeInCatalog = (coffeeId) =>
+        coffees.some((coffee) => String(coffee.id) === String(coffeeId));
+
+    const methodInCatalog = (methodId) =>
+        brewingMethods.some((method) => String(method.id) === String(methodId));
+
+    const showMissingCoffeeOption =
+        formData.coffeeId && !coffeeInCatalog(formData.coffeeId);
+
+    const showMissingMethodOption =
+        formData.brewingMethodId && !methodInCatalog(formData.brewingMethodId);
+
     useEffect(() => {
-
-        const loadCatalog = async () => {
-            try {
-                const [coffeeList, methodList] = await Promise.all([
-                    getCoffees(),
-                    getBrewingMethods()
-                ]);
-
-                setCoffees(Array.isArray(coffeeList) ? coffeeList : []);
-                setBrewingMethods(Array.isArray(methodList) ? methodList : []);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setCatalogLoading(false);
-            }
-        };
-
         loadCatalog();
-
     }, []);
 
     useEffect(() => {
@@ -177,6 +203,9 @@ const RecipesForm = () => {
                         ? JSON.parse(data.parameters)
                         : data.parameters;
 
+                setLinkedCoffeeLabel(data.coffee || "");
+                setLinkedBrewingMethodLabel(data.brewingMethod || "");
+
                 setFormData({
                     title: data.title || "",
                     description: data.steps || "",
@@ -185,21 +214,21 @@ const RecipesForm = () => {
                         ? String(data.brewingMethodId)
                         : "",
                     coffee:
-                        parameters.coffee
+                        parameters?.coffee
                             ?.replace("g", "") || "",
                     water:
-                        parameters.water
+                        parameters?.water
                             ?.replace("ml", "") || "",
                     temperature:
-                        parameters.temperature
+                        parameters?.temperature
                             ?.replace("°C", "") || "",
                     grindSize:
-                        parameters.grindSize || "",
+                        parameters?.grindSize || "",
                     minutes:
-                        parameters.brewTime
+                        parameters?.brewTime
                             ?.split(":")[0] || "",
                     seconds:
-                        parameters.brewTime
+                        parameters?.brewTime
                             ?.split(":")[1] || ""
                 });
 
@@ -333,6 +362,25 @@ const RecipesForm = () => {
                                 />
                                 {renderFieldError("description")}
 
+                                <p style={fieldLabelStyle}>
+                                    Kawa z katalogu
+                                </p>
+
+                                {catalogError && (
+                                    <div style={catalogNoticeStyle}>
+                                        <p style={catalogNoticeTextStyle}>
+                                            {catalogError}
+                                        </p>
+                                        <button
+                                            type="button"
+                                            style={retryButtonStyle}
+                                            onClick={loadCatalog}
+                                        >
+                                            Spróbuj ponownie
+                                        </button>
+                                    </div>
+                                )}
+
                                 <select
                                     name="coffeeId"
                                     value={formData.coffeeId}
@@ -344,15 +392,45 @@ const RecipesForm = () => {
                                     }}
                                 >
                                     <option value="">
-                                        {catalogLoading ? "Ładowanie kaw..." : "Wybierz kawę (opcjonalnie w roboczej)"}
+                                        {getCoffeeSelectPlaceholder({
+                                            loading: catalogLoading,
+                                            error: Boolean(catalogError),
+                                            isEmpty: !catalogLoading && !catalogError && coffees.length === 0
+                                        })}
                                     </option>
+                                    {showMissingCoffeeOption && (
+                                        <option value={formData.coffeeId}>
+                                            {linkedCoffeeLabel || `Kawa #${formData.coffeeId}`}
+                                        </option>
+                                    )}
                                     {coffees.map((coffee) => (
-                                        <option key={coffee.id} value={coffee.id}>
-                                            {coffee.name}
+                                        <option
+                                            key={coffee.id}
+                                            value={coffee.id}
+                                            title={[coffee.roastery, coffee.region].filter(Boolean).join(", ")}
+                                        >
+                                            {formatCoffeeSelectLabel(coffee)}
                                         </option>
                                     ))}
                                 </select>
                                 {renderFieldError("coffeeId")}
+
+                                <div style={wikiHintStyle}>
+                                    <p style={wikiHintTextStyle}>
+                                        Nie ma Twojej kawy na liście?
+                                    </p>
+                                    <button
+                                        type="button"
+                                        style={wikiLinkButtonStyle}
+                                        onClick={() => navigate("/wiki/add?module=coffee")}
+                                    >
+                                        Dodaj artykuł wiki
+                                    </button>
+                                </div>
+
+                                <p style={fieldLabelStyle}>
+                                    Metoda parzenia z katalogu
+                                </p>
 
                                 <select
                                     name="brewingMethodId"
@@ -365,17 +443,42 @@ const RecipesForm = () => {
                                     }}
                                 >
                                     <option value="">
-                                        {catalogLoading
-                                            ? "Ładowanie metod..."
-                                            : "Wybierz metodę parzenia (opcjonalnie w roboczej)"}
+                                        {getBrewingMethodSelectPlaceholder({
+                                            loading: catalogLoading,
+                                            error: Boolean(catalogError),
+                                            isEmpty: !catalogLoading && !catalogError && brewingMethods.length === 0
+                                        })}
                                     </option>
+                                    {showMissingMethodOption && (
+                                        <option value={formData.brewingMethodId}>
+                                            {linkedBrewingMethodLabel
+                                                || `Metoda #${formData.brewingMethodId}`}
+                                        </option>
+                                    )}
                                     {brewingMethods.map((method) => (
-                                        <option key={method.id} value={method.id}>
-                                            {method.name}
+                                        <option
+                                            key={method.id}
+                                            value={method.id}
+                                            title={method.description || method.name}
+                                        >
+                                            {formatBrewingMethodSelectLabel(method)}
                                         </option>
                                     ))}
                                 </select>
                                 {renderFieldError("brewingMethodId")}
+
+                                <div style={wikiHintStyle}>
+                                    <p style={wikiHintTextStyle}>
+                                        Nie ma Twojej metody parzenia na liście?
+                                    </p>
+                                    <button
+                                        type="button"
+                                        style={wikiLinkButtonStyle}
+                                        onClick={() => navigate("/wiki/add?module=brewing_method")}
+                                    >
+                                        Dodaj artykuł wiki
+                                    </button>
+                                </div>
 
                             </div>
 
@@ -396,50 +499,57 @@ const RecipesForm = () => {
                                     gap: "14px"
                                 }}
                             >
+                                <div>
+                                    <input
+                                        name="coffee"
+                                        placeholder="Ilość kawy (g)"
+                                        value={formData.coffee}
+                                        onChange={handleChange}
+                                        style={{
+                                            ...inputStyle,
+                                            borderColor: fieldErrors.coffee ? "#d14343" : inputStyle.border
+                                        }}
+                                    />
+                                    {renderFieldError("coffee")}
+                                </div>
 
-                                <input
-                                    name="coffee"
-                                    placeholder="Ilość kawy (g)"
-                                    value={formData.coffee}
-                                    onChange={handleChange}
-                                    style={{
-                                        ...inputStyle,
-                                        borderColor: fieldErrors.coffee ? "#d14343" : inputStyle.border
-                                    }}
-                                />
-                                {renderFieldError("coffee")}
+                                <div>
+                                    <input
+                                        name="water"
+                                        placeholder="Ilość wody (ml)"
+                                        value={formData.water}
+                                        onChange={handleChange}
+                                        style={{
+                                            ...inputStyle,
+                                            borderColor: fieldErrors.water ? "#d14343" : inputStyle.border
+                                        }}
+                                    />
+                                    {renderFieldError("water")}
+                                </div>
 
-                                <input
-                                    name="water"
-                                    placeholder="Ilość wody (ml)"
-                                    value={formData.water}
-                                    onChange={handleChange}
-                                    style={{
-                                        ...inputStyle,
-                                        borderColor: fieldErrors.water ? "#d14343" : inputStyle.border
-                                    }}
-                                />
-                                {renderFieldError("water")}
+                                <div>
+                                    <input
+                                        name="temperature"
+                                        placeholder="Temperatura wody (°C)"
+                                        value={formData.temperature}
+                                        onChange={handleChange}
+                                        style={{
+                                            ...inputStyle,
+                                            borderColor: fieldErrors.temperature ? "#d14343" : inputStyle.border
+                                        }}
+                                    />
+                                    {renderFieldError("temperature")}
+                                </div>
 
-                                <input
-                                    name="temperature"
-                                    placeholder="Temperatura wody (°C)"
-                                    value={formData.temperature}
-                                    onChange={handleChange}
-                                    style={{
-                                        ...inputStyle,
-                                        borderColor: fieldErrors.temperature ? "#d14343" : inputStyle.border
-                                    }}
-                                />
-                                {renderFieldError("temperature")}
-
-                                <input
-                                    name="grindSize"
-                                    placeholder="Stopień mielenia"
-                                    value={formData.grindSize}
-                                    onChange={handleChange}
-                                    style={inputStyle}
-                                />
+                                <div>
+                                    <input
+                                        name="grindSize"
+                                        placeholder="Stopień mielenia"
+                                        value={formData.grindSize}
+                                        onChange={handleChange}
+                                        style={inputStyle}
+                                    />
+                                </div>
 
                             </div>
 
@@ -460,68 +570,85 @@ const RecipesForm = () => {
                                     gap: "14px"
                                 }}
                             >
+                                <div>
+                                    <input
+                                        name="minutes"
+                                        placeholder="Minuty"
+                                        value={formData.minutes}
+                                        onChange={handleChange}
+                                        style={{
+                                            ...inputStyle,
+                                            borderColor: (fieldErrors.minutes || fieldErrors.brewTime)
+                                                ? "#d14343"
+                                                : inputStyle.border
+                                        }}
+                                    />
+                                    {renderFieldError("minutes")}
+                                </div>
 
-                                <input
-                                    name="minutes"
-                                    placeholder="Minuty"
-                                    value={formData.minutes}
-                                    onChange={handleChange}
-                                    style={{
-                                        ...inputStyle,
-                                        borderColor: fieldErrors.minutes ? "#d14343" : inputStyle.border
-                                    }}
-                                />
-                                {renderFieldError("minutes")}
-
-                                <input
-                                    name="seconds"
-                                    placeholder="Sekundy"
-                                    value={formData.seconds}
-                                    onChange={handleChange}
-                                    style={{
-                                        ...inputStyle,
-                                        borderColor: fieldErrors.seconds ? "#d14343" : inputStyle.border
-                                    }}
-                                />
-                                {renderFieldError("seconds")}
-
+                                <div>
+                                    <input
+                                        name="seconds"
+                                        placeholder="Sekundy"
+                                        value={formData.seconds}
+                                        onChange={handleChange}
+                                        style={{
+                                            ...inputStyle,
+                                            borderColor: (fieldErrors.seconds || fieldErrors.brewTime)
+                                                ? "#d14343"
+                                                : inputStyle.border
+                                        }}
+                                    />
+                                    {renderFieldError("seconds")}
+                                </div>
                             </div>
+
+                            {renderFieldError("brewTime")}
 
                         </div>
 
                         {/* BUTTONS */}
 
-                        <div
-                            style={{
-                                display: "flex",
-                                justifyContent: "flex-end",
-                                gap: "14px",
-                                marginTop: "26px"
-                            }}
-                        >
-
-                            <button
-                                style={draftButtonStyle}
-                                onClick={() =>
-                                    saveRecipe("DRAFT")
-                                }
+                        <div style={{ marginTop: "26px" }}>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "flex-end",
+                                    gap: "14px"
+                                }}
                             >
-                                Zapisz wersję roboczą
-                            </button>
+                                <button
+                                    type="button"
+                                    style={{
+                                        ...draftButtonStyle,
+                                        opacity: isSubmitting ? 0.7 : 1,
+                                        cursor: isSubmitting ? "not-allowed" : "pointer"
+                                    }}
+                                    disabled={isSubmitting}
+                                    onClick={() => saveRecipe("DRAFT")}
+                                >
+                                    {isSubmitting
+                                        ? "Zapisywanie..."
+                                        : "Zapisz wersję roboczą"}
+                                </button>
 
-                            <button
-                                style={publishButtonStyle}
-                                onClick={() =>
-                                    saveRecipe("PUBLISHED")
-                                }
-                            >
-
-                                {isEditing
-                                    ? "Zapisz zmiany"
-                                    : "Opublikuj recepturę"}
-
-                            </button>
-
+                                <button
+                                    type="button"
+                                    style={{
+                                        ...publishButtonStyle,
+                                        opacity: isSubmitting ? 0.7 : 1,
+                                        cursor: isSubmitting ? "not-allowed" : "pointer"
+                                    }}
+                                    disabled={isSubmitting}
+                                    onClick={() => saveRecipe("PUBLISHED")}
+                                >
+                                    {isSubmitting
+                                        ? "Zapisywanie..."
+                                        : isEditing
+                                            ? "Zapisz zmiany"
+                                            : "Opublikuj recepturę"}
+                                </button>
+                            </div>
                         </div>
 
                     </div>
@@ -579,6 +706,71 @@ const errorTextStyle = {
     margin: "6px 0 0 0",
     fontSize: "13px",
     color: "#d14343"
+};
+
+const fieldLabelStyle = {
+    margin: "4px 0 0 0",
+    fontSize: "13px",
+    fontWeight: "600",
+    color: "#5a5a5a"
+};
+
+const catalogNoticeStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+    padding: "12px 14px",
+    borderRadius: "14px",
+    backgroundColor: "#fff4f4",
+    border: "1px solid #f0cccc"
+};
+
+const catalogNoticeTextStyle = {
+    margin: 0,
+    fontSize: "13px",
+    color: "#9b2c2c"
+};
+
+const retryButtonStyle = {
+    backgroundColor: "#ffffff",
+    color: "#1f1f1f",
+    padding: "8px 12px",
+    borderRadius: "12px",
+    border: "1px solid #dddddd",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+    whiteSpace: "nowrap"
+};
+
+const wikiHintStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+    padding: "12px 14px",
+    borderRadius: "14px",
+    backgroundColor: "#f0f4ff",
+    border: "1px solid #d9e3ff"
+};
+
+const wikiHintTextStyle = {
+    margin: 0,
+    fontSize: "13px",
+    color: "#4f5d78"
+};
+
+const wikiLinkButtonStyle = {
+    backgroundColor: "#ffffff",
+    color: "#1f1f1f",
+    padding: "8px 12px",
+    borderRadius: "12px",
+    border: "1px solid #c9d7ff",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+    whiteSpace: "nowrap"
 };
 
 export default RecipesForm;

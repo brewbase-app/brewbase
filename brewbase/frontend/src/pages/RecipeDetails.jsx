@@ -15,17 +15,31 @@ import {
     Scale,
     Timer,
     FileText,
-    Download,
-    Heart,
-    Star
+    Download
 } from "lucide-react";
 
-import {
-    getRecipeById,
-    addFavorite,
-    removeFavorite,
-    rateRecipe
-} from "../api/recipeApi";
+import { getRecipeById } from "../api/recipeApi";
+
+function parseRecipeParameters(rawParameters) {
+    if (!rawParameters) {
+        return {};
+    }
+
+    if (typeof rawParameters === "string") {
+        try {
+            const parsed = JSON.parse(rawParameters);
+            return parsed && typeof parsed === "object" ? parsed : {};
+        } catch {
+            return {};
+        }
+    }
+
+    if (typeof rawParameters === "object") {
+        return rawParameters;
+    }
+
+    return {};
+}
 
 const RecipeDetails = () => {
     
@@ -37,10 +51,6 @@ const RecipeDetails = () => {
 
     const [loading, setLoading] = useState(true);
 
-    const [userRating, setUserRating] = useState(0);
-
-    const [isFavorite, setIsFavorite] = useState(false);
-
     useEffect(() => {
 
         const fetchRecipe = async () => {
@@ -49,19 +59,12 @@ const RecipeDetails = () => {
 
                 const data = await getRecipeById(id);
 
-                console.log(data);
-
                 const parsedRecipe = {
                     ...data,
-                    parameters:
-                        typeof data.parameters === "string"
-                            ? JSON.parse(data.parameters)
-                            : data.parameters
+                    parameters: parseRecipeParameters(data.parameters)
                 };
 
                 setRecipe(parsedRecipe);
-
-                setIsFavorite(data.isFavorite ?? false);
 
             } catch (error) {
 
@@ -76,59 +79,6 @@ const RecipeDetails = () => {
         fetchRecipe();
 
     }, [id]);
-
-    const handleFavorite = async () => {
-
-        try {
-
-            if (isFavorite) {
-
-                await removeFavorite(recipe.id);
-
-                setIsFavorite(false);
-
-            } else {
-
-                await addFavorite(recipe.id);
-
-                setIsFavorite(true);
-            }
-
-        } catch (error) {
-
-            console.error(error);
-
-            alert(
-                "Nie udało się zaktualizować ulubionych."
-            );
-        }
-    };
-
-    const handleRating = async (value) => {
-
-        try {
-
-            await rateRecipe(recipe.id, value);
-
-            setUserRating(value);
-
-            const updated = await getRecipeById(recipe.id);
-
-            setRecipe((prev) => ({
-                ...prev,
-                averageRating: updated.averageRating,
-                ratingCount: updated.ratingCount ?? 0
-            }));
-
-        } catch (error) {
-
-            console.error(error);
-
-            alert(
-                "Nie udało się zapisać oceny."
-            );
-        }
-    };
 
     if (loading) {
 
@@ -196,23 +146,27 @@ const RecipeDetails = () => {
         );
     }
 
+    const parameters = recipe.parameters || {};
+    const displayValue = (value, fallback = "—") => value || fallback;
+
     const exportToTXT = () => {
 
         const content = `
 ${recipe.title}
 
-Metoda: ${recipe.brewingMethod}
+Kawa (katalog): ${displayValue(recipe.coffee, "Nie wybrano")}
+Metoda: ${displayValue(recipe.brewingMethod, "Nie wybrano")}
 Status: ${recipe.isPublic ? "Publiczna" : "Robocza"}
 
 PARAMETRY
-- Kawa: ${recipe.parameters.coffee}
-- Woda: ${recipe.parameters.water}
-- Temperatura: ${recipe.parameters.temperature}
-- Czas: ${recipe.parameters.brewTime}
-- Mielenie: ${recipe.parameters.grindSize}
+- Dawka kawy: ${displayValue(parameters.coffee)}
+- Woda: ${displayValue(parameters.water)}
+- Temperatura: ${displayValue(parameters.temperature)}
+- Czas: ${displayValue(parameters.brewTime)}
+- Mielenie: ${displayValue(parameters.grindSize)}
 
 OPIS
-${recipe.steps}
+${recipe.steps || ""}
 `;
 
         const blob = new Blob([content], {
@@ -235,9 +189,9 @@ ${recipe.steps}
     const exportToCSV = () => {
 
         const csvContent = `
-Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
-"${recipe.title}","${recipe.brewingMethod}","${recipe.isPublic ? "Publiczna" : "Robocza"}","${recipe.parameters.coffee}","${recipe.parameters.water}","${recipe.parameters.temperature}","${recipe.parameters.brewTime}","${recipe.parameters.grindSize}","${recipe.steps.replace(/\n/g, " ")}"
-    `;
+Title,Brewing Method,Status,Catalog Coffee,Coffee Dose,Water,Temperature,Brew Time,Grind Size,Steps
+"${recipe.title}","${displayValue(recipe.brewingMethod, "Nie wybrano")}","${recipe.isPublic ? "Publiczna" : "Robocza"}","${displayValue(recipe.coffee, "Nie wybrano")}","${displayValue(parameters.coffee)}","${displayValue(parameters.water)}","${displayValue(parameters.temperature)}","${displayValue(parameters.brewTime)}","${displayValue(parameters.grindSize)}","${(recipe.steps || "").replace(/\n/g, " ")}"
+`;
 
         const blob = new Blob([csvContent], {
             type: "text/csv;charset=utf-8;"
@@ -288,6 +242,18 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                         {recipe.title}
                     </h1>
 
+                    {recipe.coffee && (
+                        <p
+                            style={{
+                                fontSize: "18px",
+                                color: "#6f6f6f",
+                                margin: "0 0 14px 0"
+                            }}
+                        >
+                            {recipe.coffee}
+                        </p>
+                    )}
+
                     <div
                         style={{
                             display: "flex",
@@ -311,7 +277,7 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
 
                                 <div style={badgeStyle}>
                                     <Coffee size={14} />
-                                    {recipe.brewingMethod}
+                                    {displayValue(recipe.brewingMethod, "Metoda nie wybrana")}
                                 </div>
 
                                 <div style={badgeStyle}>
@@ -331,111 +297,6 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                         </>
 
                                     )}
-
-                                </div>
-
-                            </div>
-
-                            {/* FAVORITES + RATING */}
-
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "20px",
-                                    marginTop: "18px",
-                                    flexWrap: "wrap"
-                                }}
-                            >
-
-                                {/* FAVORITE */}
-
-                                <button
-                                    onClick={handleFavorite}
-                                    style={{
-                                        background: "none",
-                                        border: "none",
-                                        cursor: "pointer",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "10px",
-                                        fontSize: "15px",
-                                        fontWeight: "600",
-                                        color: "#2f2f2f",
-                                        padding: 0
-                                    }}
-                                >
-
-                                    <Heart
-                                        size={20}
-                                        fill={
-                                            isFavorite
-                                                ? "#1f1f1f"
-                                                : "none"
-                                        }
-                                    />
-
-                                    {isFavorite
-                                        ? "Dodano do ulubionych"
-                                        : "Dodaj do ulubionych"}
-
-                                </button>
-
-                                {/* RATING */}
-
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "10px"
-                                    }}
-                                >
-
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            gap: "4px"
-                                        }}
-                                    >
-
-                                        {[1, 2, 3, 4, 5].map((star) => (
-
-                                            <Star
-                                                key={star}
-                                                size={20}
-                                                style={{
-                                                    cursor: "pointer"
-                                                }}
-                                                fill={
-                                                    star <= userRating
-                                                        ? "#1f1f1f"
-                                                        : "none"
-                                                }
-                                                onClick={() =>
-                                                    handleRating(star)
-                                                }
-                                            />
-
-                                        ))}
-
-                                    </div>
-
-                                    <span
-                                        style={{
-                                            fontSize: "14px",
-                                            color: "#666"
-                                        }}
-                                    >
-
-                                        {recipe.averageRating != null
-                                            ? recipe.averageRating.toFixed(1)
-                                            : "Brak ocen"}
-
-                                        {" · "}
-
-                                        {recipe.ratingCount ?? 0} ocen
-
-                                    </span>
 
                                 </div>
 
@@ -517,7 +378,7 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                 </p>
 
                                 <p style={infoValue}>
-                                    {recipe.parameters.coffee}
+                                    {displayValue(parameters.coffee)}
                                 </p>
                             </div>
 
@@ -532,7 +393,7 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                 </p>
 
                                 <p style={infoValue}>
-                                    {recipe.parameters.water}
+                                    {displayValue(parameters.water)}
                                 </p>
                             </div>
 
@@ -547,7 +408,7 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                 </p>
 
                                 <p style={infoValue}>
-                                    {recipe.parameters.temperature}
+                                    {displayValue(parameters.temperature)}
                                 </p>
                             </div>
 
@@ -562,7 +423,7 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                 </p>
 
                                 <p style={infoValue}>
-                                    {recipe.parameters.brewTime}
+                                    {displayValue(parameters.brewTime)}
                                 </p>
                             </div>
 
@@ -600,7 +461,7 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                         whiteSpace: "pre-line"
                                     }}
                                 >
-                                    {recipe.steps}
+                                    {displayValue(recipe.steps, "Brak opisu")}
                                 </div>
 
                             </div>
@@ -631,7 +492,7 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                     <span style={labelStyle}>
                                         Stopień mielenia:
                                     </span>{" "}
-                                    {recipe.parameters.grindSize}
+                                    {displayValue(parameters.grindSize)}
                                 </div>
 
                             </div>
@@ -674,6 +535,20 @@ const editButtonStyle = {
     padding: "10px 16px",
     borderRadius: "16px",
     border: "none",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "600"
+};
+
+const exportButtonStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    backgroundColor: "#ededed",
+    color: "#2f2f2f",
+    padding: "10px 16px",
+    borderRadius: "16px",
+    border: "1px solid #d9d9d9",
     cursor: "pointer",
     fontSize: "14px",
     fontWeight: "600"

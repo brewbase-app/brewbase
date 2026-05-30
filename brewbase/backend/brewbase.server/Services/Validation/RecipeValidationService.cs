@@ -16,6 +16,8 @@ public sealed class RecipeValidationService : IRecipeValidationService
     private const decimal MaxWaterMl = 5000m;
     private const decimal MinTemperature = 70m;
     private const decimal MaxTemperature = 100m;
+    private const int MinBrewTimeSeconds = 60;
+    private const int MaxBrewTimeSeconds = 540;
 
     public RecipeValidationResult ValidateDraft(
         string? title,
@@ -234,10 +236,56 @@ public sealed class RecipeValidationService : IRecipeValidationService
             }
         }
 
-        if (hasBrewTime && brewTimeSeconds <= 0)
+        if (hasBrewTime)
         {
-            result.AddError("Parameters.BrewTime", "Brew time must be greater than 0.");
+            if (brewTimeSeconds < MinBrewTimeSeconds || brewTimeSeconds > MaxBrewTimeSeconds)
+            {
+                result.AddError(
+                    "Parameters.BrewTime",
+                    "Brew time must be between 1:00 and 9:00.");
+            }
         }
+    }
+
+    private static bool TryParseBrewTimeSeconds(JsonElement parameters, out int value)
+    {
+        value = 0;
+
+        if (parameters.TryGetProperty("brewTime", out var brewTimeElement) &&
+            brewTimeElement.ValueKind == JsonValueKind.String)
+        {
+            var brewTime = brewTimeElement.GetString();
+            if (string.IsNullOrWhiteSpace(brewTime))
+            {
+                return false;
+            }
+
+            var match = Regex.Match(brewTime, @"^(?<minutes>\d+):(?<seconds>\d+)$");
+            if (!match.Success)
+            {
+                return false;
+            }
+
+            var minutes = int.Parse(match.Groups["minutes"].Value, CultureInfo.InvariantCulture);
+            var seconds = int.Parse(match.Groups["seconds"].Value, CultureInfo.InvariantCulture);
+
+            if (seconds is < 0 or > 59)
+            {
+                return false;
+            }
+
+            value = (minutes * 60) + seconds;
+
+            return value > 0;
+        }
+
+        if (parameters.TryGetProperty("brew_time_seconds", out var secondsElement) &&
+            secondsElement.TryGetInt32(out value))
+        {
+            return value > 0;
+        }
+
+        return false;
     }
 
     private static bool HasMeaningfulParameters(JsonElement parameters)
@@ -254,6 +302,17 @@ public sealed class RecipeValidationService : IRecipeValidationService
 
         foreach (var property in parameters.EnumerateObject())
         {
+            if (string.Equals(property.Name, "brewTime", StringComparison.Ordinal) &&
+                property.Value.ValueKind == JsonValueKind.String)
+            {
+                if (TryParseBrewTimeSeconds(parameters, out _))
+                {
+                    return true;
+                }
+
+                continue;
+            }
+
             if (property.Value.ValueKind == JsonValueKind.String &&
                 !string.IsNullOrWhiteSpace(property.Value.GetString()))
             {
@@ -325,40 +384,6 @@ public sealed class RecipeValidationService : IRecipeValidationService
             {
                 return TryParseAmount(temperatureElement.GetString(), out value);
             }
-        }
-
-        return false;
-    }
-
-    private static bool TryParseBrewTimeSeconds(JsonElement parameters, out int value)
-    {
-        value = 0;
-
-        if (parameters.TryGetProperty("brewTime", out var brewTimeElement) &&
-            brewTimeElement.ValueKind == JsonValueKind.String)
-        {
-            var brewTime = brewTimeElement.GetString();
-            if (string.IsNullOrWhiteSpace(brewTime))
-            {
-                return false;
-            }
-
-            var match = Regex.Match(brewTime, @"^(?<minutes>\d+):(?<seconds>\d+)$");
-            if (!match.Success)
-            {
-                return false;
-            }
-
-            var minutes = int.Parse(match.Groups["minutes"].Value, CultureInfo.InvariantCulture);
-            var seconds = int.Parse(match.Groups["seconds"].Value, CultureInfo.InvariantCulture);
-            value = (minutes * 60) + seconds;
-            return true;
-        }
-
-        if (parameters.TryGetProperty("brew_time_seconds", out var secondsElement) &&
-            secondsElement.TryGetInt32(out value))
-        {
-            return true;
         }
 
         return false;

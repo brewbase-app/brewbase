@@ -406,6 +406,17 @@ public class RecipeEndpointsTests : IDisposable
     }
 
     [Fact]
+    public async Task User1_CreateDraft_WithPlaceholderParameters_ReturnsCreated()
+    {
+        var body = """
+            {"title":"Draft Title Only","parameters":{"coffee":"","water":"","temperature":"","grindSize":"","brewTime":"0:0"},"steps":"","isPublic":false,"coffeeId":null,"brewingMethodId":null}
+            """;
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", devUserId: User1, body);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
     public async Task User1_CreateDraft_CompletelyEmpty_ReturnsBadRequest()
     {
         var body = """

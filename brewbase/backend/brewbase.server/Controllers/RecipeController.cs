@@ -167,7 +167,7 @@ public class RecipeController : ControllerBase
         var rating = await _context.RecipeRatings
             .FirstOrDefaultAsync(r => r.RecipeId == id && r.UserId == userId.Value);
 
-        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        var now = DateTime.UtcNow;
 
         if (rating is null)
         {
@@ -229,7 +229,7 @@ public class RecipeController : ControllerBase
             UserId = userId.Value,
             CoffeeId = NormalizeForeignKey(request.CoffeeId),
             BrewingMethodId = NormalizeForeignKey(request.BrewingMethodId),
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            CreatedAt = DateTime.UtcNow
         };
 
         _context.Recipes.Add(entity);

@@ -1,6 +1,8 @@
 const TITLE_MIN_LENGTH = 3;
 const TITLE_MAX_LENGTH = 120;
 const STEPS_MIN_LENGTH = 5;
+const MIN_BREW_TIME_SECONDS = 60;
+const MAX_BREW_TIME_SECONDS = 540;
 const MIN_TEMPERATURE = 70;
 const MAX_TEMPERATURE = 100;
 const MAX_COFFEE_GRAMS = 1000;
@@ -9,12 +11,14 @@ const MAX_WATER_ML = 5000;
 const FIELD_LABELS = {
     title: "Nazwa receptury",
     description: "Opis przygotowania",
-    brewingMethod: "Metoda parzenia",
+    coffeeId: "Kawa",
+    brewingMethodId: "Metoda parzenia",
     coffee: "Ilość kawy",
     water: "Ilość wody",
     temperature: "Temperatura wody",
-    minutes: "Czas parzenia",
-    seconds: "Czas parzenia",
+    minutes: "Minuty",
+    seconds: "Sekundy",
+    brewTime: "Czas parzenia",
     form: "Formularz",
 };
 
@@ -85,39 +89,60 @@ function validateSteps(description, errors, required) {
     }
 }
 
-function validateParameters(formData, errors, required) {
+function getBrewTimeSeconds(formData) {
+    const hasBrewTimeInput = Boolean(formData.minutes?.trim() || formData.seconds?.trim());
+    if (!hasBrewTimeInput) {
+        return null;
+    }
+
+    const minutes = parseNumber(formData.minutes) ?? 0;
+    const seconds = parseNumber(formData.seconds) ?? 0;
+    return (minutes * 60) + seconds;
+}
+
+function validateBrewTime(formData, errors, required) {
+    const hasMinutesInput = Boolean(formData.minutes?.trim());
+    const hasSecondsInput = Boolean(formData.seconds?.trim());
+
+    if (!hasMinutesInput && !hasSecondsInput) {
+        if (required) {
+            errors.brewTime = "Czas parzenia jest wymagany.";
+        }
+        return;
+    }
+
+    if (hasMinutesInput) {
+        const minutes = parseNumber(formData.minutes);
+        if (minutes === null || minutes < 0 || !Number.isInteger(minutes)) {
+            errors.minutes = "Podaj poprawną liczbę minut.";
+        }
+    }
+
+    if (hasSecondsInput) {
+        const seconds = parseNumber(formData.seconds);
+        if (seconds === null || seconds < 0 || seconds > 59 || !Number.isInteger(seconds)) {
+            errors.seconds = "Sekundy muszą być między 0 a 59.";
+        }
+    }
+
+    if (errors.minutes || errors.seconds) {
+        return;
+    }
+
+    const brewTimeSeconds = getBrewTimeSeconds(formData);
+    if (brewTimeSeconds === null) {
+        return;
+    }
+
+    if (brewTimeSeconds < MIN_BREW_TIME_SECONDS || brewTimeSeconds > MAX_BREW_TIME_SECONDS) {
+        errors.brewTime = "Czas parzenia musi być między 1:00 a 9:00.";
+    }
+}
+
+function validateOptionalParameterRanges(formData, errors) {
     const coffee = parseNumber(formData.coffee);
     const water = parseNumber(formData.water);
     const temperature = parseNumber(formData.temperature);
-    const minutes = parseNumber(formData.minutes) ?? 0;
-    const seconds = parseNumber(formData.seconds) ?? 0;
-    const brewTimeSeconds = (minutes * 60) + seconds;
-
-    if (required) {
-        if (!formData.coffeeId) {
-            errors.coffeeId = "Wybór kawy jest wymagany.";
-        }
-
-        if (!formData.brewingMethodId) {
-            errors.brewingMethodId = "Metoda parzenia jest wymagana.";
-        }
-
-        if (coffee === null) {
-            errors.coffee = "Ilość kawy jest wymagana.";
-        }
-
-        if (water === null) {
-            errors.water = "Ilość wody jest wymagana.";
-        }
-
-        if (temperature === null) {
-            errors.temperature = "Temperatura wody jest wymagana.";
-        }
-
-        if (brewTimeSeconds <= 0) {
-            errors.minutes = "Czas parzenia musi być większy od zera.";
-        }
-    }
 
     if (coffee !== null) {
         if (coffee <= 0) {
@@ -141,9 +166,57 @@ function validateParameters(formData, errors, required) {
         }
     }
 
-    if ((formData.minutes?.trim() || formData.seconds?.trim()) && brewTimeSeconds <= 0) {
-        errors.minutes = "Czas parzenia musi być większy od zera.";
+    validateBrewTime(formData, errors, false);
+}
+
+function validatePublishRequiredFields(formData, errors) {
+    if (!formData.coffeeId) {
+        errors.coffeeId = "Wybór kawy jest wymagany.";
     }
+
+    if (!formData.brewingMethodId) {
+        errors.brewingMethodId = "Metoda parzenia jest wymagana.";
+    }
+
+    if (parseNumber(formData.coffee) === null) {
+        errors.coffee = "Ilość kawy jest wymagana.";
+    }
+
+    if (parseNumber(formData.water) === null) {
+        errors.water = "Ilość wody jest wymagana.";
+    }
+
+    if (parseNumber(formData.temperature) === null) {
+        errors.temperature = "Temperatura wody jest wymagana.";
+    }
+
+    validateBrewTime(formData, errors, true);
+}
+
+export function buildRecipeParameters(formData) {
+    const parameters = {};
+
+    if (formData.coffee?.trim()) {
+        parameters.coffee = `${formData.coffee.trim()}g`;
+    }
+
+    if (formData.water?.trim()) {
+        parameters.water = `${formData.water.trim()}ml`;
+    }
+
+    if (formData.temperature?.trim()) {
+        parameters.temperature = `${formData.temperature.trim()}°C`;
+    }
+
+    if (formData.grindSize?.trim()) {
+        parameters.grindSize = formData.grindSize.trim();
+    }
+
+    if (formData.minutes?.trim() || formData.seconds?.trim()) {
+        parameters.brewTime = `${formData.minutes?.trim() || "0"}:${formData.seconds?.trim() || "0"}`;
+    }
+
+    return parameters;
 }
 
 export function validateRecipeDraft(formData) {
@@ -155,7 +228,7 @@ export function validateRecipeDraft(formData) {
 
     validateTitle(formData.title, errors, false);
     validateSteps(formData.description, errors, false);
-    validateParameters(formData, errors, false);
+    validateOptionalParameterRanges(formData, errors);
 
     return errors;
 }
@@ -165,7 +238,8 @@ export function validateRecipePublish(formData) {
 
     validateTitle(formData.title, errors, true);
     validateSteps(formData.description, errors, true);
-    validateParameters(formData, errors, true);
+    validatePublishRequiredFields(formData, errors);
+    validateOptionalParameterRanges(formData, errors);
 
     return errors;
 }
@@ -199,7 +273,10 @@ export function mapBackendErrors(apiErrors) {
                 mapped.temperature = translateBackendMessage(message, "Temperatura wody jest wymagana.");
                 break;
             case "Parameters.BrewTime":
-                mapped.minutes = translateBackendMessage(message, "Czas parzenia jest wymagany.");
+                mapped.brewTime = translateBackendMessage(
+                    message,
+                    "Czas parzenia musi być między 1:00 a 9:00."
+                );
                 break;
             case "":
                 mapped.form = translateBackendMessage(
@@ -235,6 +312,14 @@ function translateBackendMessage(message, fallback) {
 
     if (message.includes("Steps must be at least")) {
         return `Opis przygotowania musi mieć minimum ${STEPS_MIN_LENGTH} znaków.`;
+    }
+
+    if (message.includes("Brew time must be greater than 0")) {
+        return "Czas parzenia jest wymagany.";
+    }
+
+    if (message.includes("Brew time must be between")) {
+        return "Czas parzenia musi być między 1:00 a 9:00.";
     }
 
     if (message.includes("at least one field")) {

@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import "../../styles/wiki/AddWikiArticle.css";
 
-import {
-    Send,
-    ChevronDown
-} from "lucide-react";
+import { Send } from "lucide-react";
 
 import { createArticle } from "../../api/articlesApi";
 import { lookupCoffeesByName } from "../../api/coffeeApi";
@@ -23,6 +20,19 @@ import { ROASTING_STYLE_OPTIONS } from "../../utils/roastingStyleOptions";
 import { COFFEE_REGIONS } from "../../utils/coffeeRegions";
 import { COFFEE_FLAVOR_PROFILES } from "../../utils/coffeeFlavorProfiles";
 
+const CATEGORY_OPTIONS = [
+    { value: "coffee", label: "Kawy" },
+    { value: "country", label: "Kraje" },
+    { value: "brewing", label: "Metody parzenia" },
+    { value: "roastery", label: "Palarnie" },
+];
+
+const CATEGORY_LABELS = CATEGORY_OPTIONS.map((option) => option.label);
+
+const LABEL_TO_CATEGORY = Object.fromEntries(
+    CATEGORY_OPTIONS.map((option) => [option.label, option.value])
+);
+
 const CATEGORY_TO_MODULE = {
     coffee: "coffee",
     country: "country",
@@ -30,9 +40,21 @@ const CATEGORY_TO_MODULE = {
     roastery: "roastery",
 };
 
+const MODULE_TO_CATEGORY = {
+    coffee: "coffee",
+    country: "country",
+    brewing_method: "brewing",
+    roastery: "roastery",
+};
+
+function getCategoryValue(categoryLabel) {
+    return LABEL_TO_CATEGORY[categoryLabel.trim()] ?? "";
+}
+
 function AddWikiArticle() {
 
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
 
     const [title, setTitle] = useState("");
 
@@ -71,7 +93,24 @@ function AddWikiArticle() {
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
     useEffect(() => {
-        if (category !== "coffee") {
+        const moduleParam = searchParams.get("module");
+        const initialCategory = moduleParam
+            ? MODULE_TO_CATEGORY[moduleParam]
+            : null;
+
+        if (initialCategory) {
+            const label = CATEGORY_OPTIONS.find(
+                (option) => option.value === initialCategory
+            )?.label;
+
+            if (label) {
+                setCategory(label);
+            }
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
+        if (getCategoryValue(category) !== "coffee") {
             setCoffeeSuggestions([]);
             return undefined;
         }
@@ -112,10 +151,11 @@ function AddWikiArticle() {
     };
 
     const handleSubmit = async () => {
-        const module = CATEGORY_TO_MODULE[category];
+        const categoryValue = getCategoryValue(category);
+        const module = CATEGORY_TO_MODULE[categoryValue];
 
         const articleTitle =
-            category === "brewing"
+            categoryValue === "brewing"
                 ? brewingMethod.trim()
                 : title.trim();
 
@@ -126,42 +166,42 @@ function AddWikiArticle() {
             return;
         }
 
-        if (category === "coffee" && !beanOriginCountry.trim()) {
+        if (categoryValue === "coffee" && !beanOriginCountry.trim()) {
             setSubmitError(
                 "Podaj kraj pochodzenia ziaren."
             );
             return;
         }
 
-        if (category === "coffee" && !coffeeVariety.trim()) {
+        if (categoryValue === "coffee" && !coffeeVariety.trim()) {
             setSubmitError(
                 "Podaj odmianę."
             );
             return;
         }
 
-        if (category === "coffee" && !coffeeProcessing.trim()) {
+        if (categoryValue === "coffee" && !coffeeProcessing.trim()) {
             setSubmitError(
                 "Podaj obróbkę ziaren."
             );
             return;
         }
 
-        if (category === "roastery" && roastingStyles.length === 0) {
+        if (categoryValue === "roastery" && roastingStyles.length === 0) {
             setSubmitError(
                 "Wybierz co najmniej jeden styl palenia."
             );
             return;
         }
 
-        if (category === "country" && !title.trim()) {
+        if (categoryValue === "country" && !title.trim()) {
             setSubmitError(
                 "Podaj nazwę kraju."
             );
             return;
         }
 
-        if (category === "country" && !countryRegion.trim()) {
+        if (categoryValue === "country" && !countryRegion.trim()) {
             setSubmitError(
                 "Podaj region."
             );
@@ -174,7 +214,7 @@ function AddWikiArticle() {
 
             let articleContent = content.trim();
 
-            if (category === "coffee") {
+            if (categoryValue === "coffee") {
                 const metadataLines = [
                     `Kraj pochodzenia ziaren: ${beanOriginCountry.trim()}`,
                     `Odmiana: ${coffeeVariety.trim()}`,
@@ -192,13 +232,13 @@ function AddWikiArticle() {
                     articleContent;
             }
 
-            if (category === "roastery") {
+            if (categoryValue === "roastery") {
                 articleContent =
                     `Styl palenia: ${roastingStyles.join(", ")}\n\n` +
                     articleContent;
             }
 
-            if (category === "country") {
+            if (categoryValue === "country") {
                 const metadataLines = [
                     `Region: ${countryRegion.trim()}`,
                 ];
@@ -264,46 +304,18 @@ function AddWikiArticle() {
                             Kategoria
                         </label>
 
-                        <div className="select-wrapper category-select">
-
-                            <select
-                                value={category}
-                                onChange={(e) =>
-                                    setCategory(e.target.value)
-                                }
-                            >
-
-                                <option value="">
-                                    Wybierz kategorię
-                                </option>
-
-                                <option value="coffee">
-                                    Kawy
-                                </option>
-
-                                <option value="country">
-                                    Kraje
-                                </option>
-
-                                <option value="brewing">
-                                    Metody parzenia
-                                </option>
-
-                                <option value="roastery">
-                                    Palarnie
-                                </option>
-
-                            </select>
-
-                            <ChevronDown size={18} />
-
-                        </div>
+                        <ComboBoxInput
+                            value={category}
+                            onChange={setCategory}
+                            options={CATEGORY_LABELS}
+                            placeholder="Wybierz kategorię"
+                        />
 
                     </div>
 
                     {/* COFFEES */}
 
-                    {category === "coffee" && (
+                    {getCategoryValue(category) === "coffee" && (
 
                         <>
 
@@ -473,7 +485,7 @@ function AddWikiArticle() {
 
                     {/* COUNTRIES */}
 
-                    {category === "country" && (
+                    {getCategoryValue(category) === "country" && (
 
                         <>
 
@@ -544,7 +556,7 @@ function AddWikiArticle() {
 
                     {/* BREWING */}
 
-                    {category === "brewing" && (
+                    {getCategoryValue(category) === "brewing" && (
 
                         <>
 
@@ -585,7 +597,7 @@ function AddWikiArticle() {
 
                     {/* ROASTERIES */}
 
-                    {category === "roastery" && (
+                    {getCategoryValue(category) === "roastery" && (
 
                         <>
 
@@ -681,7 +693,7 @@ function AddWikiArticle() {
 
                     {/* IMAGES + ACTIONS */}
 
-                    {category && (
+                    {getCategoryValue(category) && (
 
                         <>
 
