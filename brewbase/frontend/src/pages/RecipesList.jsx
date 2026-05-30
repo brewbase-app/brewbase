@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import {
     Heart,
     Clock3,
@@ -10,87 +12,83 @@ import {
     Trash2
 } from "lucide-react";
 
-import { getFavoriteRecipes } from "../api/recipeApi";
+import {
+    getRecipes,
+    deleteRecipe
+} from "../api/recipeApi";
 
 const RecipesList = ({ title }) => {
+
     const navigate = useNavigate();
-    const isFavoritesPage = title === "Ulubione receptury";
-    const isAllRecipesPage = title === "Wszystkie receptury";
 
-    const [localRecipes, setLocalRecipes] = useState(
-        () => JSON.parse(localStorage.getItem("recipes")) || []
-    );
-    const [favoriteRecipes, setFavoriteRecipes] = useState([]);
-    const [isLoading, setIsLoading] = useState(isFavoritesPage);
-    const [error, setError] = useState("");
-
+    const [recipes, setRecipes] = useState([]);
     useEffect(() => {
-        if (!isFavoritesPage) {
-            return;
-        }
 
-        const loadFavorites = async () => {
+        const fetchRecipes = async () => {
+
             try {
-                setIsLoading(true);
-                setError("");
 
-                const data = await getFavoriteRecipes();
-                setFavoriteRecipes(Array.isArray(data) ? data : []);
-            } catch {
-                setError("Nie udało się pobrać ulubionych receptur.");
-                setFavoriteRecipes([]);
-            } finally {
-                setIsLoading(false);
+                const data = await getRecipes();
+
+                console.log(data);
+
+                setRecipes(data);
+
+            } catch (error) {
+
+                console.error(error);
             }
         };
 
-        loadFavorites();
-    }, [isFavoritesPage]);
+        fetchRecipes();
 
-    const handleDelete = (id) => {
+    }, []);
+
+    let data = [];
+
+    if (title === "Ulubione receptury") {
+
+        data = recipes.filter(
+            (r) => r.isFavorite
+        );
+
+    } else if (title === "Wszystkie receptury") {
+
+        data = recipes.filter(
+            (r) => r.isPublic === "PUBLISHED"
+        );
+
+    } else {
+
+        data = recipes;
+    }
+
+    const handleDelete = async (id) => {
+
         const confirmed = window.confirm(
             "Czy na pewno chcesz usunąć tę recepturę?"
         );
 
         if (!confirmed) return;
 
-        const updatedRecipes = localRecipes.filter(
-            (r) => r.id !== id
-        );
+        try {
 
-        setLocalRecipes(updatedRecipes);
+            await deleteRecipe(id);
 
-        localStorage.setItem(
-            "recipes",
-            JSON.stringify(updatedRecipes)
-        );
-    };
+            setRecipes((prev) =>
+                prev.filter((r) => r.id !== id)
+            );
 
-    const isRecipePublic = (recipe) => {
-        if (typeof recipe.isPublic === "boolean") {
-            return recipe.isPublic;
+        } catch (error) {
+
+            console.error(error);
+
+            alert("Nie udało się usunąć receptury.");
         }
-
-        return recipe.status === "PUBLISHED";
     };
-
-    const getRecipeSubtitle = (recipe) => {
-        if (recipe.createdAt) {
-            return new Date(recipe.createdAt).toLocaleDateString();
-        }
-
-        return [recipe.coffee, recipe.brewingMethod]
-            .filter(Boolean)
-            .join(" • ");
-    };
-
-    const data = isFavoritesPage
-        ? favoriteRecipes
-        : isAllRecipesPage
-            ? localRecipes.filter((r) => isRecipePublic(r))
-            : localRecipes;
 
     return (
+
         <div
             style={{
                 width: "100%",
@@ -100,8 +98,11 @@ const RecipesList = ({ title }) => {
                 boxSizing: "border-box"
             }}
         >
+
             {/* HEADER */}
+
             <div style={{ marginBottom: "38px" }}>
+
                 <h1
                     style={{
                         fontSize: "58px",
@@ -120,48 +121,23 @@ const RecipesList = ({ title }) => {
                         color: "#6f6f6f"
                     }}
                 >
-                    {isFavoritesPage
+
+                    {title === "Ulubione receptury"
                         ? "Twoje zapisane i ulubione przepisy."
-                        : isAllRecipesPage
+
+                        : title === "Wszystkie receptury"
                             ? "Przeglądaj wszystkie publiczne receptury."
+
                             : "Wszystkie stworzone przez Ciebie receptury."}
+
                 </p>
+
             </div>
 
-            {isLoading && (
-                <div
-                    style={{
-                        backgroundColor: "#fafafa",
-                        borderRadius: "28px",
-                        border: "1px solid #e6e6e6",
-                        padding: "50px",
-                        maxWidth: "950px",
-                        color: "#707070",
-                        fontSize: "16px"
-                    }}
-                >
-                    Ładowanie...
-                </div>
-            )}
-
-            {!isLoading && error && (
-                <div
-                    style={{
-                        backgroundColor: "#fafafa",
-                        borderRadius: "28px",
-                        border: "1px solid #e6e6e6",
-                        padding: "50px",
-                        maxWidth: "950px",
-                        color: "#707070",
-                        fontSize: "16px"
-                    }}
-                >
-                    {error}
-                </div>
-            )}
-
             {/* EMPTY STATE */}
-            {!isLoading && !error && data.length === 0 && (
+
+            {data.length === 0 && (
+
                 <div
                     style={{
                         backgroundColor: "#fafafa",
@@ -175,10 +151,11 @@ const RecipesList = ({ title }) => {
                 >
                     Brak receptur.
                 </div>
+
             )}
 
             {/* LIST */}
-            {!isLoading && !error && data.length > 0 && (
+
             <div
                 style={{
                     display: "flex",
@@ -187,7 +164,9 @@ const RecipesList = ({ title }) => {
                     maxWidth: "950px"
                 }}
             >
+
                 {data.map((r) => (
+
                     <div
                         key={r.id}
                         style={{
@@ -202,7 +181,9 @@ const RecipesList = ({ title }) => {
                                 "0 2px 10px rgba(0,0,0,0.03)"
                         }}
                     >
+
                         {/* LEFT */}
+
                         <div
                             style={{
                                 display: "flex",
@@ -210,6 +191,7 @@ const RecipesList = ({ title }) => {
                                 gap: "22px"
                             }}
                         >
+
                             <div
                                 style={{
                                     width: "58px",
@@ -223,14 +205,21 @@ const RecipesList = ({ title }) => {
                                     flexShrink: 0
                                 }}
                             >
-                                {isFavoritesPage ? (
+
+                                {title === "Ulubione receptury" ? (
+
                                     <Heart size={22} />
+
                                 ) : (
+
                                     <FileText size={22} />
+
                                 )}
+
                             </div>
 
                             <div>
+
                                 <div
                                     style={{
                                         display: "flex",
@@ -240,6 +229,7 @@ const RecipesList = ({ title }) => {
                                         flexWrap: "wrap"
                                     }}
                                 >
+
                                     <h2
                                         style={{
                                             fontSize: "22px",
@@ -264,7 +254,8 @@ const RecipesList = ({ title }) => {
                                             color: "#555"
                                         }}
                                     >
-                                        {isRecipePublic(r) ? (
+
+                                        {r.isPublic === "PUBLISHED" ? (
                                             <>
                                                 <Globe size={12} />
                                                 Publiczna
@@ -275,7 +266,9 @@ const RecipesList = ({ title }) => {
                                                 Robocza
                                             </>
                                         )}
+
                                     </div>
+
                                 </div>
 
                                 <div
@@ -287,16 +280,25 @@ const RecipesList = ({ title }) => {
                                         fontSize: "14px"
                                     }}
                                 >
+
                                     <Clock3 size={14} />
 
                                     <span>
-                                        {getRecipeSubtitle(r) || "—"}
+
+                                        {new Date(
+                                            r.createdAt
+                                        ).toLocaleDateString()}
+
                                     </span>
+
                                 </div>
+
                             </div>
+
                         </div>
 
                         {/* RIGHT */}
+
                         <div
                             style={{
                                 display: "flex",
@@ -304,32 +306,49 @@ const RecipesList = ({ title }) => {
                                 alignItems: "center"
                             }}
                         >
+
                             <button
                                 style={detailsButtonStyle}
                                 onClick={() =>
                                     navigate(`/recipes/${r.id}`)
                                 }
                             >
+
                                 Szczegóły
+
                                 <ChevronRight size={18} />
+
                             </button>
 
-                            {!isFavoritesPage && !isAllRecipesPage && (
+                            {title !==
+                                "Ulubione receptury" &&
+
+                                title !==
+                                "Wszystkie receptury" && (
+
                                     <button
                                         style={deleteButtonStyle}
                                         onClick={() =>
                                             handleDelete(r.id)
                                         }
                                     >
+
                                         <Trash2 size={16} />
+
                                         Usuń
+
                                     </button>
+
                                 )}
+
                         </div>
+
                     </div>
+
                 ))}
+
             </div>
-            )}
+
         </div>
     );
 };

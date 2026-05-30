@@ -1,35 +1,34 @@
 import { apiRequest } from "./apiClient";
 
-export function getRecipes(params = {}) {
-    const searchParams = new URLSearchParams();
+export function createRecipe(recipeData) {
 
-    Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== "") {
-            searchParams.append(key, value);
-        }
+    return apiRequest("/api/Recipe", {
+        method: "POST",
+
+        body: JSON.stringify(recipeData),
     });
-
-    const query = searchParams.toString();
-
-    return apiRequest(`/api/Recipe${query ? `?${query}` : ""}`);
 }
 
+export function getRecipes() {
+
+    return apiRequest("/api/Recipe");
+}
+
+export function deleteRecipe(id) {
+
+    return apiRequest(`/api/Recipe/${id}`, {
+        method: "DELETE",
+    });
+}
 export function getRecipeById(id) {
+
     return apiRequest(`/api/Recipe/${id}`);
 }
+export function updateRecipe(id, recipeData) {
 
-export function getFavoriteRecipes() {
-    return apiRequest("/api/Recipe/favorites");
-}
+    return apiRequest(`/api/Recipe/${id}`, {
+        method: "PUT",
 
-export function addRecipeFavorite(id) {
-    return apiRequest(`/api/Recipe/${id}/favorite`, {
-        method: "POST",
-    });
-}
-
-export function removeRecipeFavorite(id) {
-    return apiRequest(`/api/Recipe/${id}/favorite`, {
-        method: "DELETE",
+        body: JSON.stringify(recipeData),
     });
 }

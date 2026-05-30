@@ -1,8 +1,23 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+
+import {
+    useNavigate,
+    useParams
+} from "react-router-dom";
+
+import {
+    createRecipe,
+    getRecipeById,
+    updateRecipe
+} from "../api/recipeApi";
 
 const RecipesForm = () => {
+
     const navigate = useNavigate();
+
+    const { id } = useParams();
+
+    const isEditing = Boolean(id);
 
     const [formData, setFormData] = useState({
         title: "",
@@ -17,51 +32,121 @@ const RecipesForm = () => {
     });
 
     const handleChange = (e) => {
+
         setFormData({
             ...formData,
             [e.target.name]: e.target.value
         });
     };
 
-    const saveRecipe = (status) => {
-        const existingRecipes =
-            JSON.parse(localStorage.getItem("recipes")) || [];
+    useEffect(() => {
 
-        const newRecipe = {
-            id: crypto.randomUUID(),
+        if (!isEditing) return;
 
-            title: formData.title,
+        const fetchRecipe = async () => {
 
-            coffee: "Custom Coffee",
+            try {
 
-            brewingMethod: formData.brewingMethod,
+                const data = await getRecipeById(id);
 
-            steps: formData.description,
+                console.log(data);
 
-            parameters: {
-                coffee: `${formData.coffee}g`,
-                water: `${formData.water}ml`,
-                temperature: `${formData.temperature}°C`,
-                grindSize: formData.grindSize,
-                brewTime: `${formData.minutes}:${formData.seconds}`
-            },
+                const parameters =
+                    typeof data.parameters === "string"
+                        ? JSON.parse(data.parameters)
+                        : data.parameters;
 
-            status,
-            createdAt: new Date().toISOString(),
-            isFavorite: false
+                setFormData({
+                    title: data.title || "",
+
+                    description: data.steps || "",
+
+                    brewingMethod:
+                        data.brewingMethod || "",
+
+                    coffee:
+                        parameters.coffee
+                            ?.replace("g", "") || "",
+
+                    water:
+                        parameters.water
+                            ?.replace("ml", "") || "",
+
+                    temperature:
+                        parameters.temperature
+                            ?.replace("°C", "") || "",
+
+                    grindSize:
+                        parameters.grindSize || "",
+
+                    minutes:
+                        parameters.brewTime
+                            ?.split(":")[0] || "",
+
+                    seconds:
+                        parameters.brewTime
+                            ?.split(":")[1] || ""
+                });
+
+            } catch (error) {
+
+                console.error(error);
+            }
         };
 
-        const updatedRecipes = [...existingRecipes, newRecipe];
+        fetchRecipe();
 
-        localStorage.setItem(
-            "recipes",
-            JSON.stringify(updatedRecipes)
-        );
+    }, [id, isEditing]);
 
-        navigate("/recipes/my");
+    const saveRecipe = async (status) => {
+
+        try {
+
+            const payload = {
+
+                title: formData.title,
+
+                steps: formData.description,
+
+                parameters: {
+                    coffee: `${formData.coffee}g`,
+                    water: `${formData.water}ml`,
+                    temperature: `${formData.temperature}°C`,
+                    grindSize: formData.grindSize,
+                    brewTime:
+                        `${formData.minutes}:${formData.seconds}`
+                },
+
+                isPublic: status === "PUBLISHED",
+
+                coffeeId: 1,
+
+                brewingMethodId: 1
+            };
+
+            console.log(payload);
+
+            if (isEditing) {
+
+                await updateRecipe(id, payload);
+
+            } else {
+
+                await createRecipe(payload);
+            }
+
+            navigate("/recipes/my");
+
+        } catch (error) {
+
+            console.error(error);
+
+            alert("Nie udało się zapisać receptury.");
+        }
     };
 
     return (
+
         <div
             style={{
                 width: "100%",
@@ -73,10 +158,13 @@ const RecipesForm = () => {
                 justifyContent: "center"
             }}
         >
+
             <div style={{ width: "100%", maxWidth: "900px" }}>
 
                 {/* HEADER */}
+
                 <div style={{ marginBottom: "38px" }}>
+
                     <h1
                         style={{
                             fontSize: "58px",
@@ -86,7 +174,11 @@ const RecipesForm = () => {
                             lineHeight: "1"
                         }}
                     >
-                        Nowa receptura
+
+                        {isEditing
+                            ? "Edytuj recepturę"
+                            : "Nowa receptura"}
+
                     </h1>
 
                     <p
@@ -95,11 +187,17 @@ const RecipesForm = () => {
                             color: "#6f6f6f"
                         }}
                     >
-                        Dodaj nowy przepis parzenia kawy.
+
+                        {isEditing
+                            ? "Zaktualizuj swoją recepturę."
+                            : "Dodaj nowy przepis parzenia kawy."}
+
                     </p>
+
                 </div>
 
                 {/* FORM */}
+
                 <div
                     style={{
                         backgroundColor: "#fafafa",
@@ -109,6 +207,7 @@ const RecipesForm = () => {
                         boxShadow: "0 2px 10px rgba(0,0,0,0.03)"
                     }}
                 >
+
                     <div
                         style={{
                             display: "flex",
@@ -118,7 +217,9 @@ const RecipesForm = () => {
                     >
 
                         {/* BASIC INFO */}
+
                         <div>
+
                             <p style={sectionTitle}>
                                 Podstawowe informacje
                             </p>
@@ -130,6 +231,7 @@ const RecipesForm = () => {
                                     gap: "14px"
                                 }}
                             >
+
                                 <input
                                     name="title"
                                     placeholder="Nazwa receptury"
@@ -158,11 +260,15 @@ const RecipesForm = () => {
                                     onChange={handleChange}
                                     style={inputStyle}
                                 />
+
                             </div>
+
                         </div>
 
                         {/* PARAMETERS */}
+
                         <div style={{ marginTop: "14px" }}>
+
                             <p style={sectionTitle}>
                                 Parametry parzenia
                             </p>
@@ -174,6 +280,7 @@ const RecipesForm = () => {
                                     gap: "14px"
                                 }}
                             >
+
                                 <input
                                     name="coffee"
                                     placeholder="Ilość kawy (g)"
@@ -205,11 +312,15 @@ const RecipesForm = () => {
                                     onChange={handleChange}
                                     style={inputStyle}
                                 />
+
                             </div>
+
                         </div>
 
                         {/* TIME */}
+
                         <div style={{ marginTop: "14px" }}>
+
                             <p style={sectionTitle}>
                                 Czas parzenia
                             </p>
@@ -221,6 +332,7 @@ const RecipesForm = () => {
                                     gap: "14px"
                                 }}
                             >
+
                                 <input
                                     name="minutes"
                                     placeholder="Minuty"
@@ -236,10 +348,13 @@ const RecipesForm = () => {
                                     onChange={handleChange}
                                     style={inputStyle}
                                 />
+
                             </div>
+
                         </div>
 
                         {/* BUTTONS */}
+
                         <div
                             style={{
                                 display: "flex",
@@ -248,6 +363,7 @@ const RecipesForm = () => {
                                 marginTop: "26px"
                             }}
                         >
+
                             <button
                                 style={draftButtonStyle}
                                 onClick={() =>
@@ -263,13 +379,21 @@ const RecipesForm = () => {
                                     saveRecipe("PUBLISHED")
                                 }
                             >
-                                Opublikuj recepturę
+
+                                {isEditing
+                                    ? "Zapisz zmiany"
+                                    : "Opublikuj recepturę"}
+
                             </button>
+
                         </div>
 
                     </div>
+
                 </div>
+
             </div>
+
         </div>
     );
 };
@@ -316,3 +440,4 @@ const publishButtonStyle = {
 };
 
 export default RecipesForm;
+

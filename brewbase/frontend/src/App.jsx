@@ -241,6 +241,10 @@ const isAuthPage =
                             path="/recipes/:id"
                             element={<RecipeDetails />}
                         />
+                        <Route
+                            path="/recipes/edit/:id"
+                            element={<RecipesForm />}
+                        />
 
                         {/* CUPPING */}
 
