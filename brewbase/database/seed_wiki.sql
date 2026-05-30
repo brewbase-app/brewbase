@@ -22,17 +22,18 @@ INSERT INTO article (
     moderated_by_user_id,
     moderated_at,
     moderation_comment,
-    user_id
+    user_id,
+    coffee_id
 ) VALUES
 (
     1,
-    'Etiopia Yirgacheffe Kochere',
+    'Etiopia Guji Natural',
     $$Kraj pochodzenia ziaren: Etiopia
 Odmiana: Heirloom
-Obróbka ziaren: Washed
-Profil smakowy: Jaśmin, Cytrusy, Bergamotka
+Obróbka ziaren: Natural
+Profil smakowy: Jagody, Kwiaty, Czekolada
 
-Jasno palona kawa o wyraźnym profilu kwiatowym i cytrusowym. W filiżance często pojawiają się nuty jaśminu, bergamotki i lemoniady. Doskonała do metod przelewowych, szczególnie V60.$$,
+Naturalnie obrabiana kawa z regionu Guji. W filiżance dominują nuty dojrzałych jagód i delikatnej kwiatowości, z aksamitnym body typowym dla etiopskich naturali.$$,
     'Approved',
     'coffee',
     '2026-04-10 09:15:00',
@@ -41,36 +42,18 @@ Jasno palona kawa o wyraźnym profilu kwiatowym i cytrusowym. W filiżance częs
     2,
     '2026-04-12 11:00:00',
     NULL,
+    1,
     1
 ),
 (
     2,
-    'Panama Geisha Esmeralda',
-    $$Kraj pochodzenia ziaren: Panama
-Odmiana: Geisha
-Obróbka ziaren: Washed
-Profil smakowy: Tropikalne owoce, Miód, Kwiaty
-
-Jedna z najbardziej rozpoznawalnych kaw specialty na świecie. Charakteryzuje się elegancką słodyczą, aromatem tropikalnych owoców i herbacianą strukturą. Wymaga delikatnego parzenia, aby nie zdominować subtelnych nut.$$,
-    'Approved',
-    'coffee',
-    '2026-04-11 14:20:00',
-    '2026-04-13 09:30:00',
-    '2026-04-13 09:30:00',
-    2,
-    '2026-04-13 09:30:00',
-    NULL,
-    1
-),
-(
-    3,
-    'Kolumbia Huila Pink Bourbon',
+    'Kolumbia Huila Washed',
     $$Kraj pochodzenia ziaren: Kolumbia
-Odmiana: Bourbon
-Obróbka ziaren: Honey
-Profil smakowy: Czerwone owoce, Karmel, Czekolada
+Odmiana: Caturra
+Obróbka ziaren: Washed
+Profil smakowy: Czekolada, Karmel, Orzechy
 
-Kawa o zbalansowanym profilu: czerwone owoce, karmel i delikatna kwasowość. Obróbka honey podkreśla słodyczę i daje pełniejsze body niż klasyczna washed.$$,
+Klasyczna washed z Huili o zbalansowanym profilu: czekolada, karmel i łagodna orzechowa słodycz. Dobrze sprawdza się jako przelew i espresso.$$,
     'Approved',
     'coffee',
     '2026-04-14 08:00:00',
@@ -79,10 +62,11 @@ Kawa o zbalansowanym profilu: czerwone owoce, karmel i delikatna kwasowość. Ob
     2,
     '2026-04-15 16:45:00',
     NULL,
-    1
+    1,
+    2
 ),
 (
-    4,
+    3,
     'Kenia Nyeri AA',
     $$Kraj pochodzenia ziaren: Kenia
 Odmiana: SL28
@@ -98,10 +82,11 @@ Klasyczna kenijska kawa o wyrazistej kwasowości i soczystym profilu owocowym. C
     NULL,
     NULL,
     NULL,
-    1
+    1,
+    NULL
 ),
 (
-    5,
+    4,
     'Brazylia Santos',
     $$Kraj pochodzenia ziaren: Brazylia
 Odmiana: Catuai
@@ -116,10 +101,11 @@ Popularna brazylijska kawa o łagodnym, orzechowym profilu. Dobrze sprawdza się
     2,
     '2026-05-06 09:00:00',
     'Artykuł wymaga uzupełnienia o profil smakowy oraz bardziej szczegółowy opis regionu uprawy.',
-    1
+    1,
+    NULL
 ),
 (
-    6,
+    5,
     'Etiopia',
     $$Region: Yirgacheffe
 Profil smakowy: Jaśmin, Cytrusy, Herbaciane
@@ -135,10 +121,11 @@ Najważniejsze regiony specialty: Yirgacheffe, Sidamo, Guji, Harrar.$$,
     2,
     '2026-04-09 14:00:00',
     NULL,
-    1
+    1,
+    NULL
 ),
 (
-    7,
+    6,
     'Kolumbia',
     $$Region: Huila
 Profil smakowy: Czekolada, Karmel, Czerwone owoce
@@ -154,10 +141,11 @@ Popularne regiony: Huila, Nariño, Cauca, Antioquia.$$,
     2,
     '2026-04-10 08:15:00',
     NULL,
-    1
+    1,
+    NULL
 ),
 (
-    8,
+    7,
     'Kenia',
     $$Region: Nyeri
 Profil smakowy: Porzeczka, Cytrusy, Winne
@@ -173,10 +161,11 @@ Ważne regiony: Nyeri, Kirinyaga, Kiambu.$$,
     2,
     '2026-04-17 11:30:00',
     NULL,
-    1
+    1,
+    NULL
 ),
 (
-    9,
+    8,
     'V60',
     $$Metoda przelewowa Hario V60 pozwala uzyskać czysty, transparentny profil smaku. Kluczowe są: świeżo zmielona kawa, kontrola tempa zalewania oraz odpowiednia temperatura wody (ok. 92–96°C).
 
@@ -189,10 +178,11 @@ Typowy przepis: 15 g kawy na 250 ml wody, całkowity czas ekstrakcji 2:30–3:00
     2,
     '2026-04-08 10:30:00',
     NULL,
-    1
+    1,
+    NULL
 ),
 (
-    10,
+    9,
     'AeroPress',
     $$AeroPress to wszechstronna metoda łącząca immersion i ciśnienie. Można parzyć w stylu klasycznym (normal) lub odwróconym (inverted). Daje pełniejsze body niż V60, zachowując przy tym dobrą klarowność.
 
@@ -205,10 +195,11 @@ Sprawdza się zarówno w domu, jak i w podróży.$$,
     2,
     '2026-04-13 12:00:00',
     NULL,
-    1
+    1,
+    NULL
 ),
 (
-    11,
+    10,
     'Chemex',
     $$Metoda filtracyjna o charakterystycznym, eleganckim kształcie. Grubsze filtry Chemex dają wyjątkowo czysty napar z delikatnym body.
 
@@ -221,10 +212,11 @@ Artykuł oczekuje na moderację.$$,
     NULL,
     NULL,
     NULL,
-    1
+    1,
+    NULL
 ),
 (
-    12,
+    11,
     'Coffee Collective',
     $$Styl palenia: Light Roast, Nordic Roast
 
@@ -239,10 +231,11 @@ Siedziba: Kopenhaga, Dania. Założona w 2007 roku.$$,
     2,
     '2026-04-07 09:00:00',
     NULL,
-    1
+    1,
+    NULL
 ),
 (
-    13,
+    12,
     'Audun Coffee',
     $$Styl palenia: Omni Roast, Light Roast
 
@@ -257,7 +250,8 @@ Siedziba: Oslo, Norwegia.$$,
     2,
     '2026-04-14 15:20:00',
     NULL,
-    1
+    1,
+    NULL
 );
 
 SELECT setval(

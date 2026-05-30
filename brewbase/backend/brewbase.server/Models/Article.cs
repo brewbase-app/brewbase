@@ -29,6 +29,10 @@ public partial class Article
 
     public int UserId { get; set; }
 
+    public int? CoffeeId { get; set; }
+
+    public virtual Coffee? Coffee { get; set; }
+
     public virtual AppUser? ModeratedByUser { get; set; }
 
     public virtual ICollection<Report> Reports { get; set; } = new List<Report>();

@@ -23,4 +23,6 @@ public sealed class ArticleListResponseDto
     public IReadOnlyList<string> FlavorProfiles { get; init; } = Array.Empty<string>();
 
     public string Content { get; init; } = null!;
+
+    public int? CoffeeId { get; init; }
 }

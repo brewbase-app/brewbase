@@ -19,6 +19,7 @@ CREATE TABLE article (
                          moderated_at timestamp  NULL,
                          moderation_comment text  NULL,
                          user_id int  NOT NULL,
+                         coffee_id int  NULL,
                          CONSTRAINT article_pk PRIMARY KEY (id)
 );
 
@@ -311,6 +312,14 @@ ALTER TABLE article ADD CONSTRAINT article_user
             INITIALLY IMMEDIATE
 ;
 
+-- Reference: article_coffee_fk (table: article)
+ALTER TABLE article ADD CONSTRAINT article_coffee_fk
+    FOREIGN KEY (coffee_id)
+        REFERENCES coffee (id)
+        NOT DEFERRABLE
+            INITIALLY IMMEDIATE
+;
+
 
 -- Reference: coffee_processing_methods (table: coffee)
 ALTER TABLE coffee ADD CONSTRAINT coffee_processing_methods
@@ -598,6 +607,12 @@ ALTER TABLE recipe_rating ADD CONSTRAINT chk_recipe_rating_value
 
 -- article
 CREATE INDEX idx_article_user_id ON article(user_id);
+CREATE INDEX idx_article_coffee_id ON article(coffee_id);
+CREATE UNIQUE INDEX uq_article_coffee_wiki
+    ON article(coffee_id)
+    WHERE module = 'coffee'
+      AND status = 'Approved'
+      AND coffee_id IS NOT NULL;
 CREATE INDEX idx_article_moderated_by_user_id ON article(moderated_by_user_id);
 
 -- coffee

@@ -7,6 +7,9 @@ namespace brewbase.server.Services;
 
 public class CoffeeReadService : ICoffeeReadService
 {
+    private const string ApprovedStatus = "Approved";
+    private const string CoffeeModule = "coffee";
+
     private readonly BrewDbContext _context;
 
     public CoffeeReadService(BrewDbContext context)
@@ -74,7 +77,7 @@ public class CoffeeReadService : ICoffeeReadService
 
     public async Task<CoffeeDetailResponseDto?> GetByIdAsync(int id, int? currentUserId = null)
     {
-        return await _context.Coffees
+        var coffee = await _context.Coffees
             .Where(c => c.Id == id)
             .Select(c => new CoffeeDetailResponseDto
             {
@@ -96,5 +99,54 @@ public class CoffeeReadService : ICoffeeReadService
                         f.UserId == currentUserId.Value && f.CoffeeId == c.Id)
             })
             .FirstOrDefaultAsync();
+
+        if (coffee is null)
+        {
+            return null;
+        }
+
+        coffee.WikiArticle = await _context.Articles
+            .AsNoTracking()
+            .Where(article =>
+                article.CoffeeId == id
+                && article.Module == CoffeeModule
+                && article.Status == ApprovedStatus)
+            .OrderByDescending(article => article.PublishedAt ?? article.CreatedAt)
+            .Select(article => new LinkedCoffeeArticleDto
+            {
+                Id = article.Id,
+                Content = article.Content,
+                AuthorLogin = article.User.Login,
+                PublishedAt = article.PublishedAt
+            })
+            .FirstOrDefaultAsync();
+
+        return coffee;
+    }
+
+    public async Task<List<CoffeeLookupResponseDto>> LookupByNameAsync(string name, int limit = 10)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return new List<CoffeeLookupResponseDto>();
+        }
+
+        var trimmedName = name.Trim();
+        var clampedLimit = Math.Clamp(limit, 1, 20);
+        var lowerName = trimmedName.ToLower();
+
+        return await _context.Coffees
+            .AsNoTracking()
+            .Where(coffee =>
+                coffee.Name != null
+                && coffee.Name.ToLower().Contains(lowerName))
+            .OrderBy(coffee => coffee.Name)
+            .Take(clampedLimit)
+            .Select(coffee => new CoffeeLookupResponseDto
+            {
+                Id = coffee.Id,
+                Name = coffee.Name
+            })
+            .ToListAsync();
     }
 }

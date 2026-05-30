@@ -1,13 +1,19 @@
 import { apiRequest } from "./apiClient";
 
-export function createArticle({ title, content, module }) {
+export function createArticle({ title, content, module, coffeeId }) {
+    const payload = {
+        title,
+        content,
+        module,
+    };
+
+    if (coffeeId) {
+        payload.coffeeId = coffeeId;
+    }
+
     return apiRequest("/api/articles", {
         method: "POST",
-        body: JSON.stringify({
-            title,
-            content,
-            module,
-        }),
+        body: JSON.stringify(payload),
     });
 }
 

@@ -231,6 +231,20 @@ function CoffeeDetails() {
                         )}
                     </div>
                 </section>
+
+                {coffee.wikiArticle && (
+                    <section>
+                        <h2>Artykuł wiki</h2>
+
+                        <p className="wiki-article-author">
+                            Autor artykułu: {coffee.wikiArticle.authorLogin}
+                        </p>
+
+                        <p style={{ whiteSpace: "pre-wrap" }}>
+                            {coffee.wikiArticle.content}
+                        </p>
+                    </section>
+                )}
             </div>
         </div>
     );
