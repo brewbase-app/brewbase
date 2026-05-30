@@ -55,7 +55,7 @@ const RecipesList = ({ title }) => {
     } else if (title === "Wszystkie receptury") {
 
         data = recipes.filter(
-            (r) => r.isPublic === "PUBLISHED"
+            (r) => r.isPublic
         );
 
     } else {
@@ -255,7 +255,7 @@ const RecipesList = ({ title }) => {
                                         }}
                                     >
 
-                                        {r.isPublic === "PUBLISHED" ? (
+                                        {r.isPublic ?  (
                                             <>
                                                 <Globe size={12} />
                                                 Publiczna
