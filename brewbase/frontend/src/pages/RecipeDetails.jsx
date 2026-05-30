@@ -30,6 +30,8 @@ import {
 const RecipeDetails = () => {
     
 
+    const navigate = useNavigate();
+
     const { id } = useParams();
     const navigate = useNavigate();
 
