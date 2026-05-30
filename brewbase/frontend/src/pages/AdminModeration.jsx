@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
     CheckCircle2,
@@ -10,9 +10,20 @@ import {
     Filter
 } from "lucide-react";
 
+import {
+    getPendingArticles,
+    getReports,
+    approveArticle,
+    rejectArticle
+} from "../api/adminApi";
+
 import "../styles/AdminModeration.css";
 
 function AdminModeration() {
+
+    // =========================
+    // STATE
+    // =========================
 
     const [activeFilter, setActiveFilter] =
         useState("all");
@@ -20,62 +31,248 @@ function AdminModeration() {
     const [selectedItem, setSelectedItem] =
         useState(null);
 
-    const moderationItems = [
+    const [moderationItems, setModerationItems] =
+        useState([]);
 
-        {
-            id: 1,
-            type: "approval",
-            category: "Kawy",
-            title: "Geisha z Panamy — charakterystyka",
-            author: "CoffeeLover",
-            createdAt: "2 godz. temu",
-            content:
-                "Geisha z Panamy to jedna z najbardziej cenionych kaw specialty...",
-        },
+    const [loading, setLoading] =
+        useState(true);
 
-        {
-            id: 2,
-            type: "report",
-            category: "Receptury",
-            title: "V60 — najlepszy przepis",
-            author: "User123",
-            createdAt: "3 godz. temu",
-            reportReason: "Wulgaryzmy",
-            content: "gowno gowno",
-        },
+    const [error, setError] =
+        useState("");
 
-        {
-            id: 3,
-            type: "approval",
-            category: "Regiony",
-            title: "Yirgacheffe — region kultowy",
-            author: "BeanExplorer",
-            createdAt: "5 godz. temu",
-            content:
-                "Yirgacheffe słynie z herbacianego body i wysokiej słodyczy...",
-        },
+    // =========================
+    // FETCH DATA
+    // =========================
 
-        {
-            id: 4,
-            type: "report",
-            category: "Cuppingi",
-            title: "Etiopia Gedeb",
-            author: "CoffeeFan",
-            createdAt: "1 dzień temu",
-            reportReason: "Spam",
-            content:
-                "Smak okropny, nie polecam!!!",
-        }
-    ];
+    useEffect(() => {
+
+        const fetchModeration =
+            async () => {
+
+                try {
+
+                    const pendingArticles =
+                        await getPendingArticles();
+
+                    let reports = [];
+
+                    try {
+
+                        reports =
+                            await getReports();
+
+                    } catch (err) {
+
+                        console.error(
+                            "Reports error:",
+                            err
+                        );
+                    }
+
+                    // MAP ARTICLES
+
+                    const mappedArticles =
+                        pendingArticles.map(
+                            (article) => ({
+
+                                id:
+                                article.id,
+
+                                title:
+                                article.title,
+
+                                content:
+                                article.content,
+
+                                author:
+                                    article.author ||
+                                    article.authorName ||
+                                    "Unknown",
+
+                                category:
+                                    article.category ||
+                                    "Article",
+
+                                createdAt:
+                                    article.createdAt ||
+                                    "Recently",
+
+                                type:
+                                    "approval",
+                            })
+                        );
+
+                    // MAP REPORTS
+
+                    const mappedReports =
+                        reports.map(
+                            (report) => ({
+
+                                id:
+                                report.id,
+
+                                title:
+                                    report.title ||
+                                    "Reported content",
+
+                                content:
+                                    report.content ||
+                                    report.description ||
+                                    "No content",
+
+                                author:
+                                    report.author ||
+                                    report.reportedUser ||
+                                    "Unknown",
+
+                                category:
+                                    "Report",
+
+                                createdAt:
+                                    report.createdAt ||
+                                    "Recently",
+
+                                reportReason:
+                                    report.reason ||
+                                    report.reportReason ||
+                                    "No reason",
+
+                                type:
+                                    "report",
+                            })
+                        );
+
+                    setModerationItems([
+                        ...mappedArticles,
+                        ...mappedReports,
+                    ]);
+
+                } catch (err) {
+
+                    setError(
+                        err.message
+                    );
+
+                } finally {
+
+                    setLoading(false);
+                }
+            };
+
+        fetchModeration();
+
+    }, []);
+
+    // =========================
+    // FILTERING
+    // =========================
 
     const filteredItems =
         moderationItems.filter((item) => {
 
-            if (activeFilter === "all")
-                return true;
+            if (activeFilter === "all") {
 
-            return item.type === activeFilter;
+                return true;
+            }
+
+            return (
+                item.type ===
+                activeFilter
+            );
         });
+
+    // =========================
+    // ACTIONS
+    // =========================
+
+    const handleApprove =
+        async () => {
+
+            try {
+
+                await approveArticle(
+                    selectedItem.id
+                );
+
+                setModerationItems(
+                    moderationItems.filter(
+                        (item) =>
+                            item.id !==
+                            selectedItem.id
+                    )
+                );
+
+                setSelectedItem(
+                    null
+                );
+
+            } catch (err) {
+
+                alert(
+                    err.message
+                );
+            }
+        };
+
+    const handleReject =
+        async () => {
+
+            try {
+
+                await rejectArticle(
+                    selectedItem.id,
+                    "Rejected by admin"
+                );
+
+                setModerationItems(
+                    moderationItems.filter(
+                        (item) =>
+                            item.id !==
+                            selectedItem.id
+                    )
+                );
+
+                setSelectedItem(
+                    null
+                );
+
+            } catch (err) {
+
+                alert(
+                    err.message
+                );
+            }
+        };
+
+    // =========================
+    // LOADING
+    // =========================
+
+    if (loading) {
+
+        return (
+            <p>
+                Ładowanie moderacji...
+            </p>
+        );
+    }
+
+    // =========================
+    // ERROR
+    // =========================
+
+    if (error) {
+
+        return (
+            <p>
+                {error}
+            </p>
+        );
+    }
+
+    // =========================
+    // RENDER
+    // =========================
 
     return (
 
@@ -90,8 +287,8 @@ function AdminModeration() {
                 </h1>
 
                 <p>
-                    Przeglądaj i moderuj treści
-                    tworzone przez użytkowników.
+                    Zarządzaj zgłoszeniami
+                    i moderacją treści.
                 </p>
 
             </div>
@@ -99,6 +296,8 @@ function AdminModeration() {
             {/* STATS */}
 
             <div className="admin-stats">
+
+                {/* APPROVALS */}
 
                 <div className="admin-stat-card">
 
@@ -111,16 +310,26 @@ function AdminModeration() {
                     <div>
 
                         <h2>
-                            23
+
+                            {
+                                moderationItems.filter(
+                                    (item) =>
+                                        item.type ===
+                                        "approval"
+                                ).length
+                            }
+
                         </h2>
 
                         <p>
-                            Treści do akceptacji
+                            Do akceptacji
                         </p>
 
                     </div>
 
                 </div>
+
+                {/* REPORTS */}
 
                 <div className="admin-stat-card report">
 
@@ -133,7 +342,15 @@ function AdminModeration() {
                     <div>
 
                         <h2>
-                            45
+
+                            {
+                                moderationItems.filter(
+                                    (item) =>
+                                        item.type ===
+                                        "report"
+                                ).length
+                            }
+
                         </h2>
 
                         <p>
@@ -150,11 +367,11 @@ function AdminModeration() {
 
             <div className="moderation-layout">
 
-                {/* LEFT */}
+                {/* LEFT PANEL */}
 
                 <div className="moderation-list-section">
 
-                    {/* FILTERS */}
+                    {/* TOOLBAR */}
 
                     <div className="moderation-toolbar">
 
@@ -167,7 +384,9 @@ function AdminModeration() {
                                         : ""
                                 }
                                 onClick={() =>
-                                    setActiveFilter("all")
+                                    setActiveFilter(
+                                        "all"
+                                    )
                                 }
                             >
                                 Wszystkie
@@ -180,10 +399,12 @@ function AdminModeration() {
                                         : ""
                                 }
                                 onClick={() =>
-                                    setActiveFilter("approval")
+                                    setActiveFilter(
+                                        "approval"
+                                    )
                                 }
                             >
-                                Treści do akceptacji
+                                Do akceptacji
                             </button>
 
                             <button
@@ -193,7 +414,9 @@ function AdminModeration() {
                                         : ""
                                 }
                                 onClick={() =>
-                                    setActiveFilter("report")
+                                    setActiveFilter(
+                                        "report"
+                                    )
                                 }
                             >
                                 Zgłoszenia
@@ -211,88 +434,100 @@ function AdminModeration() {
 
                     </div>
 
-                    {/* TABLE */}
+                    {/* LIST */}
 
                     <div className="moderation-list">
 
-                        {filteredItems.map((item) => (
+                        {filteredItems.map(
+                            (item) => (
 
-                            <div
-                                key={item.id}
-                                className={`moderation-item ${
-                                    selectedItem?.id === item.id
-                                        ? "selected"
-                                        : ""
-                                }`}
-                                onClick={() =>
-                                    setSelectedItem(item)
-                                }
-                            >
-
-                                <div className="moderation-type">
-
-                                    {item.type === "approval"
-                                        ? (
-                                            <FileText size={18} />
-                                        ) : (
-                                            <Flag size={18} />
-                                        )}
-
-                                </div>
-
-                                <div className="moderation-content">
-
-                                    <h3>
-                                        {item.title}
-                                    </h3>
-
-                                    <p>
-                                        {item.content}
-                                    </p>
-
-                                </div>
-
-                                <div className="moderation-meta">
-
-                                    <span>
-                                        {item.category}
-                                    </span>
-
-                                    <small>
-                                        {item.author}
-                                    </small>
-
-                                </div>
-
-                                <div className="moderation-date">
-
-                                    {item.createdAt}
-
-                                </div>
-
-                                <button
-                                    className="preview-button"
+                                <div
+                                    key={item.id}
+                                    className={`moderation-item ${
+                                        selectedItem?.id ===
+                                        item.id
+                                            ? "selected"
+                                            : ""
+                                    }`}
+                                    onClick={() =>
+                                        setSelectedItem(
+                                            item
+                                        )
+                                    }
                                 >
 
-                                    <Eye size={18} />
+                                    <div className="moderation-type">
 
-                                </button>
+                                        {item.type ===
+                                        "approval"
+                                            ? (
+                                                <FileText
+                                                    size={18}
+                                                />
+                                            ) : (
+                                                <Flag
+                                                    size={18}
+                                                />
+                                            )}
 
-                            </div>
+                                    </div>
 
-                        ))}
+                                    <div className="moderation-content">
+
+                                        <h3>
+                                            {item.title}
+                                        </h3>
+
+                                        <p>
+                                            {item.content}
+                                        </p>
+
+                                    </div>
+
+                                    <div className="moderation-meta">
+
+                                        <span>
+                                            {item.category}
+                                        </span>
+
+                                        <small>
+                                            {item.author}
+                                        </small>
+
+                                    </div>
+
+                                    <div className="moderation-date">
+
+                                        {item.createdAt}
+
+                                    </div>
+
+                                    <button
+                                        className="preview-button"
+                                    >
+
+                                        <Eye size={18} />
+
+                                    </button>
+
+                                </div>
+
+                            )
+                        )}
 
                     </div>
 
                 </div>
 
-                {/* RIGHT PREVIEW */}
+                {/* RIGHT PANEL */}
 
                 <div className="moderation-preview">
 
                     {selectedItem ? (
 
                         <>
+
+                            {/* HEADER */}
 
                             <div className="preview-header">
 
@@ -301,10 +536,14 @@ function AdminModeration() {
                                 </h2>
 
                                 <span>
-                                    {selectedItem.category}
+                                    {
+                                        selectedItem.category
+                                    }
                                 </span>
 
                             </div>
+
+                            {/* AUTHOR */}
 
                             <div className="preview-section">
 
@@ -313,50 +552,63 @@ function AdminModeration() {
                                 </label>
 
                                 <p>
-                                    {selectedItem.author}
+                                    {
+                                        selectedItem.author
+                                    }
                                 </p>
 
                             </div>
 
+                            {/* DATE */}
+
                             <div className="preview-section">
 
                                 <label>
-                                    Dodano
+                                    Data
                                 </label>
 
                                 <p>
-                                    {selectedItem.createdAt}
+                                    {
+                                        selectedItem.createdAt
+                                    }
                                 </p>
 
                             </div>
 
-                            {selectedItem.type === "report" && (
+                            {/* REPORT REASON */}
 
-                                <div className="preview-section">
+                            {selectedItem.type ===
+                                "report" && (
 
-                                    <label>
-                                        Powód zgłoszenia
-                                    </label>
+                                    <div className="preview-section">
 
-                                    <p>
-                                        {
-                                            selectedItem.reportReason
-                                        }
-                                    </p>
+                                        <label>
+                                            Powód zgłoszenia
+                                        </label>
 
-                                </div>
+                                        <p>
+                                            {
+                                                selectedItem.reportReason
+                                            }
+                                        </p>
 
-                            )}
+                                    </div>
+
+                                )}
+
+                            {/* CONTENT */}
 
                             <div className="preview-section">
 
                                 <label>
-                                    Podgląd treści
+                                    Treść
                                 </label>
 
                                 <div className="preview-box">
 
-                                    {selectedItem.content}
+                                    {
+                                        selectedItem.content
+                                    }
 
                                 </div>
 
@@ -366,80 +618,47 @@ function AdminModeration() {
 
                             <div className="moderation-actions">
 
-                                {selectedItem.type ===
-                                "approval" ? (
+                                <button
+                                    className="accept-button"
+                                    onClick={
+                                        handleApprove
+                                    }
+                                >
 
-                                    <>
+                                    <CheckCircle2
+                                        size={18}
+                                    />
 
-                                        <button
-                                            className="accept-button"
-                                        >
+                                    Akceptuj
 
-                                            <CheckCircle2
-                                                size={18}
-                                            />
+                                </button>
 
-                                            Akceptuj
+                                <button
+                                    className="reject-button"
+                                    onClick={
+                                        handleReject
+                                    }
+                                >
 
-                                        </button>
+                                    <XCircle
+                                        size={18}
+                                    />
 
-                                        <button
-                                            className="reject-button"
-                                        >
+                                    Odrzuć
 
-                                            <XCircle
-                                                size={18}
-                                            />
+                                </button>
 
-                                            Odrzuć
+                                <button
+                                    className="comment-button"
+                                >
 
-                                        </button>
+                                    <MessageSquare
+                                        size={18}
+                                    />
 
-                                        <button
-                                            className="comment-button"
-                                        >
+                                    Komentarz
 
-                                            <MessageSquare
-                                                size={18}
-                                            />
-
-                                            Odrzuć z komentarzem
-
-                                        </button>
-
-                                    </>
-
-                                ) : (
-
-                                    <>
-
-                                        <button
-                                            className="accept-button"
-                                        >
-
-                                            Brak naruszeń
-
-                                        </button>
-
-                                        <button
-                                            className="reject-button"
-                                        >
-
-                                            Usuń treść
-
-                                        </button>
-
-                                        <button
-                                            className="comment-button"
-                                        >
-
-                                            Usuń i ostrzeż
-
-                                        </button>
-
-                                    </>
-
-                                )}
+                                </button>
 
                             </div>
 
@@ -459,7 +678,7 @@ function AdminModeration() {
 
                 </div>
 
-            </div>
+            </div>f
 
         </div>
 
