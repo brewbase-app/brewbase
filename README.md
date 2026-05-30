@@ -1,10 +1,10 @@
 # BrewBase
 
-Projekt inżynierski: Platforma dla miłośników kawy.
+Projekt inżynierski: Platforma społecznościowa do odkrywania kaw, tworzenia receptur i budowania kawowej społeczności.
 
 ## Funkcje
 
-- **Wikipedia** - 
+- **Wiki kawowe** - artykuły społecznościowe o kawach, metodach i palarniach
 - **Przepisy** - tworzenie i udostępnianie przepisów parzenia
 - **Cupping** - sesje degustacyjne z ocenami
 - **Notatki** - szybkie zapiski
@@ -25,25 +25,69 @@ Projekt inżynierski: Platforma dla miłośników kawy.
 
 ```
 brewbase/
-├── backend/     — API (modularny monolit)
+├── backend/     — backend API ASP.NET Core
 ├── frontend/    — aplikacja React (SPA)
 └── database/    — schemat SQL, migracje, dane seed
 ```
 
-## Uruchomienie lokalne
+## Środowiska
+
+### Primary environment (docelowe)
+
+Głównym środowiskiem projektu jest **uczelniana VM** ze wspólną bazą PostgreSQL i wspólnym deploymentem aplikacji (backend + frontend). To środowisko służy do wspólnego developmentu i prezentacji projektu.
+
+### Local environment (development / fallback)
+
+**Docker PostgreSQL** (lub lokalna instalacja Postgresa) służy wyłącznie do developmentu i jako fallback, gdy VM jest niedostępna. Nie jest to środowisko produkcyjne projektu — ten sam flow bootstrapu bazy, inny host w connection stringu.
+
+---
+
+## Bootstrap bazy danych
+
+Źródłem prawdy schematu jest `brewbase/database/schema.sql`. Katalog `brewbase/database/migrations/` to **historyczne patche** — stosuj je ręcznie tylko wtedy, gdy baza powstała wcześniej i nie była odtwarzana z aktualnego `schema.sql`.
+
+### Kolejność (pełne demo danych)
+
+Wykonaj skrypty **w tej kolejności** na świeżej bazie:
+
+```
+schema.sql → seed_init.sql → seed_wiki.sql → refresh_all_rankings()
+```
+
+| Krok | Plik / polecenie | Po co |
+|------|------------------|--------|
+| 1 | `brewbase/database/schema.sql` | Tabele, constrainty, funkcje `refresh_*` |
+| 2 | `brewbase/database/seed_init.sql` | Katalog, użytkownicy testowi, przykładowe receptury |
+| 3 | `brewbase/database/seed_wiki.sql` | Artykuły wiki (kawy, kraje, metody parzenia, palarnie) |
+| 4 | `SELECT refresh_all_rankings();` | Wypełnienie tabel snapshot rankingów |
+
+**`seed_wiki.sql`** jest częścią pełnego zestawu demo — bez niego wiki i część katalogu (powiązania artykułów z kawami/metodami) będą wyglądały na puste.
+
+**`refresh_all_rankings()`** przelicza rankingi do tabel `*_ranking`. Backend czyta stamtąd listy rankingowe; po samym seedzie bez tego kroku strona rankingów może być pusta. Alternatywa: `POST /api/Ranking/refresh` (wymaga uprawnień).
+
+### pg_cron (opcjonalnie, infrastruktura VM)
+
+Plik `brewbase/database/cron/pg_cron.sql` rejestruje **godzinny** refresh rankingów przez rozszerzenie pg_cron. Uruchamiaj go **tylko** na PostgreSQL z pg_cron (typowo VM uczelni), **po** `schema.sql`.
+
+- Domyślny obraz Docker `postgres` **nie** zawiera pg_cron.
+- Lokalnie zamiast cronu: `SELECT refresh_all_rankings();` lub endpoint refresh powyżej.
+
+---
+
+## Uruchomienie lokalne (fallback)
+
 ### Wymagania
 
 - .NET 8 SDK
 - Node.js (npm)
-- PostgreSQL 15+
+- PostgreSQL 16+ (Docker lub lokalna instalacja)
 
 ### Baza danych
 
-1. Utwórz bazę PostgreSQL.
-2. Wykonaj `brewbase/database/schema.sql`.
-3. +`brewbase/database/seed_init.sql` (przykładowe dane).
+1. Utwórz bazę PostgreSQL (np. kontener Docker — wyłącznie do dev).
+2. Wykonaj bootstrap z sekcji [Bootstrap bazy danych](#bootstrap-bazy-danych) (wszystkie cztery kroki).
 
-Migracje z katalogu `brewbase/database/migrations/` stosuj ręcznie, jeśli baza powstała wcześniej.
+Konta testowe po seedzie (hasło: `Test123!`): `kawosz`, `maja`, `admin`.
 
 ### Backend
 
