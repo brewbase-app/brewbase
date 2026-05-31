@@ -888,11 +888,16 @@ public sealed class RecipeApiFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<DbContextOptions<BrewDbContext>>();
             services.RemoveAll<BrewDbContext>();
+            services.RemoveAll<IDbContextFactory<BrewDbContext>>();
 
-            services.AddDbContext<BrewDbContext>(options =>
-            {
-                options.UseSqlite(connection);
-            });
+            Action<DbContextOptionsBuilder> configureSqlite = options => options.UseSqlite(connection);
+
+            services.AddDbContext<BrewDbContext>(
+                configureSqlite,
+                contextLifetime: ServiceLifetime.Scoped,
+                optionsLifetime: ServiceLifetime.Singleton);
+
+            services.AddDbContextFactory<BrewDbContext>(configureSqlite);
         });
     }
 
