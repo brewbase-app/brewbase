@@ -63,7 +63,8 @@ function MyWikiArticleDetails() {
             </div>
 
             <div className="article-content">
-                {article.status === "Rejected" &&
+                {(article.status === "Draft" ||
+                    article.status === "Rejected") &&
                     article.moderationComment && (
                         <section>
                             <div className="wiki-my-article-comment">

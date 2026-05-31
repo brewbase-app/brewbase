@@ -77,7 +77,7 @@ export function approveArticle(
 
 export function rejectArticle(
     articleId,
-    reason = ""
+    comment = ""
 ) {
 
     return apiRequest(
@@ -86,7 +86,7 @@ export function rejectArticle(
             method: "PATCH",
 
             body: JSON.stringify({
-                reason,
+                comment,
             }),
         }
     );
@@ -96,9 +96,31 @@ export function rejectArticle(
 // REPORTS
 
 
-export function getReports() {
+export function getReports(scope = "open") {
+
+    const query = scope ? `?scope=${encodeURIComponent(scope)}` : "";
 
     return apiRequest(
-        "/api/admin/reports"
+        `/api/admin/reports${query}`
+    );
+}
+
+export function dismissReport(reportId) {
+
+    return apiRequest(
+        `/api/admin/reports/${reportId}/dismiss`,
+        {
+            method: "PATCH",
+        }
+    );
+}
+
+export function upholdReport(reportId) {
+
+    return apiRequest(
+        `/api/admin/reports/${reportId}/uphold`,
+        {
+            method: "PATCH",
+        }
     );
 }

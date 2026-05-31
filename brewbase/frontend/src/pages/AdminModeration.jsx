@@ -3,685 +3,625 @@ import { useEffect, useState } from "react";
 import {
     CheckCircle2,
     XCircle,
-    MessageSquare,
     Eye,
     Flag,
     FileText,
-    Filter
 } from "lucide-react";
 
 import {
     getPendingArticles,
     getReports,
     approveArticle,
-    rejectArticle
+    rejectArticle,
+    dismissReport,
+    upholdReport,
 } from "../api/adminApi";
 
 import "../styles/AdminModeration.css";
 
+const REPORT_CONTENT_TYPE_LABELS = {
+    recipe: "Receptura",
+    coffee: "Kawa",
+    article: "Artykuł wiki",
+};
+
+const REPORT_STATUS_LABELS = {
+    open: "Otwarte",
+    dismissed: "Odrzucone",
+    upheld: "Zatwierdzone",
+};
+
+function formatModerationDate(value) {
+    if (!value) {
+        return "—";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return String(value);
+    }
+
+    return date.toLocaleString("pl-PL", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
+
+function getContentTypeLabel(contentType) {
+    return REPORT_CONTENT_TYPE_LABELS[contentType] ?? "Treść";
+}
+
+function getReportStatusLabel(status) {
+    return REPORT_STATUS_LABELS[status] ?? status ?? "Otwarte";
+}
+
+function mapReport(report) {
+    return {
+        id: report.reportId ?? report.id,
+        contentType: report.contentType ?? "article",
+        contentId: report.contentId ?? report.articleId,
+        contentTitle:
+            report.contentTitle ??
+            report.articleTitle ??
+            "Zgłoszona treść",
+        category: report.category ?? "Inny problem",
+        comment: report.comment ?? null,
+        reportedBy: report.reportedBy ?? report.author ?? "Nieznany",
+        status: report.status ?? "open",
+        resolvedAt: report.resolvedAt ?? null,
+        resolvedByLogin: report.resolvedByLogin ?? null,
+        resolutionAction: report.resolutionAction ?? null,
+        createdAt: report.createdAt,
+        type: "report",
+    };
+}
+
+function mapApproval(article) {
+    return {
+        id: article.id,
+        title: article.title,
+        content: article.content,
+        author: article.author || article.authorName || article.authorLogin || "Unknown",
+        category: article.category || "Article",
+        createdAt: article.createdAt || "Recently",
+        type: "approval",
+    };
+}
+
 function AdminModeration() {
-
-    // =========================
-    // STATE
-    // =========================
-
-    const [activeFilter, setActiveFilter] =
-        useState("all");
-
-    const [selectedItem, setSelectedItem] =
-        useState(null);
-
-    const [moderationItems, setModerationItems] =
-        useState([]);
-
-    const [loading, setLoading] =
-        useState(true);
-
-    const [error, setError] =
-        useState("");
-
-    // =========================
-    // FETCH DATA
-    // =========================
+    const [activeFilter, setActiveFilter] = useState("all");
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [pendingArticles, setPendingArticles] = useState([]);
+    const [openReports, setOpenReports] = useState([]);
+    const [historyReports, setHistoryReports] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [rejectComment, setRejectComment] = useState("");
+    const [showRejectForm, setShowRejectForm] = useState(false);
+    const [actionError, setActionError] = useState("");
 
     useEffect(() => {
+        const fetchModeration = async () => {
+            try {
+                const [pending, open, history] = await Promise.all([
+                    getPendingArticles(),
+                    getReports("open"),
+                    getReports("history"),
+                ]);
 
-        const fetchModeration =
-            async () => {
-
-                try {
-
-                    const pendingArticles =
-                        await getPendingArticles();
-
-                    let reports = [];
-
-                    try {
-
-                        reports =
-                            await getReports();
-
-                    } catch (err) {
-
-                        console.error(
-                            "Reports error:",
-                            err
-                        );
-                    }
-
-                    // MAP ARTICLES
-
-                    const mappedArticles =
-                        pendingArticles.map(
-                            (article) => ({
-
-                                id:
-                                article.id,
-
-                                title:
-                                article.title,
-
-                                content:
-                                article.content,
-
-                                author:
-                                    article.author ||
-                                    article.authorName ||
-                                    "Unknown",
-
-                                category:
-                                    article.category ||
-                                    "Article",
-
-                                createdAt:
-                                    article.createdAt ||
-                                    "Recently",
-
-                                type:
-                                    "approval",
-                            })
-                        );
-
-                    // MAP REPORTS
-
-                    const mappedReports =
-                        reports.map(
-                            (report) => ({
-
-                                id:
-                                report.id,
-
-                                title:
-                                    report.title ||
-                                    "Reported content",
-
-                                content:
-                                    report.content ||
-                                    report.description ||
-                                    "No content",
-
-                                author:
-                                    report.author ||
-                                    report.reportedUser ||
-                                    "Unknown",
-
-                                category:
-                                    "Report",
-
-                                createdAt:
-                                    report.createdAt ||
-                                    "Recently",
-
-                                reportReason:
-                                    report.reason ||
-                                    report.reportReason ||
-                                    "No reason",
-
-                                type:
-                                    "report",
-                            })
-                        );
-
-                    setModerationItems([
-                        ...mappedArticles,
-                        ...mappedReports,
-                    ]);
-
-                } catch (err) {
-
-                    setError(
-                        err.message
-                    );
-
-                } finally {
-
-                    setLoading(false);
-                }
-            };
+                setPendingArticles(pending.map(mapApproval));
+                setOpenReports(open.map(mapReport));
+                setHistoryReports(history.map(mapReport));
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
 
         fetchModeration();
-
     }, []);
 
-    // =========================
-    // FILTERING
-    // =========================
+    const moderationItems = [
+        ...pendingArticles,
+        ...openReports,
+    ];
 
-    const filteredItems =
-        moderationItems.filter((item) => {
+    const filteredItems = (() => {
+        if (activeFilter === "approval") {
+            return pendingArticles;
+        }
 
-            if (activeFilter === "all") {
+        if (activeFilter === "report") {
+            return openReports;
+        }
 
-                return true;
-            }
+        if (activeFilter === "report-history") {
+            return historyReports;
+        }
 
-            return (
-                item.type ===
-                activeFilter
+        return moderationItems;
+    })();
+
+    const removeSelectedFromLists = () => {
+        if (!selectedItem) {
+            return;
+        }
+
+        if (selectedItem.type === "approval") {
+            setPendingArticles((items) =>
+                items.filter((item) => item.id !== selectedItem.id)
             );
-        });
+        } else if (selectedItem.status === "open") {
+            setOpenReports((items) =>
+                items.filter((item) => item.id !== selectedItem.id)
+            );
+        } else {
+            setHistoryReports((items) =>
+                items.filter((item) => item.id !== selectedItem.id)
+            );
+        }
 
-    // =========================
-    // ACTIONS
-    // =========================
+        setSelectedItem(null);
+    };
 
-    const handleApprove =
-        async () => {
+    const refreshReports = async () => {
+        const [open, history] = await Promise.all([
+            getReports("open"),
+            getReports("history"),
+        ]);
 
-            try {
+        setOpenReports(open.map(mapReport));
+        setHistoryReports(history.map(mapReport));
+    };
 
-                await approveArticle(
-                    selectedItem.id
-                );
+    const handleDismissReport = async () => {
+        if (selectedItem?.type !== "report" || selectedItem.status !== "open") {
+            return;
+        }
 
-                setModerationItems(
-                    moderationItems.filter(
-                        (item) =>
-                            item.id !==
-                            selectedItem.id
-                    )
-                );
+        setActionError("");
 
-                setSelectedItem(
-                    null
-                );
+        try {
+            await dismissReport(selectedItem.id);
+            await refreshReports();
+            setSelectedItem(null);
+        } catch (err) {
+            setActionError(err.message);
+        }
+    };
 
-            } catch (err) {
+    const handleUpholdReport = async () => {
+        if (selectedItem?.type !== "report" || selectedItem.status !== "open") {
+            return;
+        }
 
-                alert(
-                    err.message
-                );
-            }
-        };
+        const confirmed = window.confirm(
+            "Zatwierdzić zgłoszenie i usunąć/ukryć zgłoszoną treść?"
+        );
 
-    const handleReject =
-        async () => {
+        if (!confirmed) {
+            return;
+        }
 
-            try {
+        setActionError("");
 
-                await rejectArticle(
-                    selectedItem.id,
-                    "Rejected by admin"
-                );
+        try {
+            await upholdReport(selectedItem.id);
+            await refreshReports();
+            setSelectedItem(null);
+        } catch (err) {
+            setActionError(err.message);
+        }
+    };
 
-                setModerationItems(
-                    moderationItems.filter(
-                        (item) =>
-                            item.id !==
-                            selectedItem.id
-                    )
-                );
+    const handleApprove = async () => {
+        if (selectedItem?.type !== "approval") {
+            return;
+        }
 
-                setSelectedItem(
-                    null
-                );
+        setActionError("");
 
-            } catch (err) {
+        try {
+            await approveArticle(selectedItem.id);
+            removeSelectedFromLists();
+            setShowRejectForm(false);
+            setRejectComment("");
+        } catch (err) {
+            setActionError(err.message);
+        }
+    };
 
-                alert(
-                    err.message
-                );
-            }
-        };
+    const handleReject = async () => {
+        if (selectedItem?.type !== "approval") {
+            return;
+        }
 
-    // =========================
-    // LOADING
-    // =========================
+        const comment = rejectComment.trim();
+
+        if (!comment) {
+            setActionError("Komentarz moderacji jest wymagany.");
+            return;
+        }
+
+        setActionError("");
+
+        try {
+            await rejectArticle(selectedItem.id, comment);
+            removeSelectedFromLists();
+            setShowRejectForm(false);
+            setRejectComment("");
+        } catch (err) {
+            setActionError(err.message);
+        }
+    };
+
+    const handleSelectItem = (item) => {
+        setSelectedItem(item);
+        setShowRejectForm(false);
+        setRejectComment("");
+        setActionError("");
+    };
 
     if (loading) {
-
-        return (
-            <p>
-                Ładowanie moderacji...
-            </p>
-        );
+        return <p>Ładowanie moderacji...</p>;
     }
-
-    // =========================
-    // ERROR
-    // =========================
 
     if (error) {
-
-        return (
-            <p>
-                {error}
-            </p>
-        );
+        return <p>{error}</p>;
     }
 
-    // =========================
-    // RENDER
-    // =========================
+    const isHistoryReport =
+        selectedItem?.type === "report" && selectedItem.status !== "open";
 
     return (
-
         <div className="admin-page">
-
-            {/* HEADER */}
-
             <div className="admin-header">
-
-                <h1>
-                    Treści do moderacji
-                </h1>
-
-                <p>
-                    Zarządzaj zgłoszeniami
-                    i moderacją treści.
-                </p>
-
+                <h1>Treści do moderacji</h1>
+                <p>Zarządzaj zgłoszeniami i moderacją treści.</p>
             </div>
-
-            {/* STATS */}
 
             <div className="admin-stats">
-
-                {/* APPROVALS */}
-
                 <div className="admin-stat-card">
-
                     <div className="admin-stat-icon">
-
                         <FileText size={26} />
-
                     </div>
-
                     <div>
-
-                        <h2>
-
-                            {
-                                moderationItems.filter(
-                                    (item) =>
-                                        item.type ===
-                                        "approval"
-                                ).length
-                            }
-
-                        </h2>
-
-                        <p>
-                            Do akceptacji
-                        </p>
-
+                        <h2>{pendingArticles.length}</h2>
+                        <p>Do akceptacji</p>
                     </div>
-
                 </div>
-
-                {/* REPORTS */}
 
                 <div className="admin-stat-card report">
-
                     <div className="admin-stat-icon">
-
                         <Flag size={26} />
-
                     </div>
-
                     <div>
-
-                        <h2>
-
-                            {
-                                moderationItems.filter(
-                                    (item) =>
-                                        item.type ===
-                                        "report"
-                                ).length
-                            }
-
-                        </h2>
-
-                        <p>
-                            Zgłoszenia
-                        </p>
-
+                        <h2>{openReports.length}</h2>
+                        <p>Otwarte zgłoszenia</p>
                     </div>
-
                 </div>
-
             </div>
 
-            {/* CONTENT */}
-
             <div className="moderation-layout">
-
-                {/* LEFT PANEL */}
-
                 <div className="moderation-list-section">
-
-                    {/* TOOLBAR */}
-
                     <div className="moderation-toolbar">
-
                         <div className="moderation-filters">
-
                             <button
-                                className={
-                                    activeFilter === "all"
-                                        ? "active"
-                                        : ""
-                                }
-                                onClick={() =>
-                                    setActiveFilter(
-                                        "all"
-                                    )
-                                }
+                                type="button"
+                                className={activeFilter === "all" ? "active" : ""}
+                                onClick={() => setActiveFilter("all")}
                             >
                                 Wszystkie
                             </button>
-
                             <button
+                                type="button"
                                 className={
-                                    activeFilter === "approval"
-                                        ? "active"
-                                        : ""
+                                    activeFilter === "approval" ? "active" : ""
                                 }
-                                onClick={() =>
-                                    setActiveFilter(
-                                        "approval"
-                                    )
-                                }
+                                onClick={() => setActiveFilter("approval")}
                             >
                                 Do akceptacji
                             </button>
-
                             <button
-                                className={
-                                    activeFilter === "report"
-                                        ? "active"
-                                        : ""
-                                }
-                                onClick={() =>
-                                    setActiveFilter(
-                                        "report"
-                                    )
-                                }
+                                type="button"
+                                className={activeFilter === "report" ? "active" : ""}
+                                onClick={() => setActiveFilter("report")}
                             >
                                 Zgłoszenia
                             </button>
-
+                            <button
+                                type="button"
+                                className={
+                                    activeFilter === "report-history"
+                                        ? "active"
+                                        : ""
+                                }
+                                onClick={() => setActiveFilter("report-history")}
+                            >
+                                Historia zgłoszeń
+                            </button>
                         </div>
-
-                        <button className="filter-button">
-
-                            <Filter size={16} />
-
-                            Filtry
-
-                        </button>
-
                     </div>
-
-                    {/* LIST */}
 
                     <div className="moderation-list">
+                        {filteredItems.length === 0 ? (
+                            <div className="admin-empty-list">
+                                Brak pozycji w tej sekcji.
+                            </div>
+                        ) : (
+                            filteredItems.map((item) => {
+                                const isReport = item.type === "report";
+                                const listTitle = isReport
+                                    ? item.contentTitle
+                                    : item.title;
+                                const listSubtitle = isReport
+                                    ? `${item.category} · ${item.reportedBy}`
+                                    : item.content;
+                                const listMetaLabel = isReport
+                                    ? getContentTypeLabel(item.contentType)
+                                    : item.category;
+                                const listMetaAuthor = isReport
+                                    ? getReportStatusLabel(item.status)
+                                    : item.author;
 
-                        {filteredItems.map(
-                            (item) => (
-
-                                <div
-                                    key={item.id}
-                                    className={`moderation-item ${
-                                        selectedItem?.id ===
-                                        item.id
-                                            ? "selected"
-                                            : ""
-                                    }`}
-                                    onClick={() =>
-                                        setSelectedItem(
-                                            item
-                                        )
-                                    }
-                                >
-
-                                    <div className="moderation-type">
-
-                                        {item.type ===
-                                        "approval"
-                                            ? (
-                                                <FileText
-                                                    size={18}
-                                                />
-                                            ) : (
-                                                <Flag
-                                                    size={18}
-                                                />
-                                            )}
-
-                                    </div>
-
-                                    <div className="moderation-content">
-
-                                        <h3>
-                                            {item.title}
-                                        </h3>
-
-                                        <p>
-                                            {item.content}
-                                        </p>
-
-                                    </div>
-
-                                    <div className="moderation-meta">
-
-                                        <span>
-                                            {item.category}
-                                        </span>
-
-                                        <small>
-                                            {item.author}
-                                        </small>
-
-                                    </div>
-
-                                    <div className="moderation-date">
-
-                                        {item.createdAt}
-
-                                    </div>
-
-                                    <button
-                                        className="preview-button"
+                                return (
+                                    <div
+                                        key={`${item.type}-${item.id}-${item.status ?? "open"}`}
+                                        className={`moderation-item ${
+                                            selectedItem?.type === item.type &&
+                                            selectedItem?.id === item.id &&
+                                            selectedItem?.status === item.status
+                                                ? "selected"
+                                                : ""
+                                        }`}
+                                        onClick={() => handleSelectItem(item)}
                                     >
+                                        <div className="moderation-type">
+                                            {isReport ? (
+                                                <Flag size={18} />
+                                            ) : (
+                                                <FileText size={18} />
+                                            )}
+                                        </div>
 
-                                        <Eye size={18} />
+                                        <div className="moderation-content">
+                                            <h3>{listTitle}</h3>
+                                            <p>{listSubtitle}</p>
+                                        </div>
 
-                                    </button>
+                                        <div className="moderation-meta">
+                                            <span>{listMetaLabel}</span>
+                                            <small>{listMetaAuthor}</small>
+                                        </div>
 
-                                </div>
+                                        <div className="moderation-date">
+                                            {formatModerationDate(item.createdAt)}
+                                        </div>
 
-                            )
+                                        <button type="button" className="preview-button">
+                                            <Eye size={18} />
+                                        </button>
+                                    </div>
+                                );
+                            })
                         )}
-
                     </div>
-
                 </div>
-
-                {/* RIGHT PANEL */}
 
                 <div className="moderation-preview">
-
                     {selectedItem ? (
-
-                        <>
-
-                            {/* HEADER */}
-
-                            <div className="preview-header">
-
-                                <h2>
-                                    {selectedItem.title}
-                                </h2>
-
-                                <span>
-                                    {
-                                        selectedItem.category
-                                    }
-                                </span>
-
-                            </div>
-
-                            {/* AUTHOR */}
-
-                            <div className="preview-section">
-
-                                <label>
-                                    Autor
-                                </label>
-
-                                <p>
-                                    {
-                                        selectedItem.author
-                                    }
-                                </p>
-
-                            </div>
-
-                            {/* DATE */}
-
-                            <div className="preview-section">
-
-                                <label>
-                                    Data
-                                </label>
-
-                                <p>
-                                    {
-                                        selectedItem.createdAt
-                                    }
-                                </p>
-
-                            </div>
-
-                            {/* REPORT REASON */}
-
-                            {selectedItem.type ===
-                                "report" && (
-
-                                    <div className="preview-section">
-
-                                        <label>
-                                            Powód zgłoszenia
-                                        </label>
-
-                                        <p>
-                                            {
-                                                selectedItem.reportReason
-                                            }
-                                        </p>
-
-                                    </div>
-
-                                )}
-
-                            {/* CONTENT */}
-
-                            <div className="preview-section">
-
-                                <label>
-                                    Treść
-                                </label>
-
-                                <div className="preview-box">
-
-                                    {
-                                        selectedItem.content
-                                    }
-
+                        selectedItem.type === "report" ? (
+                            <>
+                                <div className="preview-header">
+                                    <p className="admin-report-label">Zgłoszenie</p>
+                                    <h2>Szczegóły zgłoszenia</h2>
+                                    <span>
+                                        {getContentTypeLabel(selectedItem.contentType)}
+                                    </span>
                                 </div>
 
-                            </div>
+                                <div className="admin-report-target-summary">
+                                    <span className="admin-report-target-type">
+                                        {getContentTypeLabel(selectedItem.contentType)}
+                                    </span>
+                                    <span className="admin-report-target-title">
+                                        {selectedItem.contentTitle}
+                                    </span>
+                                    <span className="admin-report-target-id">
+                                        ID: {selectedItem.contentId}
+                                    </span>
+                                </div>
 
-                            {/* ACTIONS */}
+                                <div className="preview-section">
+                                    <label>Status zgłoszenia</label>
+                                    <div className="admin-report-field-value">
+                                        {getReportStatusLabel(selectedItem.status)}
+                                    </div>
+                                </div>
 
-                            <div className="moderation-actions">
+                                <div className="preview-section">
+                                    <label>Kategoria zgłoszenia</label>
+                                    <div className="admin-report-field-value">
+                                        {selectedItem.category}
+                                    </div>
+                                </div>
 
-                                <button
-                                    className="accept-button"
-                                    onClick={
-                                        handleApprove
-                                    }
-                                >
+                                <div className="preview-section">
+                                    <label>Komentarz (opcjonalny)</label>
+                                    <div
+                                        className={`admin-report-field-value admin-report-field-value--comment ${
+                                            selectedItem.comment?.trim()
+                                                ? ""
+                                                : "admin-report-field-value--empty"
+                                        }`}
+                                    >
+                                        {selectedItem.comment?.trim() ||
+                                            "Brak komentarza"}
+                                    </div>
+                                </div>
 
-                                    <CheckCircle2
-                                        size={18}
-                                    />
+                                <div className="preview-section">
+                                    <label>Zgłoszono przez</label>
+                                    <p>{selectedItem.reportedBy}</p>
+                                </div>
 
-                                    Akceptuj
+                                <div className="preview-section">
+                                    <label>Data zgłoszenia</label>
+                                    <p>
+                                        {formatModerationDate(selectedItem.createdAt)}
+                                    </p>
+                                </div>
 
-                                </button>
+                                {isHistoryReport && (
+                                    <>
+                                        <div className="preview-section">
+                                            <label>Rozpatrzone przez</label>
+                                            <p>
+                                                {selectedItem.resolvedByLogin ||
+                                                    "—"}
+                                            </p>
+                                        </div>
+                                        <div className="preview-section">
+                                            <label>Data rozpatrzenia</label>
+                                            <p>
+                                                {formatModerationDate(
+                                                    selectedItem.resolvedAt
+                                                )}
+                                            </p>
+                                        </div>
+                                    </>
+                                )}
 
-                                <button
-                                    className="reject-button"
-                                    onClick={
-                                        handleReject
-                                    }
-                                >
+                                {actionError && (
+                                    <p className="admin-action-error">{actionError}</p>
+                                )}
 
-                                    <XCircle
-                                        size={18}
-                                    />
+                                {!isHistoryReport && (
+                                    <div className="moderation-actions">
+                                        <button
+                                            type="button"
+                                            className="reject-button"
+                                            onClick={handleDismissReport}
+                                        >
+                                            <XCircle size={18} />
+                                            Odrzuć zgłoszenie
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="accept-button"
+                                            onClick={handleUpholdReport}
+                                        >
+                                            <CheckCircle2 size={18} />
+                                            Zatwierdź zgłoszenie i usuń treść
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                <div className="preview-header">
+                                    <h2>{selectedItem.title}</h2>
+                                    <span>{selectedItem.category}</span>
+                                </div>
 
-                                    Odrzuć
+                                <div className="preview-section">
+                                    <label>Autor</label>
+                                    <p>{selectedItem.author}</p>
+                                </div>
 
-                                </button>
+                                <div className="preview-section">
+                                    <label>Data</label>
+                                    <p>
+                                        {formatModerationDate(selectedItem.createdAt)}
+                                    </p>
+                                </div>
 
-                                <button
-                                    className="comment-button"
-                                >
+                                <div className="preview-section">
+                                    <label>Treść</label>
+                                    <div className="preview-box">
+                                        {selectedItem.content}
+                                    </div>
+                                </div>
 
-                                    <MessageSquare
-                                        size={18}
-                                    />
+                                {showRejectForm && (
+                                    <div className="preview-section">
+                                        <label>Komentarz moderacji</label>
+                                        <textarea
+                                            className="admin-reject-textarea"
+                                            value={rejectComment}
+                                            placeholder="Wyjaśnij, dlaczego treść została odrzucona..."
+                                            onChange={(event) =>
+                                                setRejectComment(event.target.value)
+                                            }
+                                        />
+                                    </div>
+                                )}
 
-                                    Komentarz
+                                {actionError && (
+                                    <p className="admin-action-error">{actionError}</p>
+                                )}
 
-                                </button>
+                                <div className="moderation-actions">
+                                    <button
+                                        type="button"
+                                        className="accept-button"
+                                        onClick={handleApprove}
+                                    >
+                                        <CheckCircle2 size={18} />
+                                        Zatwierdź treść
+                                    </button>
 
-                            </div>
-
-                        </>
-
+                                    {showRejectForm ? (
+                                        <>
+                                            <button
+                                                type="button"
+                                                className="reject-button"
+                                                onClick={handleReject}
+                                            >
+                                                <XCircle size={18} />
+                                                Potwierdź odrzucenie
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="comment-button"
+                                                onClick={() => {
+                                                    setShowRejectForm(false);
+                                                    setRejectComment("");
+                                                    setActionError("");
+                                                }}
+                                            >
+                                                Anuluj
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            className="reject-button"
+                                            onClick={() => {
+                                                setShowRejectForm(true);
+                                                setActionError("");
+                                            }}
+                                        >
+                                            <XCircle size={18} />
+                                            Odrzuć treść
+                                        </button>
+                                    )}
+                                </div>
+                            </>
+                        )
                     ) : (
-
                         <div className="empty-preview">
-
-                            <p>
-                                Wybierz treść do podglądu
-                            </p>
-
+                            <p>Wybierz treść do podglądu</p>
                         </div>
-
                     )}
-
                 </div>
-
-            </div>f
-
+            </div>
         </div>
-
     );
 }
 

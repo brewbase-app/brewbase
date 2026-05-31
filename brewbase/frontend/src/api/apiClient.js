@@ -27,7 +27,9 @@ export async function apiRequest(path, options = {}) {
 
         try {
             const parsed = JSON.parse(errorText);
-            if (parsed?.title) {
+            if (parsed?.message) {
+                message = parsed.message;
+            } else if (parsed?.title) {
                 message = parsed.title;
             }
             if (parsed?.errors && typeof parsed.errors === "object") {
