@@ -112,6 +112,67 @@ public class QuickNotesEndpointsTests : IDisposable
     }
 
     [Fact]
+    public async Task Unauthenticated_Create_ReturnsUnauthorized()
+    {
+        var body = """{"content":"Should fail"}""";
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/QuickNotes")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task User1_Create_EmptyContent_ReturnsBadRequest()
+    {
+        var body = """{"content":"   "}""";
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/QuickNotes")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        request.Headers.Add(CurrentUserProvider.DevUserIdHeaderName, User1.ToString());
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task User1_GetById_Nonexistent_ReturnsNotFound()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/QuickNotes/99999");
+        request.Headers.Add(CurrentUserProvider.DevUserIdHeaderName, User1.ToString());
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task User1_Create_ThenGetAll_PersistsNote()
+    {
+        var unique = $"Persist-{Guid.NewGuid():N}";
+        var body = $$"""{"content":"{{unique}}"}""";
+        using var post = new HttpRequestMessage(HttpMethod.Post, "/api/QuickNotes")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        post.Headers.Add(CurrentUserProvider.DevUserIdHeaderName, User1.ToString());
+        var postResponse = await _client.SendAsync(post);
+        postResponse.EnsureSuccessStatusCode();
+
+        using var list = new HttpRequestMessage(HttpMethod.Get, "/api/QuickNotes");
+        list.Headers.Add(CurrentUserProvider.DevUserIdHeaderName, User1.ToString());
+        var listResponse = await _client.SendAsync(list);
+        listResponse.EnsureSuccessStatusCode();
+
+        var root = await ParseJsonAsync(listResponse);
+        Assert.Contains(
+            root.EnumerateArray(),
+            item => item.GetProperty("content").GetString() == unique);
+    }
+
+    [Fact]
     public async Task User1_Create_ReturnsCreated()
     {
         var body = """{"content":"Nowa notatka z testu"}""";
