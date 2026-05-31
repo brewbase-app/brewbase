@@ -249,7 +249,7 @@ internal sealed class GlobalSearchPostgresReader
                 Type = "quick_note",
                 Title = title,
                 Snippet = SearchTextNormalizer.BuildSnippet(row.Content),
-                Path = "/quicknotes",
+                Path = $"/quicknotes?id={row.Id}",
                 Score = row.RankScore
             };
         }).ToList();

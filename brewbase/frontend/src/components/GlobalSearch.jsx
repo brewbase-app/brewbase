@@ -9,7 +9,7 @@ const TYPE_LABELS = {
     recipe: "Receptura",
     user: "Użytkownik",
     wiki: "Wiki",
-    quick_note: "Quick note",
+    quick_note: "Szybka notatka",
     cupping: "Cupping",
 };
 

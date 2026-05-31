@@ -492,7 +492,7 @@ public sealed class GlobalSearchService : IGlobalSearchService
                     Type = "quick_note",
                     Title = title,
                     Snippet = SearchTextNormalizer.BuildSnippet(candidate.Content),
-                    Path = "/quicknotes",
+                    Path = $"/quicknotes?id={candidate.Id}",
                     Score = score
                 };
             })

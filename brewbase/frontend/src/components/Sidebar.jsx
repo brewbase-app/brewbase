@@ -173,7 +173,7 @@ function Sidebar({
                         <StickyNote size={20} />
 
                         <span className="menu-text">
-                            Quick Notes
+                            Szybkie notatki
                         </span>
 
                     </NavLink>
