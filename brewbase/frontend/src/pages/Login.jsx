@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { apiRequest } from "../api/apiClient";
+import { setAuthToken, setUserRole } from "../utils/auth";
+import { getProfile } from "../api/profileApi";
 
 function Login() {
     const [login, setLogin] = useState("");
@@ -32,7 +34,14 @@ function Login() {
                 }),
             });
 
-            localStorage.setItem("token", data.token);
+            setAuthToken(data.token);
+
+            try {
+                const profile = await getProfile();
+                setUserRole(profile.role);
+            } catch {
+                setUserRole(null);
+            }
 
             navigate("/home");
         } catch (error) {

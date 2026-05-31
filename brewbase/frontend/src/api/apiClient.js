@@ -7,8 +7,10 @@ export class ApiError extends Error {
     }
 }
 
+import { getAuthToken } from "../utils/auth";
+
 export async function apiRequest(path, options = {}) {
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
     const hasBody = options.body != null && options.body !== "";
 
     const response = await fetch(path, {

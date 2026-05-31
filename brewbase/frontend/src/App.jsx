@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
     BrowserRouter,
@@ -13,8 +13,12 @@ import { ArrowLeft } from "lucide-react";
 
 import "./App.css";
 
+import { getAuthToken, getUserRole, setUserRole } from "./utils/auth";
 import Sidebar from "./components/Sidebar";
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
+import AdminRoute from "./components/Auth/AdminRoute";
+
+import { getProfile } from "./api/profileApi";
 
 /* HOME */
 
@@ -85,10 +89,34 @@ function Layout() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
 
     const [sidebarExpanded, setSidebarExpanded] =
         useState(false);
+
+    const [userRole, setUserRoleState] = useState(getUserRole());
+
+    useEffect(() => {
+        if (!token) {
+            setUserRoleState(null);
+            return;
+        }
+
+        if (getUserRole()) {
+            setUserRoleState(getUserRole());
+            return;
+        }
+
+        getProfile()
+            .then((profile) => {
+                setUserRole(profile.role);
+                setUserRoleState(profile.role);
+            })
+            .catch(() => {
+                setUserRole(null);
+                setUserRoleState(null);
+            });
+    }, [token]);
 
     
 const isAuthPage =
@@ -123,6 +151,7 @@ const isAuthPage =
                 <Sidebar
                     sidebarExpanded={sidebarExpanded}
                     setSidebarExpanded={setSidebarExpanded}
+                    showAdmin={userRole === "Admin"}
                 />
 
             )}
@@ -135,8 +164,8 @@ const isAuthPage =
                         !isAuthPage
                             ? (
                                 sidebarExpanded
-                                    ? "220px"
-                                    : "72px"
+                                    ? "300px"
+                                    : "100px"
                             )
                             : "0px",
 
@@ -374,10 +403,12 @@ const isAuthPage =
 
                         {/* ADMIN */}
 
-                        <Route
-                            path="/admin"
-                            element={<AdminModeration />}
-                        />
+                        <Route element={<AdminRoute />}>
+                            <Route
+                                path="/admin"
+                                element={<AdminModeration />}
+                            />
+                        </Route>
 
                     </Route>
 
