@@ -4,6 +4,13 @@ namespace brewbase.server.Services.Interfaces;
 
 public interface IReportService
 {
-    Task<bool> CreateReportAsync(int articleId, CreateReportRequestDto dto);
+    Task<ReportCreateResult> CreateReportAsync(CreateReportRequestDto dto);
+}
 
+public enum ReportCreateResult
+{
+    Created,
+    Invalid,
+    Duplicate,
+    NotFound
 }

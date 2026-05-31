@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2, Flag } from "lucide-react";
 
+import { submitReport } from "../api/reportApi";
 import "../styles/ReportPage.css";
 
 const REPORT_CATEGORIES = [
@@ -61,21 +62,25 @@ function ReportPage() {
 
         setIsSubmitting(true);
 
-        // Mock submit — gotowe do podłączenia backendu moderacji
-        await new Promise((resolve) => {
-            setTimeout(resolve, 700);
-        });
+        try {
+            await submitReport({
+                contentType: reportTarget.contentType,
+                contentId: reportTarget.contentId,
+                contentTitle: reportTarget.contentTitle,
+                category,
+                comment,
+            });
 
-        console.log("Report submitted (mock):", {
-            contentType: reportTarget?.contentType,
-            contentId: reportTarget?.contentId,
-            contentTitle: reportTarget?.contentTitle,
-            category,
-            comment: comment.trim() || null,
-        });
-
-        setIsSubmitting(false);
-        setIsSubmitted(true);
+            setIsSubmitted(true);
+        } catch (submitError) {
+            setErrors({
+                submit:
+                    submitError.message ||
+                    "Nie udało się wysłać zgłoszenia. Spróbuj ponownie.",
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleCancel = () => {
@@ -260,6 +265,10 @@ function ReportPage() {
                                 </p>
                             )}
                         </div>
+
+                        {errors.submit && (
+                            <p className="report-field-error">{errors.submit}</p>
+                        )}
 
                         <div className="report-form-actions">
                             <button

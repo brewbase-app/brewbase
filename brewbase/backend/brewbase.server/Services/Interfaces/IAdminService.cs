@@ -1,6 +1,7 @@
 ﻿
 using brewbase.server.Dtos;
 using brewbase.server.Models;
+using brewbase.server.Services;
 namespace brewbase.server.Services.Interfaces;
 
 
@@ -19,6 +20,10 @@ public interface IAdminService
     
     Task<List<PendingArticleResponseDto>> GetPendingArticlesAsync();
     
-    Task<List<ReportedArticleResponseDto>> GetReportsAsync();
+    Task<List<ReportedArticleResponseDto>> GetReportsAsync(string scope = "open");
+
+    Task<ReportModerationResult> DismissReportAsync(int reportId);
+
+    Task<ReportModerationResult> UpholdReportAsync(int reportId);
     
 }

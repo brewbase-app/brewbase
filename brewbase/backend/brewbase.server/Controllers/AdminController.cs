@@ -93,6 +93,14 @@ public class AdminController : ControllerBase
         int id,
         ModerateArticleRequestDto dto)
     {
+        if (string.IsNullOrWhiteSpace(dto.Comment))
+        {
+            return BadRequest(new SimpleErrorResponseDto
+            {
+                Message = "Komentarz moderacji jest wymagany przy odrzuceniu treści."
+            });
+        }
+
         var result = await _adminService
             .RejectArticleAsync(id, dto);
 
@@ -113,11 +121,47 @@ public class AdminController : ControllerBase
     
     [HttpGet("reports")]
     public async Task<ActionResult<List<ReportedArticleResponseDto>>>
-        GetReports()
+        GetReports([FromQuery] string scope = "open")
     {
         var reports = await _adminService
-            .GetReportsAsync();
+            .GetReportsAsync(scope);
 
         return Ok(reports);
+    }
+
+    [HttpPatch("reports/{reportId}/dismiss")]
+    public async Task<IActionResult> DismissReport(int reportId)
+    {
+        return MapReportModerationResult(
+            await _adminService.DismissReportAsync(reportId));
+    }
+
+    [HttpPatch("reports/{reportId}/uphold")]
+    public async Task<IActionResult> UpholdReport(int reportId)
+    {
+        return MapReportModerationResult(
+            await _adminService.UpholdReportAsync(reportId));
+    }
+
+    private IActionResult MapReportModerationResult(ReportModerationResult result)
+    {
+        return result switch
+        {
+            ReportModerationResult.Success => NoContent(),
+            ReportModerationResult.AlreadyResolved => Conflict(
+                new SimpleErrorResponseDto
+                {
+                    Message = "To zgłoszenie zostało już rozpatrzone."
+                }),
+            ReportModerationResult.ContentNotFound => BadRequest(
+                new SimpleErrorResponseDto
+                {
+                    Message = "Nie udało się usunąć zgłoszonej treści. Treść mogła zostać już usunięta."
+                }),
+            _ => NotFound(new SimpleErrorResponseDto
+            {
+                Message = "Nie znaleziono zgłoszenia."
+            })
+        };
     }
 }
