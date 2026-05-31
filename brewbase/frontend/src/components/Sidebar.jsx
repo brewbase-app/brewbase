@@ -13,15 +13,24 @@ import {
     Book,
     Trophy,
     StickyNote,
-    Settings
+    Settings,
+    LogOut
 } from "lucide-react";
+
+import { logout } from "../utils/auth";
 
 function Sidebar({
                      sidebarExpanded,
-                     setSidebarExpanded
+                     setSidebarExpanded,
+                     showAdmin = false
                  }) {
 
     const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate("/login", { replace: true });
+    };
 
     return (
 
@@ -52,7 +61,8 @@ function Sidebar({
 
             </div>
 
-            <ul className="menu">
+            <div className="sidebar-nav">
+                <ul className="menu">
 
                 {/* DASHBOARD */}
                 <li>
@@ -181,6 +191,7 @@ function Sidebar({
                 </li>
 
                 {/* ADMIN */}
+                {showAdmin && (
                 <li>
 
                     <NavLink
@@ -197,8 +208,21 @@ function Sidebar({
                     </NavLink>
 
                 </li>
+                )}
 
-            </ul>
+                </ul>
+            </div>
+
+            <div className="sidebar-footer">
+                <button
+                    type="button"
+                    className="sidebar-logout"
+                    onClick={handleLogout}
+                >
+                    <LogOut size={20} />
+                    <span className="menu-text">Wyloguj</span>
+                </button>
+            </div>
 
         </div>
 
