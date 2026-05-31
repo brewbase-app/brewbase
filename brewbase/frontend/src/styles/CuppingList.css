@@ -1,72 +1,195 @@
 .cupping-container {
-    padding: 40px;
-    max-width: 900px;
-    margin: 0 auto;
+    width: 100%;
+    min-height: 100vh;
+    background: #f3f3f3;
+    padding: 55px 60px;
+    box-sizing: border-box;
+    font-family: "Inter", sans-serif;
+}
+
+.cupping-inner {
+    max-width: 950px;
+}
+
+.cupping-header {
+    margin-bottom: 38px;
 }
 
 .cupping-title {
-    text-align: center;
-    font-size: 42px;
-    margin-bottom: 30px;
+    margin: 0 0 8px 0;
+    font-size: 58px;
+    font-weight: 700;
+    color: #1f1f1f;
+    line-height: 1;
+    text-align: left;
+}
+
+.cupping-subtitle {
+    margin: 0;
+    font-size: 16px;
+    color: #6f6f6f;
+}
+
+.cupping-actions {
+    margin-bottom: 32px;
+}
+
+.add-session-btn,
+.details-btn {
+    border: none;
+    border-radius: 18px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s ease;
 }
 
 .add-session-btn {
-    display: block;
-    margin: 0 auto 40px auto;
-    padding: 12px 28px;
-    border-radius: 30px;
-    background-color: black;
+    background: #1f1f1f;
     color: white;
-    border: none;
-    font-size: 16px;
-    cursor: pointer;
-    transition: 0.2s;
 }
 
 .add-session-btn:hover {
-    background-color: #333;
+    background: #000;
+    transform: translateY(-1px);
 }
 
 .cupping-list {
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 18px;
 }
 
 .cupping-card {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 25px;
-    border-radius: 20px;
-    border: 1px solid #ccc;
-    background-color: #f5f5f5;
-    transition: 0.2s;
+    gap: 20px;
+    padding: 24px 28px;
+    border-radius: 26px;
+    border: 1px solid #e6e6e6;
+    background: #fafafa;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    transition: 0.2s ease;
 }
 
 .cupping-card:hover {
-    transform: scale(1.01);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
 }
 
-.card-left h3 {
-    margin-bottom: 8px;
+.card-left {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    min-width: 0;
 }
 
-.card-left p {
-    margin: 3px 0;
-    color: #444;
+.card-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    background: #efefef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2a2a2a;
+    flex-shrink: 0;
+}
+
+.card-content h3 {
+    margin: 0 0 8px 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1f1f1f;
+}
+
+.card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    color: #707070;
+    font-size: 14px;
+}
+
+.card-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .details-btn {
-    padding: 10px 20px;
-    border-radius: 25px;
-    border: none;
-    background-color: #333;
+    background: #1f1f1f;
     color: white;
-    cursor: pointer;
-    transition: 0.2s;
+    flex-shrink: 0;
 }
 
 .details-btn:hover {
-    background-color: black;
+    background: #000;
+    transform: translateY(-1px);
+}
+
+.card-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.delete-btn {
+    border: 1px solid #dddddd;
+    border-radius: 18px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s ease;
+    background: #efefef;
+    color: #555;
+}
+
+.delete-btn:hover {
+    background: #e8e8e8;
+}
+
+.empty-text {
+    background: #fafafa;
+    border-radius: 28px;
+    border: 1px solid #e6e6e6;
+    padding: 50px;
+    color: #707070;
+    font-size: 16px;
+    margin: 0;
+}
+
+.error-text {
+    color: #b42318;
+    font-size: 14px;
+    margin: 0 0 20px 0;
+}
+
+@media (max-width: 900px) {
+    .cupping-container {
+        padding: 40px 24px;
+    }
+
+    .cupping-title {
+        font-size: 42px;
+    }
+
+    .cupping-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .details-btn {
+        justify-content: center;
+    }
 }

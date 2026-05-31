@@ -1,11 +1,13 @@
 using brewbase.server.Dtos;
 using brewbase.server.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using brewbase.server.Services;
 
 namespace brewbase.server.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class TastingSessionsController : ControllerBase
 {
@@ -79,6 +81,42 @@ public class TastingSessionsController : ControllerBase
 
     	return Ok(tastingSession);
 	}
+
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(typeof(TastingSessionResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateTastingSessionRequestDto request)
+    {
+        var result = await _tastingSessionWriteService.UpdateSessionAsync(id, request);
+
+        return result.Status switch
+        {
+            TastingSessionWriteStatus.Success => Ok(result.Data),
+            TastingSessionWriteStatus.Unauthorized => Unauthorized(),
+            TastingSessionWriteStatus.TastingSessionNotFound => NotFound(new SimpleErrorResponseDto { Message = "Tasting session not found." }),
+            _ => BadRequest()
+        };
+    }
+
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var result = await _tastingSessionWriteService.DeleteSessionAsync(id);
+
+        return result switch
+        {
+            TastingSessionWriteStatus.Success => NoContent(),
+            TastingSessionWriteStatus.Unauthorized => Unauthorized(),
+            TastingSessionWriteStatus.TastingSessionNotFound => NotFound(new SimpleErrorResponseDto { Message = "Tasting session not found." }),
+            _ => BadRequest()
+        };
+    }
+
 	[HttpPost("{id:int}/coffees")]
     [ProducesResponseType(typeof(TastingSessionCoffeeResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -145,4 +183,22 @@ public class TastingSessionsController : ControllerBase
         	_ => BadRequest()
     	};
 	}
+
+    [HttpDelete("{sessionId:int}/coffees/{sessionCoffeeId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteCoffee(int sessionId, int sessionCoffeeId)
+    {
+        var result = await _tastingSessionWriteService.DeleteCoffeeAsync(sessionId, sessionCoffeeId);
+
+        return result switch
+        {
+            TastingSessionWriteStatus.Success => NoContent(),
+            TastingSessionWriteStatus.Unauthorized => Unauthorized(),
+            TastingSessionWriteStatus.TastingSessionNotFound => NotFound(new SimpleErrorResponseDto { Message = "Tasting session not found." }),
+            TastingSessionWriteStatus.CoffeeNotInSession => NotFound(new SimpleErrorResponseDto { Message = "Coffee is not added to this tasting session." }),
+            _ => BadRequest()
+        };
+    }
 }

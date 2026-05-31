@@ -1,46 +1,138 @@
 .cupping-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    width: 100%;
+    min-height: 100vh;
+    background: #f3f3f3;
+    padding: 55px 60px;
+    box-sizing: border-box;
+    font-family: "Inter", sans-serif;
+}
+
+.cupping-inner {
+    width: 100%;
+    max-width: 900px;
+}
+
+.cupping-header {
+    margin-bottom: 38px;
+}
+
+.cupping-header h1 {
+    margin: 0 0 8px 0;
+    font-size: 58px;
+    font-weight: 700;
+    color: #1f1f1f;
+    line-height: 1;
+}
+
+.cupping-header p {
+    margin: 0;
+    font-size: 16px;
+    color: #6f6f6f;
 }
 
 .cupping-box {
-    width: 500px;
-    padding: 40px;
-    border-radius: 20px;
-    border: 1px solid #ccc;
-    background-color: #f5f5f5;
+    background: #fafafa;
+    border-radius: 28px;
+    border: 1px solid #e6e6e6;
+    padding: 32px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-.cupping-box h1 {
-    text-align: center;
-    margin-bottom: 10px;
+.cupping-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cupping-field label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f1f1f;
 }
 
 .cupping-box input,
 .cupping-box textarea {
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid #dddddd;
+    background: white;
     font-size: 14px;
+    color: #1f1f1f;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.cupping-box input:focus,
+.cupping-box textarea:focus {
+    border-color: #1f1f1f;
 }
 
 .cupping-box textarea {
-    height: 100px;
-    resize: none;
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.5;
 }
 
-.cupping-box button {
-    margin-top: 10px;
-    padding: 14px;
-    border-radius: 30px;
+.cupping-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.cupping-btn-primary,
+.cupping-btn-secondary {
     border: none;
-    background-color: #333;
-    color: white;
+    border-radius: 18px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
-    font-size: 16px;
+    transition: 0.2s ease;
+}
+
+.cupping-btn-primary {
+    background: #1f1f1f;
+    color: white;
+}
+
+.cupping-btn-primary:hover:not(:disabled) {
+    background: #000;
+    transform: translateY(-1px);
+}
+
+.cupping-btn-secondary {
+    background: #efefef;
+    color: #555;
+    border: 1px solid #dddddd;
+}
+
+.cupping-btn-secondary:hover:not(:disabled) {
+    background: #e8e8e8;
+}
+
+.cupping-btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.cupping-error {
+    margin: 0;
+    color: #b42318;
+    font-size: 14px;
+}
+
+@media (max-width: 900px) {
+    .cupping-wrapper {
+        padding: 40px 24px;
+    }
+
+    .cupping-header h1 {
+        font-size: 42px;
+    }
 }
