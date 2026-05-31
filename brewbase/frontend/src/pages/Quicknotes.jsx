@@ -13,6 +13,7 @@ import {
     updateQuickNote,
     deleteQuickNote
 } from "../api/quickNotesApi";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 function Quicknotes() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -24,6 +25,8 @@ function Quicknotes() {
     const [notes, setNotes] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [noteToDelete, setNoteToDelete] = useState(null);
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -141,18 +144,26 @@ function Quicknotes() {
         }
     };
 
-    const handleDelete = async (id, event) => {
+    const handleDeleteClick = (id, event) => {
         event.stopPropagation();
+        setNoteToDelete(id);
+        setError("");
+    };
 
-        const confirmDelete = window.confirm(
-            "Czy na pewno chcesz usunąć tę notatkę?"
-        );
+    const handleCloseDeleteDialog = () => {
+        if (!isDeleting) {
+            setNoteToDelete(null);
+        }
+    };
 
-        if (!confirmDelete || isSaving) {
+    const handleConfirmDelete = async () => {
+        if (noteToDelete == null || isDeleting) {
             return;
         }
 
-        setIsSaving(true);
+        const id = noteToDelete;
+
+        setIsDeleting(true);
         setError("");
 
         try {
@@ -163,10 +174,12 @@ function Quicknotes() {
                 setSelectedNote(null);
                 setNoteContent("");
             }
+
+            setNoteToDelete(null);
         } catch {
             setError("Nie udało się usunąć notatki.");
         } finally {
-            setIsSaving(false);
+            setIsDeleting(false);
         }
     };
 
@@ -304,7 +317,7 @@ function Quicknotes() {
                                                 size={16}
                                                 strokeWidth={2}
                                                 onClick={(event) =>
-                                                    handleDelete(note.id, event)
+                                                    handleDeleteClick(note.id, event)
                                                 }
                                             />
                                         </div>
@@ -325,6 +338,18 @@ function Quicknotes() {
                     </div>
                 </div>
             </div>
+
+            <ConfirmDialog
+                isOpen={noteToDelete !== null}
+                title="Usunąć notatkę?"
+                description="Tej operacji nie można cofnąć."
+                confirmLabel="Usuń"
+                cancelLabel="Anuluj"
+                isConfirming={isDeleting}
+                confirmingLabel="Usuwanie..."
+                onConfirm={handleConfirmDelete}
+                onClose={handleCloseDeleteDialog}
+            />
         </div>
     );
 }
