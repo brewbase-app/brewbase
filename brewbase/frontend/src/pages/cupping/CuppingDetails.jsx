@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Plus, Trash2 } from "lucide-react";
 import {
-    addCoffeeToTastingSession,
-    getTastingSessionDetails,
-    updateTastingSessionCoffee,
-} from "../../api/tastingSessionsApi";
-import "../../styles/CuppingDetails.css";
+    addCoffeeToCuppingSession,
+    deleteCuppingSession,
+    deleteCuppingSessionCoffee,
+    getCuppingSessionDetails,
+    updateCuppingSession,
+    updateCuppingSessionCoffee,
+} from "../../api/cuppingSessionsApi";
 import { getCoffees } from "../../api/coffeeApi";
+import "../../styles/CuppingDetails.css";
 
 const createEmptyCupping = () => ({
     rowId: `new-${Date.now()}-${Math.random()}`,
@@ -21,7 +25,6 @@ const createEmptyCupping = () => ({
     overallScore: "",
     flavorProfileNotes: "",
     notes: "",
-    cleanCup: "",
     isNew: true,
 });
 
@@ -41,52 +44,71 @@ const normalizeCoffeeList = (data) => {
     return [];
 };
 
+const formatDateInput = (date) => {
+    if (!date) {
+        return "";
+    }
+
+    const parsed = new Date(date);
+
+    if (Number.isNaN(parsed.getTime())) {
+        return "";
+    }
+
+    return parsed.toISOString().slice(0, 10);
+};
+
 const CuppingDetails = () => {
     const navigate = useNavigate();
     const { id } = useParams();
 
-    const [session, setSession] = useState(null);
+    const [sessionForm, setSessionForm] = useState({
+        name: "",
+        date: "",
+        description: "",
+    });
     const [availableCoffees, setAvailableCoffees] = useState([]);
     const [cuppings, setCuppings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [error, setError] = useState("");
 
     useEffect(() => {
         const loadSession = async () => {
             try {
                 const [sessionData, coffeesData] = await Promise.all([
-                    getTastingSessionDetails(id),
+                    getCuppingSessionDetails(id),
                     getCoffees(),
                 ]);
 
-                setSession(sessionData);
+                setSessionForm({
+                    name: sessionData.name ?? "",
+                    date: formatDateInput(sessionData.sessionDate ?? sessionData.createdAt),
+                    description: sessionData.description ?? "",
+                });
                 setAvailableCoffees(normalizeCoffeeList(coffeesData));
 
                 setCuppings(
-                    sessionData.coffees.map((coffee) => ({
-                        rowId: String(coffee.id),
-                        sessionCoffeeId: coffee.id,
-                        selectedCoffeeId: coffee.coffeeId ?? "",
-                        customCoffeeName: coffee.coffeeId ? "" : coffee.coffeeName,
-                        coffeeName: coffee.coffeeName,
-                        aromaScore: coffee.aromaScore ?? "",
-                        sweetnessScore: coffee.sweetnessScore ?? "",
-                        acidityScore: coffee.acidityScore ?? "",
-                        bodyScore: coffee.bodyScore ?? "",
-                        overallScore: coffee.overallScore ?? "",
-                        flavorProfileNotes: coffee.flavorProfileNotes ?? "",
-                        notes: coffee.notes ?? "",
-                        cleanCup:
-                            coffee.cleanCup === null || coffee.cleanCup === undefined
-                                ? ""
-                                : coffee.cleanCup
-                                    ? "tak"
-                                    : "nie",
-                        isNew: false,
-                    }))
+                    sessionData.coffees.length > 0
+                        ? sessionData.coffees.map((coffee) => ({
+                            rowId: String(coffee.sessionCoffeeId),
+                            sessionCoffeeId: coffee.sessionCoffeeId,
+                            selectedCoffeeId: coffee.coffeeId ?? "",
+                            customCoffeeName: coffee.coffeeId ? "" : coffee.coffeeName,
+                            coffeeName: coffee.coffeeName,
+                            aromaScore: coffee.aromaScore ?? "",
+                            sweetnessScore: coffee.sweetnessScore ?? "",
+                            acidityScore: coffee.acidityScore ?? "",
+                            bodyScore: coffee.bodyScore ?? "",
+                            overallScore: coffee.overallScore ?? "",
+                            flavorProfileNotes: coffee.flavorProfileNotes ?? "",
+                            notes: coffee.notes ?? "",
+                            isNew: false,
+                        }))
+                        : [createEmptyCupping()]
                 );
-            } catch (error) {
+            } catch {
                 setError("Nie udało się pobrać szczegółów sesji.");
             } finally {
                 setIsLoading(false);
@@ -95,6 +117,13 @@ const CuppingDetails = () => {
 
         loadSession();
     }, [id]);
+
+    const handleSessionChange = (event) => {
+        setSessionForm((current) => ({
+            ...current,
+            [event.target.name]: event.target.value,
+        }));
+    };
 
     const addCupping = () => {
         setCuppings((prev) => [...prev, createEmptyCupping()]);
@@ -138,6 +167,54 @@ const CuppingDetails = () => {
         );
     };
 
+    const handleRemoveCupping = async (cup) => {
+        setError("");
+
+        if (cup.isNew) {
+            setCuppings((prev) => {
+                const next = prev.filter((item) => item.rowId !== cup.rowId);
+                return next.length > 0 ? next : [createEmptyCupping()];
+            });
+            return;
+        }
+
+        const confirmed = window.confirm("Czy na pewno chcesz usunąć tę degustację?");
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            await deleteCuppingSessionCoffee(id, cup.sessionCoffeeId);
+            setCuppings((prev) => {
+                const next = prev.filter((item) => item.rowId !== cup.rowId);
+                return next.length > 0 ? next : [createEmptyCupping()];
+            });
+        } catch {
+            setError("Nie udało się usunąć degustacji.");
+        }
+    };
+
+    const handleDeleteSession = async () => {
+        const confirmed = window.confirm("Czy na pewno chcesz usunąć całą sesję cupping?");
+
+        if (!confirmed || isDeleting) {
+            return;
+        }
+
+        setError("");
+        setIsDeleting(true);
+
+        try {
+            await deleteCuppingSession(id);
+            navigate("/cupping");
+        } catch {
+            setError("Nie udało się usunąć sesji.");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     const toNullableNumber = (value) => {
         if (value === "" || value === null || value === undefined) {
             return null;
@@ -154,24 +231,14 @@ const CuppingDetails = () => {
         return value.trim();
     };
 
-    const toNullableBoolean = (value) => {
-        if (value === "tak") {
-            return true;
-        }
-
-        if (value === "nie") {
-            return false;
-        }
-
-        return null;
-    };
-
     const validateCup = (cup) => {
-        const hasSelectedCoffee = cup.coffeeId !== "";
-        const hasCustomCoffee = cup.customCoffeeName && cup.customCoffeeName.trim();
+        if (cup.isNew) {
+            const hasSelectedCoffee = cup.selectedCoffeeId !== "";
+            const hasCustomCoffee = cup.customCoffeeName && cup.customCoffeeName.trim();
 
-        if (!hasSelectedCoffee && !hasCustomCoffee) {
-            throw new Error("Wybierz kawę z listy albo wpisz własną nazwę kawy.");
+            if (!hasSelectedCoffee && !hasCustomCoffee) {
+                throw new Error("Wybierz kawę z listy albo wpisz własną nazwę kawy.");
+            }
         }
 
         const scoreFields = [
@@ -218,15 +285,25 @@ const CuppingDetails = () => {
         acidityScore: toNullableNumber(cup.acidityScore),
         bodyScore: toNullableNumber(cup.bodyScore),
         flavorProfileNotes: toNullableText(cup.flavorProfileNotes),
-        cleanCup: toNullableBoolean(cup.cleanCup),
         overallScore: toNullableNumber(cup.overallScore),
     });
 
     const handleSave = async () => {
         setError("");
 
+        if (!sessionForm.name.trim()) {
+            setError("Nazwa sesji jest wymagana.");
+            return;
+        }
+
         try {
             setIsSaving(true);
+
+            await updateCuppingSession(id, {
+                name: sessionForm.name.trim(),
+                description: sessionForm.description || null,
+                sessionDate: sessionForm.date ? `${sessionForm.date}T00:00:00` : null,
+            });
 
             for (const cup of cuppings) {
                 validateCup(cup);
@@ -234,7 +311,7 @@ const CuppingDetails = () => {
                 let sessionCoffeeId = cup.sessionCoffeeId;
 
                 if (cup.isNew) {
-                    const createdCoffee = await addCoffeeToTastingSession(
+                    const createdCoffee = await addCoffeeToCuppingSession(
                         id,
                         buildAddPayload(cup)
                     );
@@ -246,6 +323,7 @@ const CuppingDetails = () => {
                             item.rowId === cup.rowId
                                 ? {
                                     ...item,
+                                    rowId: String(createdCoffee.sessionCoffeeId),
                                     sessionCoffeeId: createdCoffee.sessionCoffeeId,
                                     coffeeId: createdCoffee.coffeeId ?? "",
                                     coffeeName: createdCoffee.coffeeName,
@@ -256,7 +334,7 @@ const CuppingDetails = () => {
                     );
                 }
 
-                await updateTastingSessionCoffee(
+                await updateCuppingSessionCoffee(
                     id,
                     sessionCoffeeId,
                     buildUpdatePayload(cup)
@@ -264,8 +342,8 @@ const CuppingDetails = () => {
             }
 
             navigate(`/cupping/preview/${id}`);
-        } catch (error) {
-            setError(error.message || "Nie udało się zapisać sesji.");
+        } catch (saveError) {
+            setError(saveError.message || "Nie udało się zapisać sesji.");
         } finally {
             setIsSaving(false);
         }
@@ -274,266 +352,295 @@ const CuppingDetails = () => {
     if (isLoading) {
         return (
             <div className="details-container">
-                <h1 className="title">Cupping session</h1>
-                <p>Ładowanie sesji...</p>
+                <div className="details-inner">
+                    <div className="details-header">
+                        <h1 className="title">Sesja Cupping</h1>
+                        <p className="details-subtitle">Dodaj kawy i uzupełnij oceny degustacji.</p>
+                    </div>
+                    <p className="loading-text">Ładowanie sesji...</p>
+                </div>
             </div>
         );
     }
 
     return (
         <div className="details-container">
-            <h1 className="title">
-                {session?.name ?? "Cupping session"}
-            </h1>
+            <div className="details-inner">
+                <div className="details-header">
+                    <h1 className="title">Sesja Cupping</h1>
+                    <p className="details-subtitle">
+                        Dodaj kawy do sesji i uzupełnij oceny degustacji.
+                    </p>
+                </div>
 
-            {session?.description && (
-                <p>{session.description}</p>
-            )}
+                {error && (
+                    <p className="error-text">{error}</p>
+                )}
 
-            {error && (
-                <p className="error-text">
-                    {error}
-                </p>
-            )}
-
-            {cuppings.map((cup, index) => (
-                <div
-                    key={cup.rowId}
-                    className="cupping-block"
-                >
-                    <h2 className="subtitle">
-                        Degustacja {index + 1}
-                    </h2>
-
-                    {cup.isNew ? (
-                        <>
-                            <select
+                <div className="session-form-card">
+                    <div className="coffee-inputs">
+                        <div className="coffee-field">
+                            <label htmlFor="session-name">Nazwa sesji</label>
+                            <input
+                                id="session-name"
+                                name="name"
                                 className="coffee-input"
-                                value={cup.selectedCoffeeId}
-                                onChange={(e) =>
-                                    handleSelectedCoffeeChange(
-                                        cup.rowId,
-                                        e.target.value
-                                    )
-                                }
-                            >
-                                <option value="">
-                                    Wybierz kawę z bazy
-                                </option>
+                                value={sessionForm.name}
+                                onChange={handleSessionChange}
+                            />
+                        </div>
 
-                                {availableCoffees.map((coffee) => (
-                                    <option
-                                        key={coffee.id}
-                                        value={coffee.id}
-                                    >
-                                        {coffee.name}
-                                    </option>
-                                ))}
-                            </select>
-
+                        <div className="coffee-field">
+                            <label htmlFor="session-date">Data sesji</label>
                             <input
+                                id="session-date"
+                                name="date"
+                                type="date"
                                 className="coffee-input"
-                                type="text"
-                                placeholder="albo wpisz własną kawę"
-                                value={cup.customCoffeeName}
-                                disabled={!!cup.selectedCoffeeId}
-                                onChange={(e) =>
-                                    handleCustomCoffeeNameChange(
-                                        cup.rowId,
-                                        e.target.value
-                                    )
-                                }
-                            />
-                        </>
-                    ) : (
-                        <p>
-                            Kawa: {cup.coffeeName}
-                        </p>
-                    )}
-
-                    {cup.coffeeName && (
-                        <p>
-                            Kawa: {cup.coffeeName}
-                        </p>
-                    )}
-
-                    <div className="grid">
-                        <div className="box">
-                            <h3>Aroma (1-10)</h3>
-
-                            <input
-                                type="number"
-                                min="1"
-                                max="10"
-                                value={cup.aromaScore}
-                                onChange={(e) =>
-                                    handleChange(
-                                        cup.rowId,
-                                        "aromaScore",
-                                        e.target.value
-                                    )
-                                }
+                                value={sessionForm.date}
+                                onChange={handleSessionChange}
                             />
                         </div>
 
-                        <div className="box">
-                            <h3>Profile smakowe</h3>
-
+                        <div className="coffee-field coffee-field-full">
+                            <label htmlFor="session-description">Opis</label>
                             <textarea
-                                placeholder="Notatki smakowe"
-                                value={cup.flavorProfileNotes}
-                                onChange={(e) =>
-                                    handleChange(
-                                        cup.rowId,
-                                        "flavorProfileNotes",
-                                        e.target.value
-                                    )
-                                }
-                            />
-                        </div>
-
-                        <div className="box">
-                            <h3>Słodycz (1-10)</h3>
-
-                            <input
-                                type="number"
-                                min="1"
-                                max="10"
-                                value={cup.sweetnessScore}
-                                onChange={(e) =>
-                                    handleChange(
-                                        cup.rowId,
-                                        "sweetnessScore",
-                                        e.target.value
-                                    )
-                                }
-                            />
-                        </div>
-
-                        <div className="box">
-                            <h3>Czysta filiżanka</h3>
-
-                            <div className="checkbox-group">
-                                <label>
-                                    <input
-                                        type="radio"
-                                        name={`cleanCup-${cup.rowId}`}
-                                        checked={cup.cleanCup === "tak"}
-                                        onChange={() =>
-                                            handleChange(
-                                                cup.rowId,
-                                                "cleanCup",
-                                                "tak"
-                                            )
-                                        }
-                                    />
-                                    Tak
-                                </label>
-
-                                <label>
-                                    <input
-                                        type="radio"
-                                        name={`cleanCup-${cup.rowId}`}
-                                        checked={cup.cleanCup === "nie"}
-                                        onChange={() =>
-                                            handleChange(
-                                                cup.rowId,
-                                                "cleanCup",
-                                                "nie"
-                                            )
-                                        }
-                                    />
-                                    Nie
-                                </label>
-                            </div>
-                        </div>
-
-                        <div className="box">
-                            <h3>Kwasowość (1-10)</h3>
-
-                            <input
-                                type="number"
-                                min="1"
-                                max="10"
-                                value={cup.acidityScore}
-                                onChange={(e) =>
-                                    handleChange(
-                                        cup.rowId,
-                                        "acidityScore",
-                                        e.target.value
-                                    )
-                                }
-                            />
-                        </div>
-
-                        <div className="box">
-                            <h3>Dodatkowy komentarz</h3>
-
-                            <textarea
-                                value={cup.notes}
-                                onChange={(e) =>
-                                    handleChange(
-                                        cup.rowId,
-                                        "notes",
-                                        e.target.value
-                                    )
-                                }
-                            />
-                        </div>
-
-                        <div className="box">
-                            <h3>Body (1-10)</h3>
-
-                            <input
-                                type="number"
-                                min="1"
-                                max="10"
-                                value={cup.bodyScore}
-                                onChange={(e) =>
-                                    handleChange(
-                                        cup.rowId,
-                                        "bodyScore",
-                                        e.target.value
-                                    )
-                                }
-                            />
-                        </div>
-
-                        <div className="box">
-                            <h3>Ogólna ocena</h3>
-
-                            <input
-                                type="number"
-                                min="1"
-                                max="10"
-                                value={cup.overallScore}
-                                onChange={(e) =>
-                                    handleChange(
-                                        cup.rowId,
-                                        "overallScore",
-                                        e.target.value
-                                    )
-                                }
+                                id="session-description"
+                                name="description"
+                                className="coffee-input coffee-textarea"
+                                value={sessionForm.description}
+                                onChange={handleSessionChange}
                             />
                         </div>
                     </div>
                 </div>
-            ))}
 
-            <button
-                className="add-cup-btn"
-                onClick={addCupping}
-            >
-                + Dodaj kolejną degustację
-            </button>
+                {cuppings.map((cup, index) => (
+                    <div
+                        key={cup.rowId}
+                        className="cupping-block"
+                    >
+                        <div className="block-header">
+                            <h2 className="subtitle">
+                                Degustacja {index + 1}
+                            </h2>
 
-            <button
-                className="save-btn"
-                onClick={handleSave}
-                disabled={isSaving}
-            >
-                {isSaving ? "Zapisywanie..." : "Zapisz sesję"}
-            </button>
+                            <button
+                                type="button"
+                                className="remove-cup-btn"
+                                onClick={() => handleRemoveCupping(cup)}
+                            >
+                                <Trash2 size={16} />
+                                Usuń
+                            </button>
+                        </div>
+
+                        {cup.isNew ? (
+                            <div className="coffee-inputs">
+                                <div className="coffee-field">
+                                    <label htmlFor={`coffee-select-${cup.rowId}`}>
+                                        Kawa z bazy
+                                    </label>
+                                    <select
+                                        id={`coffee-select-${cup.rowId}`}
+                                        className="coffee-input"
+                                        value={cup.selectedCoffeeId}
+                                        onChange={(event) =>
+                                            handleSelectedCoffeeChange(
+                                                cup.rowId,
+                                                event.target.value
+                                            )
+                                        }
+                                    >
+                                        <option value="">
+                                            Wybierz kawę z bazy
+                                        </option>
+
+                                        {availableCoffees.map((coffee) => (
+                                            <option
+                                                key={coffee.id}
+                                                value={coffee.id}
+                                            >
+                                                {coffee.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="coffee-field">
+                                    <label htmlFor={`coffee-custom-${cup.rowId}`}>
+                                        Własna nazwa kawy
+                                    </label>
+                                    <input
+                                        id={`coffee-custom-${cup.rowId}`}
+                                        className="coffee-input"
+                                        type="text"
+                                        placeholder="albo wpisz własną kawę"
+                                        value={cup.customCoffeeName}
+                                        disabled={!!cup.selectedCoffeeId}
+                                        onChange={(event) =>
+                                            handleCustomCoffeeNameChange(
+                                                cup.rowId,
+                                                event.target.value
+                                            )
+                                        }
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="coffee-label">
+                                Kawa: {cup.coffeeName}
+                            </p>
+                        )}
+
+                        <div className="grid">
+                            <div className="box">
+                                <h3>Aroma (1-10)</h3>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="10"
+                                    value={cup.aromaScore}
+                                    onChange={(event) =>
+                                        handleChange(
+                                            cup.rowId,
+                                            "aromaScore",
+                                            event.target.value
+                                        )
+                                    }
+                                />
+                            </div>
+
+                            <div className="box">
+                                <h3>Słodycz (1-10)</h3>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="10"
+                                    value={cup.sweetnessScore}
+                                    onChange={(event) =>
+                                        handleChange(
+                                            cup.rowId,
+                                            "sweetnessScore",
+                                            event.target.value
+                                        )
+                                    }
+                                />
+                            </div>
+
+                            <div className="box">
+                                <h3>Kwasowość (1-10)</h3>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="10"
+                                    value={cup.acidityScore}
+                                    onChange={(event) =>
+                                        handleChange(
+                                            cup.rowId,
+                                            "acidityScore",
+                                            event.target.value
+                                        )
+                                    }
+                                />
+                            </div>
+
+                            <div className="box">
+                                <h3>Body (1-10)</h3>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="10"
+                                    value={cup.bodyScore}
+                                    onChange={(event) =>
+                                        handleChange(
+                                            cup.rowId,
+                                            "bodyScore",
+                                            event.target.value
+                                        )
+                                    }
+                                />
+                            </div>
+
+                            <div className="box">
+                                <h3>Ogólna ocena (1-10)</h3>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="10"
+                                    value={cup.overallScore}
+                                    onChange={(event) =>
+                                        handleChange(
+                                            cup.rowId,
+                                            "overallScore",
+                                            event.target.value
+                                        )
+                                    }
+                                />
+                            </div>
+
+                            <div className="box box-full">
+                                <h3>Profile smakowe</h3>
+                                <textarea
+                                    placeholder="Notatki smakowe"
+                                    value={cup.flavorProfileNotes}
+                                    onChange={(event) =>
+                                        handleChange(
+                                            cup.rowId,
+                                            "flavorProfileNotes",
+                                            event.target.value
+                                        )
+                                    }
+                                />
+                            </div>
+
+                            <div className="box box-full">
+                                <h3>Dodatkowy komentarz</h3>
+                                <textarea
+                                    value={cup.notes}
+                                    onChange={(event) =>
+                                        handleChange(
+                                            cup.rowId,
+                                            "notes",
+                                            event.target.value
+                                        )
+                                    }
+                                />
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                <div className="details-actions">
+                    <button
+                        type="button"
+                        className="add-cup-btn"
+                        onClick={addCupping}
+                    >
+                        <Plus size={18} />
+                        Dodaj kolejną degustację
+                    </button>
+
+                    <button
+                        type="button"
+                        className="delete-session-btn"
+                        onClick={handleDeleteSession}
+                        disabled={isDeleting || isSaving}
+                    >
+                        <Trash2 size={16} />
+                        {isDeleting ? "Usuwanie..." : "Usuń sesję"}
+                    </button>
+
+                    <button
+                        type="button"
+                        className="save-btn"
+                        onClick={handleSave}
+                        disabled={isSaving || isDeleting}
+                    >
+                        {isSaving ? "Zapisywanie..." : "Zapisz sesję"}
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };

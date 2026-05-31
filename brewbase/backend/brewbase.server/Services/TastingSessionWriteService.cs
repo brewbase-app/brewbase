@@ -53,6 +53,79 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
             SessionDate = tastingSession.SessionDate
         };
     }
+
+    public async Task<TastingSessionWriteResult<TastingSessionResponseDto>> UpdateSessionAsync(
+        int sessionId,
+        UpdateTastingSessionRequestDto request)
+    {
+        var userId = _currentUserProvider.GetUserId();
+
+        if (userId is null)
+        {
+            return new TastingSessionWriteResult<TastingSessionResponseDto>(
+                TastingSessionWriteStatus.Unauthorized);
+        }
+
+        var session = await _context.CuppingSessions
+            .SingleOrDefaultAsync(existingSession =>
+                existingSession.Id == sessionId &&
+                existingSession.UserId == userId.Value);
+
+        if (session is null)
+        {
+            return new TastingSessionWriteResult<TastingSessionResponseDto>(
+                TastingSessionWriteStatus.TastingSessionNotFound);
+        }
+
+        session.Name = request.Name.Trim();
+        session.Description = string.IsNullOrWhiteSpace(request.Description)
+            ? null
+            : request.Description.Trim();
+        session.SessionDate = request.SessionDate.HasValue
+            ? DateTime.SpecifyKind(request.SessionDate.Value, DateTimeKind.Unspecified)
+            : null;
+
+        await _context.SaveChangesAsync();
+
+        return new TastingSessionWriteResult<TastingSessionResponseDto>(
+            TastingSessionWriteStatus.Success,
+            new TastingSessionResponseDto
+            {
+                Id = session.Id,
+                Name = session.Name,
+                Description = session.Description,
+                CreatedAt = session.CreatedAt,
+                UserId = session.UserId,
+                SessionDate = session.SessionDate
+            });
+    }
+
+    public async Task<TastingSessionWriteStatus> DeleteSessionAsync(int sessionId)
+    {
+        var userId = _currentUserProvider.GetUserId();
+
+        if (userId is null)
+        {
+            return TastingSessionWriteStatus.Unauthorized;
+        }
+
+        var session = await _context.CuppingSessions
+            .Include(existingSession => existingSession.CuppingSessionCoffees)
+            .SingleOrDefaultAsync(existingSession =>
+                existingSession.Id == sessionId &&
+                existingSession.UserId == userId.Value);
+
+        if (session is null)
+        {
+            return TastingSessionWriteStatus.TastingSessionNotFound;
+        }
+
+        _context.CuppingSessionCoffees.RemoveRange(session.CuppingSessionCoffees);
+        _context.CuppingSessions.Remove(session);
+        await _context.SaveChangesAsync();
+
+        return TastingSessionWriteStatus.Success;
+    }
 	
 	public async Task<TastingSessionWriteResult<TastingSessionCoffeeResponseDto>> AddCoffeeAsync(
     int sessionId,
@@ -271,4 +344,37 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
         TastingSessionWriteStatus.Success,
         response);
 }
+
+    public async Task<TastingSessionWriteStatus> DeleteCoffeeAsync(int sessionId, int sessionCoffeeId)
+    {
+        var userId = _currentUserProvider.GetUserId();
+
+        if (userId is null)
+        {
+            return TastingSessionWriteStatus.Unauthorized;
+        }
+
+        var sessionExists = await _context.CuppingSessions
+            .AnyAsync(session => session.Id == sessionId && session.UserId == userId.Value);
+
+        if (!sessionExists)
+        {
+            return TastingSessionWriteStatus.TastingSessionNotFound;
+        }
+
+        var sessionCoffee = await _context.CuppingSessionCoffees
+            .SingleOrDefaultAsync(existingCoffee =>
+                existingCoffee.CuppingSessionId == sessionId &&
+                existingCoffee.Id == sessionCoffeeId);
+
+        if (sessionCoffee is null)
+        {
+            return TastingSessionWriteStatus.CoffeeNotInSession;
+        }
+
+        _context.CuppingSessionCoffees.Remove(sessionCoffee);
+        await _context.SaveChangesAsync();
+
+        return TastingSessionWriteStatus.Success;
+    }
 }

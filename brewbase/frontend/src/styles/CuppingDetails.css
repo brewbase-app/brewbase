@@ -1,65 +1,304 @@
 .details-container {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 40px 20px;
+    width: 100%;
+    min-height: 100vh;
+    background: #f3f3f3;
+    padding: 55px 60px;
+    box-sizing: border-box;
+    font-family: "Inter", sans-serif;
 }
+
+.details-inner {
+    max-width: 950px;
+}
+
+.details-header {
+    margin-bottom: 38px;
+}
+
 .title {
-    text-align: center;
-    margin-bottom: 10px;
+    margin: 0 0 8px 0;
+    font-size: 58px;
+    font-weight: 700;
+    color: #1f1f1f;
+    line-height: 1;
+    text-align: left;
+}
+
+.details-subtitle {
+    margin: 0;
+    font-size: 16px;
+    color: #6f6f6f;
+}
+
+.error-text {
+    color: #b42318;
+    font-size: 14px;
+    margin: 0 0 20px 0;
+}
+
+.loading-text,
+.empty-text {
+    background: #fafafa;
+    border-radius: 28px;
+    border: 1px solid #e6e6e6;
+    padding: 50px;
+    color: #707070;
+    font-size: 16px;
+}
+
+.cupping-block {
+    background: #fafafa;
+    border-radius: 28px;
+    border: 1px solid #e6e6e6;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
 }
 
 .subtitle {
-    text-align: center;
+    margin: 0 0 20px 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1f1f1f;
+    text-align: left;
+}
+
+.coffee-label {
+    margin: 0 0 20px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #444;
+}
+
+.coffee-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.coffee-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.coffee-field label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f1f1f;
+}
+
+.coffee-input {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid #dddddd;
+    background: white;
+    font-size: 14px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.coffee-input:focus {
+    border-color: #1f1f1f;
+}
+
+.coffee-input:disabled {
+    background: #f0f0f0;
+    color: #888;
+}
+
+.coffee-field-full {
+    grid-column: 1 / -1;
+}
+
+.coffee-textarea {
+    min-height: 110px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.session-form-card {
+    background: #fafafa;
+    border-radius: 28px;
+    border: 1px solid #e6e6e6;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
     margin-bottom: 20px;
 }
-.coffee-input {
-    width: 300px;
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-        display: block;
-        margin: 0 auto 30px auto;
-        
+
+.block-header .subtitle {
+    margin: 0;
 }
-.cupping-block {
-    margin-bottom: 40px;
+
+.remove-cup-btn,
+.delete-session-btn {
+    border: 1px solid #dddddd;
+    border-radius: 18px;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s ease;
+    background: #efefef;
+    color: #555;
+}
+
+.remove-cup-btn:hover,
+.delete-session-btn:hover:not(:disabled) {
+    background: #e8e8e8;
+}
+
+.delete-session-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
 
 .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 30px;
+    gap: 20px;
 }
 
 .box {
-    min-height: 180px;
-    border: 1px solid #ccc;
-    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border: 1px solid #e6e6e6;
+    border-radius: 20px;
     padding: 20px;
-    background: #f5f5f5;
+    background: white;
 }
 
-.box input,
+.box h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f1f1f;
+}
+
+.box input[type="number"],
 .box textarea {
     width: 100%;
-    margin-top: 10px;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid #dddddd;
     box-sizing: border-box;
+    font-size: 14px;
+    outline: none;
 }
+
+.box input[type="number"]:focus,
+.box textarea:focus {
+    border-color: #1f1f1f;
+}
+
+.box textarea {
+    min-height: 90px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
 .checkbox-group {
     display: flex;
-    gap: 20px;
-    margin-top: 10px;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: nowrap;
 }
-.add-cup-btn {
-    margin: 30px auto;
-    display: block;
-    padding: 12px 24px;
-    border-radius: 25px;
-    background: #333;
-    color: white;
-    border: none;
+
+.checkbox-group label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #555;
+    font-weight: 500;
     cursor: pointer;
+    white-space: nowrap;
+}
+
+.checkbox-group input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+    accent-color: #1f1f1f;
+}
+
+.box-full {
+    grid-column: 1 / -1;
+}
+
+.details-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.add-cup-btn,
+.save-btn {
+    border: none;
+    border-radius: 18px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s ease;
+}
+
+.add-cup-btn {
+    background: #efefef;
+    color: #555;
+    border: 1px solid #dddddd;
+}
+
+.add-cup-btn:hover {
+    background: #e8e8e8;
+}
+
+.save-btn {
+    background: #1f1f1f;
+    color: white;
+}
+
+.save-btn:hover:not(:disabled) {
+    background: #000;
+    transform: translateY(-1px);
+}
+
+.save-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+    .details-container {
+        padding: 40px 24px;
+    }
+
+    .title {
+        font-size: 42px;
+    }
+
+    .coffee-inputs,
+    .grid {
+        grid-template-columns: 1fr;
+    }
 }

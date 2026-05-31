@@ -650,4 +650,199 @@ public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserTastingSession()
 
     Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 }
+
+    [Fact]
+    public async Task ShouldUpdateTastingSession()
+    {
+        var sessionName = $"Update session {Guid.NewGuid()}";
+        var updatedName = $"Updated session {Guid.NewGuid()}";
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        await EnsureTestUsersExistAsync(context);
+
+        var session = new CuppingSession
+        {
+            Name = sessionName,
+            Description = "Original description",
+            CreatedAt = DateTime.Now,
+            UserId = 1
+        };
+
+        context.CuppingSessions.Add(session);
+        await context.SaveChangesAsync();
+
+        var request = new
+        {
+            name = updatedName,
+            description = "Updated description",
+            sessionDate = new DateTime(2026, 5, 15)
+        };
+
+        var response = await _client.PutAsJsonAsync($"/api/TastingSessions/{session.Id}", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var root = document.RootElement;
+
+        Assert.Equal(updatedName, root.GetProperty("name").GetString());
+        Assert.Equal("Updated description", root.GetProperty("description").GetString());
+
+        var savedSession = await context.CuppingSessions
+            .AsNoTracking()
+            .SingleAsync(existingSession => existingSession.Id == session.Id);
+
+        Assert.Equal(updatedName, savedSession.Name);
+        Assert.Equal("Updated description", savedSession.Description);
+        Assert.Equal(new DateTime(2026, 5, 15), savedSession.SessionDate);
+    }
+
+    [Fact]
+    public async Task ShouldDeleteTastingSession()
+    {
+        var sessionName = $"Delete session {Guid.NewGuid()}";
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        await EnsureTestUsersExistAsync(context);
+
+        var session = new CuppingSession
+        {
+            Name = sessionName,
+            Description = "Session to delete",
+            CreatedAt = DateTime.Now,
+            UserId = 1
+        };
+
+        context.CuppingSessions.Add(session);
+        await context.SaveChangesAsync();
+
+        context.CuppingSessionCoffees.Add(new CuppingSessionCoffee
+        {
+            CuppingSessionId = session.Id,
+            CoffeeId = 1,
+            CreatedAt = DateTime.Now
+        });
+
+        await context.SaveChangesAsync();
+
+        var response = await _client.DeleteAsync($"/api/TastingSessions/{session.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var sessionExists = await context.CuppingSessions.AnyAsync(existingSession => existingSession.Id == session.Id);
+        var coffeesExist = await context.CuppingSessionCoffees.AnyAsync(existingCoffee => existingCoffee.CuppingSessionId == session.Id);
+
+        Assert.False(sessionExists);
+        Assert.False(coffeesExist);
+    }
+
+    [Fact]
+    public async Task ShouldDeleteCoffeeFromTastingSession()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        await EnsureTestUsersExistAsync(context);
+
+        var session = new CuppingSession
+        {
+            Name = $"Delete coffee session {Guid.NewGuid()}",
+            Description = "Session for deleting coffee",
+            CreatedAt = DateTime.Now,
+            UserId = 1
+        };
+
+        context.CuppingSessions.Add(session);
+        await context.SaveChangesAsync();
+
+        var sessionCoffee = new CuppingSessionCoffee
+        {
+            CuppingSessionId = session.Id,
+            CoffeeId = 1,
+            CreatedAt = DateTime.Now
+        };
+
+        context.CuppingSessionCoffees.Add(sessionCoffee);
+        await context.SaveChangesAsync();
+
+        var response = await _client.DeleteAsync(
+            $"/api/TastingSessions/{session.Id}/coffees/{sessionCoffee.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var coffeeExists = await context.CuppingSessionCoffees
+            .AnyAsync(existingCoffee => existingCoffee.Id == sessionCoffee.Id);
+
+        Assert.False(coffeeExists);
+    }
+
+    [Fact]
+    public async Task ShouldAddCustomCoffeeToTastingSession()
+    {
+        var sessionName = $"Custom coffee session {Guid.NewGuid()}";
+        var customCoffeeName = $"Guest coffee {Guid.NewGuid()}";
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        await EnsureTestUsersExistAsync(context);
+
+        var session = new CuppingSession
+        {
+            Name = sessionName,
+            Description = "Session for custom coffee",
+            CreatedAt = DateTime.Now,
+            UserId = 1
+        };
+
+        context.CuppingSessions.Add(session);
+        await context.SaveChangesAsync();
+
+        var request = new
+        {
+            coffeeName = customCoffeeName,
+            notes = "Sample note"
+        };
+
+        var response = await _client.PostAsJsonAsync($"/api/TastingSessions/{session.Id}/coffees", request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var payload = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(payload);
+        var root = document.RootElement;
+
+        Assert.True(root.GetProperty("sessionCoffeeId").GetInt32() > 0);
+        Assert.Equal(customCoffeeName, root.GetProperty("coffeeName").GetString());
+        Assert.Equal("Sample note", root.GetProperty("notes").GetString());
+    }
+
+    [Fact]
+    public async Task ShouldReturnNotFoundWhenDeletingOtherUserTastingSession()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        await EnsureTestUsersExistAsync(context);
+
+        var session = new CuppingSession
+        {
+            Name = $"Other user delete session {Guid.NewGuid()}",
+            Description = "Other user session",
+            CreatedAt = DateTime.Now,
+            UserId = 2
+        };
+
+        context.CuppingSessions.Add(session);
+        await context.SaveChangesAsync();
+
+        var response = await _client.DeleteAsync($"/api/TastingSessions/{session.Id}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }

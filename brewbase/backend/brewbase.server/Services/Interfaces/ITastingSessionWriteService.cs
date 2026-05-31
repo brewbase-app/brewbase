@@ -6,6 +6,12 @@ public interface ITastingSessionWriteService
 {
     Task<TastingSessionResponseDto?> CreateAsync(CreateTastingSessionRequestDto request);
 
+    Task<TastingSessionWriteResult<TastingSessionResponseDto>> UpdateSessionAsync(
+        int sessionId,
+        UpdateTastingSessionRequestDto request);
+
+    Task<TastingSessionWriteStatus> DeleteSessionAsync(int sessionId);
+
 	Task<TastingSessionWriteResult<TastingSessionCoffeeResponseDto>> AddCoffeeAsync(
         int sessionId,
         AddCoffeeToTastingSessionRequestDto request);
@@ -19,4 +25,6 @@ public interface ITastingSessionWriteService
 		int sessionId,
 		int sessionCoffeeId,
 		UpdateTastingSessionCoffeeNoteRequestDto request);
+
+    Task<TastingSessionWriteStatus> DeleteCoffeeAsync(int sessionId, int sessionCoffeeId);
 }
