@@ -8,9 +8,11 @@ export const ARTICLE_MODULE_LABELS = {
 };
 
 export const ARTICLE_STATUS_LABELS = {
+    Draft: "Szkic",
     Pending: "W moderacji",
     Approved: "Opublikowany",
     Rejected: "Odrzucony",
+    Removed: "Usunięty",
 };
 
 export function getArticleModuleLabel(module) {

@@ -23,7 +23,7 @@ function getStatusClassName(status) {
         return "approved";
     }
 
-    if (status === "Rejected") {
+    if (status === "Draft" || status === "Rejected") {
         return "rejected";
     }
 
@@ -187,7 +187,8 @@ function MyWikiArticles() {
                                 )}
                             </div>
 
-                            {article.status === "Rejected" &&
+                            {(article.status === "Draft" ||
+                                article.status === "Rejected") &&
                                 article.moderationComment && (
                                     <div className="wiki-my-article-comment">
                                         Komentarz moderatora:{" "}

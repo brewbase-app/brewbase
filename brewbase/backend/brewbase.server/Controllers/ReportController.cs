@@ -17,17 +17,47 @@ public class ReportController : ControllerBase
     }
 
     [Authorize]
+    [HttpPost]
+    public async Task<IActionResult> CreateReport(
+        CreateReportRequestDto dto)
+    {
+        return MapResult(
+            await _reportService.CreateReportAsync(dto));
+    }
+
+    [Authorize]
     [HttpPost("article/{articleId}")]
     public async Task<IActionResult> ReportArticle(
         int articleId,
         CreateReportRequestDto dto)
     {
-        var result = await _reportService
-            .CreateReportAsync(articleId, dto);
+        dto.ContentType = "article";
+        dto.ContentId = articleId;
 
-        if (!result)
-            return BadRequest();
+        return MapResult(
+            await _reportService.CreateReportAsync(dto));
+    }
 
-        return Ok();
+    private IActionResult MapResult(ReportCreateResult result)
+    {
+        return result switch
+        {
+            ReportCreateResult.Created => Ok(),
+            ReportCreateResult.Duplicate => Conflict(
+                new SimpleErrorResponseDto
+                {
+                    Message = "Ta treść została już przez Ciebie zgłoszona."
+                }),
+            ReportCreateResult.NotFound => NotFound(
+                new SimpleErrorResponseDto
+                {
+                    Message = "Nie znaleziono zgłaszanej treści."
+                }),
+            _ => BadRequest(
+                new SimpleErrorResponseDto
+                {
+                    Message = "Nieprawidłowe dane zgłoszenia."
+                })
+        };
     }
 }
