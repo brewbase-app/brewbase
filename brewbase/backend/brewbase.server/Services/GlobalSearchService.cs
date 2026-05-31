@@ -21,13 +21,14 @@ public sealed class GlobalSearchService : IGlobalSearchService
     private const double ExactTitleBonus = 15;
     private const double StartsWithBonus = 8;
 
-    private readonly BrewDbContext _context;
+    private readonly IDbContextFactory<BrewDbContext> _contextFactory;
     private readonly bool _usePostgres;
 
-    public GlobalSearchService(BrewDbContext context)
+    public GlobalSearchService(IDbContextFactory<BrewDbContext> contextFactory)
     {
-        _context = context;
-        _usePostgres = !(_context.Database.ProviderName ?? string.Empty)
+        _contextFactory = contextFactory;
+        using var probeContext = contextFactory.CreateDbContext();
+        _usePostgres = !(probeContext.Database.ProviderName ?? string.Empty)
             .Contains("Sqlite", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -110,26 +111,90 @@ public sealed class GlobalSearchService : IGlobalSearchService
         int perTypeLimit,
         CancellationToken cancellationToken)
     {
-        var reader = new GlobalSearchPostgresReader(_context);
-
-        var coffeeTask = reader.SearchCoffeesAsync(normalizedQuery, ilikePattern, perTypeLimit, cancellationToken);
-        var recipeTask = reader.SearchRecipesAsync(currentUserId, normalizedQuery, ilikePattern, perTypeLimit, cancellationToken);
-        var userTask = reader.SearchUsersAsync(normalizedQuery, ilikePattern, perTypeLimit, cancellationToken);
-        var wikiTask = reader.SearchWikiArticlesAsync(normalizedQuery, ilikePattern, perTypeLimit, cancellationToken);
-        var noteTask = reader.SearchQuickNotesAsync(currentUserId, normalizedQuery, ilikePattern, perTypeLimit, cancellationToken);
-        var cuppingTask = reader.SearchCuppingSessionsAsync(currentUserId, normalizedQuery, ilikePattern, perTypeLimit, cancellationToken);
+        var coffeeTask = SearchPostgresCoffeesAsync(normalizedQuery, ilikePattern, perTypeLimit, cancellationToken);
+        var recipeTask = SearchPostgresRecipesAsync(currentUserId, normalizedQuery, ilikePattern, perTypeLimit, cancellationToken);
+        var userTask = SearchPostgresUsersAsync(normalizedQuery, ilikePattern, perTypeLimit, cancellationToken);
+        var wikiTask = SearchPostgresWikiArticlesAsync(normalizedQuery, ilikePattern, perTypeLimit, cancellationToken);
+        var noteTask = SearchPostgresQuickNotesAsync(currentUserId, normalizedQuery, ilikePattern, perTypeLimit, cancellationToken);
+        var cuppingTask = SearchPostgresCuppingSessionsAsync(currentUserId, normalizedQuery, ilikePattern, perTypeLimit, cancellationToken);
 
         await Task.WhenAll(coffeeTask, recipeTask, userTask, wikiTask, noteTask, cuppingTask);
 
         var merged = new List<GlobalSearchResultDto>();
-        merged.AddRange(RefineScores(coffeeTask.Result, words, r => r.Title, r => r.Snippet));
-        merged.AddRange(RefineScores(recipeTask.Result, words, r => r.Title, r => r.Snippet));
-        merged.AddRange(RefineScores(userTask.Result, words, r => r.Title, r => r.Snippet));
-        merged.AddRange(RefineScores(wikiTask.Result, words, r => r.Title, r => r.Snippet));
-        merged.AddRange(RefineScores(noteTask.Result, words, r => r.Title, r => r.Snippet));
-        merged.AddRange(RefineScores(cuppingTask.Result, words, r => r.Title, r => r.Snippet));
+        merged.AddRange(RefineScores(await coffeeTask, words, r => r.Title, r => r.Snippet));
+        merged.AddRange(RefineScores(await recipeTask, words, r => r.Title, r => r.Snippet));
+        merged.AddRange(RefineScores(await userTask, words, r => r.Title, r => r.Snippet));
+        merged.AddRange(RefineScores(await wikiTask, words, r => r.Title, r => r.Snippet));
+        merged.AddRange(RefineScores(await noteTask, words, r => r.Title, r => r.Snippet));
+        merged.AddRange(RefineScores(await cuppingTask, words, r => r.Title, r => r.Snippet));
 
         return merged;
+    }
+
+    private async Task<List<GlobalSearchResultDto>> SearchPostgresCoffeesAsync(
+        string normalizedQuery,
+        string ilikePattern,
+        int perTypeLimit,
+        CancellationToken cancellationToken) =>
+        await ExecutePostgresReaderAsync(
+            reader => reader.SearchCoffeesAsync(normalizedQuery, ilikePattern, perTypeLimit, cancellationToken),
+            cancellationToken);
+
+    private async Task<List<GlobalSearchResultDto>> SearchPostgresRecipesAsync(
+        int currentUserId,
+        string normalizedQuery,
+        string ilikePattern,
+        int perTypeLimit,
+        CancellationToken cancellationToken) =>
+        await ExecutePostgresReaderAsync(
+            reader => reader.SearchRecipesAsync(currentUserId, normalizedQuery, ilikePattern, perTypeLimit, cancellationToken),
+            cancellationToken);
+
+    private async Task<List<GlobalSearchResultDto>> SearchPostgresUsersAsync(
+        string normalizedQuery,
+        string ilikePattern,
+        int perTypeLimit,
+        CancellationToken cancellationToken) =>
+        await ExecutePostgresReaderAsync(
+            reader => reader.SearchUsersAsync(normalizedQuery, ilikePattern, perTypeLimit, cancellationToken),
+            cancellationToken);
+
+    private async Task<List<GlobalSearchResultDto>> SearchPostgresWikiArticlesAsync(
+        string normalizedQuery,
+        string ilikePattern,
+        int perTypeLimit,
+        CancellationToken cancellationToken) =>
+        await ExecutePostgresReaderAsync(
+            reader => reader.SearchWikiArticlesAsync(normalizedQuery, ilikePattern, perTypeLimit, cancellationToken),
+            cancellationToken);
+
+    private async Task<List<GlobalSearchResultDto>> SearchPostgresQuickNotesAsync(
+        int currentUserId,
+        string normalizedQuery,
+        string ilikePattern,
+        int perTypeLimit,
+        CancellationToken cancellationToken) =>
+        await ExecutePostgresReaderAsync(
+            reader => reader.SearchQuickNotesAsync(currentUserId, normalizedQuery, ilikePattern, perTypeLimit, cancellationToken),
+            cancellationToken);
+
+    private async Task<List<GlobalSearchResultDto>> SearchPostgresCuppingSessionsAsync(
+        int currentUserId,
+        string normalizedQuery,
+        string ilikePattern,
+        int perTypeLimit,
+        CancellationToken cancellationToken) =>
+        await ExecutePostgresReaderAsync(
+            reader => reader.SearchCuppingSessionsAsync(currentUserId, normalizedQuery, ilikePattern, perTypeLimit, cancellationToken),
+            cancellationToken);
+
+    private async Task<List<GlobalSearchResultDto>> ExecutePostgresReaderAsync(
+        Func<GlobalSearchPostgresReader, Task<List<GlobalSearchResultDto>>> query,
+        CancellationToken cancellationToken)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var reader = new GlobalSearchPostgresReader(context);
+        return await query(reader);
     }
 
     private async Task<List<GlobalSearchResultDto>> SearchSqliteAsync(
@@ -138,14 +203,23 @@ public sealed class GlobalSearchService : IGlobalSearchService
         int perTypeLimit,
         CancellationToken cancellationToken)
     {
-        var results = new List<GlobalSearchResultDto>();
-        results.AddRange(await SearchCoffeesSqliteAsync(words, perTypeLimit, cancellationToken));
-        results.AddRange(await SearchRecipesSqliteAsync(words, currentUserId, perTypeLimit, cancellationToken));
-        results.AddRange(await SearchUsersSqliteAsync(words, perTypeLimit, cancellationToken));
-        results.AddRange(await SearchWikiArticlesSqliteAsync(words, perTypeLimit, cancellationToken));
-        results.AddRange(await SearchQuickNotesSqliteAsync(words, currentUserId, perTypeLimit, cancellationToken));
-        results.AddRange(await SearchCuppingSessionsSqliteAsync(words, currentUserId, perTypeLimit, cancellationToken));
-        return results;
+        var coffeeTask = SearchCoffeesSqliteAsync(words, perTypeLimit, cancellationToken);
+        var recipeTask = SearchRecipesSqliteAsync(words, currentUserId, perTypeLimit, cancellationToken);
+        var userTask = SearchUsersSqliteAsync(words, perTypeLimit, cancellationToken);
+        var wikiTask = SearchWikiArticlesSqliteAsync(words, perTypeLimit, cancellationToken);
+        var noteTask = SearchQuickNotesSqliteAsync(words, currentUserId, perTypeLimit, cancellationToken);
+        var cuppingTask = SearchCuppingSessionsSqliteAsync(words, currentUserId, perTypeLimit, cancellationToken);
+
+        await Task.WhenAll(coffeeTask, recipeTask, userTask, wikiTask, noteTask, cuppingTask);
+
+        var merged = new List<GlobalSearchResultDto>();
+        merged.AddRange(await coffeeTask);
+        merged.AddRange(await recipeTask);
+        merged.AddRange(await userTask);
+        merged.AddRange(await wikiTask);
+        merged.AddRange(await noteTask);
+        merged.AddRange(await cuppingTask);
+        return merged;
     }
 
     private static List<GlobalSearchResultDto> RefineScores(
@@ -194,7 +268,8 @@ public sealed class GlobalSearchService : IGlobalSearchService
         int take,
         CancellationToken cancellationToken)
     {
-        var candidates = await _context.Coffees
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var candidates = await context.Coffees
             .AsNoTracking()
             .Select(coffee => new
             {
@@ -243,8 +318,9 @@ public sealed class GlobalSearchService : IGlobalSearchService
         int take,
         CancellationToken cancellationToken)
     {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var candidates = await RecipeReadService
-            .WhereVisibleTo(_context.Recipes.AsNoTracking(), currentUserId)
+            .WhereVisibleTo(context.Recipes.AsNoTracking(), currentUserId)
             .Select(recipe => new
             {
                 recipe.Id,
@@ -297,7 +373,8 @@ public sealed class GlobalSearchService : IGlobalSearchService
         int take,
         CancellationToken cancellationToken)
     {
-        var candidates = await _context.AppUsers
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var candidates = await context.AppUsers
             .AsNoTracking()
             .Where(user => !user.IsBlocked)
             .Select(user => new { user.Id, user.Login, user.Label })
@@ -335,7 +412,8 @@ public sealed class GlobalSearchService : IGlobalSearchService
         int take,
         CancellationToken cancellationToken)
     {
-        var candidates = await _context.Articles
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var candidates = await context.Articles
             .AsNoTracking()
             .Where(article => article.Status == ApprovedStatus)
             .Select(article => new
@@ -385,7 +463,8 @@ public sealed class GlobalSearchService : IGlobalSearchService
         int take,
         CancellationToken cancellationToken)
     {
-        var candidates = await _context.QuickNotes
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var candidates = await context.QuickNotes
             .AsNoTracking()
             .Where(note => note.UserId == currentUserId)
             .Select(note => new { note.Id, note.Content })
@@ -430,7 +509,8 @@ public sealed class GlobalSearchService : IGlobalSearchService
         int take,
         CancellationToken cancellationToken)
     {
-        var candidates = await _context.CuppingSessions
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var candidates = await context.CuppingSessions
             .AsNoTracking()
             .Where(session => session.UserId == currentUserId)
             .Select(session => new { session.Id, session.Name, session.Description })
