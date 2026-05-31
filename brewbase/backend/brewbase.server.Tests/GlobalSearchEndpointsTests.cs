@@ -140,6 +140,68 @@ public class GlobalSearchEndpointsTests : IDisposable
             item.GetProperty("type").GetString() == "quick_note");
     }
 
+    [Fact]
+    public async Task User2_Search_FindsOwnPrivateRecipe()
+    {
+        var results = await SearchResultsAsync(User2, "Zulu");
+        Assert.Contains(results, item =>
+            item.GetProperty("type").GetString() == "recipe"
+            && item.GetProperty("title").GetString() == "Zulu Recipe");
+    }
+
+    [Fact]
+    public async Task User1_Search_DoesNotReturnPendingWikiArticle()
+    {
+        var results = await SearchResultsAsync(User1, "PendingWikiOnly");
+        Assert.DoesNotContain(results, item =>
+            item.GetProperty("type").GetString() == "wiki"
+            && item.GetProperty("title").GetString() == "PendingWikiOnly");
+    }
+
+    [Fact]
+    public async Task User1_Search_DoesNotReturnBlockedUser()
+    {
+        var results = await SearchResultsAsync(User1, "recipe.tester.two");
+        Assert.DoesNotContain(results, item =>
+            item.GetProperty("type").GetString() == "user"
+            && item.GetProperty("title").GetString() == "recipe.tester.two");
+    }
+
+    [Fact]
+    public async Task Search_RespectsLimitParameter()
+    {
+        var response = await SearchAsUserAsync(User1, "Alpha", limit: 1);
+        response.EnsureSuccessStatusCode();
+        var root = await ParseJsonAsync(response);
+        var results = root.GetProperty("results").EnumerateArray().ToList();
+
+        Assert.Single(results);
+    }
+
+    [Fact]
+    public async Task QueryLongerThanMaxLength_ReturnsEmptyResults()
+    {
+        var longQuery = new string('a', 121);
+        var response = await SearchAsUserAsync(User1, longQuery);
+        response.EnsureSuccessStatusCode();
+
+        var root = await ParseJsonAsync(response);
+        Assert.Empty(root.GetProperty("results").EnumerateArray());
+    }
+
+    [Fact]
+    public async Task User1_Search_ResultIncludesExpectedDeepLinkPaths()
+    {
+        var results = await SearchResultsAsync(User1, "Alpha Coffee");
+        var coffee = results.Single(item => item.GetProperty("type").GetString() == "coffee");
+
+        Assert.Equal("/wiki/coffees/1", coffee.GetProperty("path").GetString());
+
+        var recipeResults = await SearchResultsAsync(User1, "Alpha Recipe");
+        var recipe = recipeResults.Single(item => item.GetProperty("type").GetString() == "recipe");
+        Assert.Equal("/recipes/1", recipe.GetProperty("path").GetString());
+    }
+
     private void SeedSearchExtras()
     {
         using var scope = _factory.Services.CreateScope();
@@ -193,14 +255,41 @@ public class GlobalSearchEndpointsTests : IDisposable
             });
         }
 
+        if (!context.Articles.Any(article => article.Title == "PendingWikiOnly"))
+        {
+            context.Articles.Add(new Article
+            {
+                Title = "PendingWikiOnly",
+                Content = "Should not appear in global search.",
+                Status = "Pending",
+                Module = "country",
+                UserId = User1,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
+
+        var user2 = context.AppUsers.FirstOrDefault(user => user.Id == User2);
+        if (user2 is not null)
+        {
+            user2.IsBlocked = true;
+        }
+
         context.SaveChanges();
     }
 
-    private async Task<HttpResponseMessage> SearchAsUserAsync(int userId, string query)
+    private async Task<HttpResponseMessage> SearchAsUserAsync(
+        int userId,
+        string query,
+        int? limit = null)
     {
-        using var request = new HttpRequestMessage(
-            HttpMethod.Get,
-            $"/api/search?query={Uri.EscapeDataString(query)}");
+        var url = $"/api/search?query={Uri.EscapeDataString(query)}";
+        if (limit.HasValue)
+        {
+            url += $"&limit={limit.Value}";
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add(CurrentUserProvider.DevUserIdHeaderName, userId.ToString());
         return await _client.SendAsync(request);
     }
