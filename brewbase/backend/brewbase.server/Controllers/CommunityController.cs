@@ -61,7 +61,19 @@ public class CommunityController : ControllerBase
         return Ok();
     }
     
-    [HttpGet("profile/{userId}")]
+    [HttpGet("profile/by-login/{login}")]
+    public async Task<ActionResult<PublicUserProfileResponseDto>> GetPublicProfileByLogin(string login)
+    {
+        var profile = await _communityService
+            .GetPublicProfileByLoginAsync(login);
+
+        if (profile == null)
+            return NotFound();
+
+        return Ok(profile);
+    }
+
+    [HttpGet("profile/{userId:int}")]
     public async Task<ActionResult<PublicUserProfileResponseDto>> GetPublicProfile(int userId)
     {
         var profile = await _communityService
@@ -71,6 +83,17 @@ public class CommunityController : ControllerBase
             return NotFound();
 
         return Ok(profile);
+    }
+
+    [HttpGet("followers/{userId:int}")]
+    public async Task<ActionResult<List<FollowUserListResponseDto>>> GetFollowers(int userId)
+    {
+        var followers = await _communityService.GetFollowersAsync(userId);
+
+        if (followers == null)
+            return NotFound();
+
+        return Ok(followers);
     }
     
     [Authorize]

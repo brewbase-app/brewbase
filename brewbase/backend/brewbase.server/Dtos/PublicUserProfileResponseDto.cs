@@ -15,4 +15,6 @@ public class PublicUserProfileResponseDto
     public int FollowingCount { get; set; }
 
     public int RecipesCount { get; set; }
+
+    public bool IsFollowing { get; set; }
 }

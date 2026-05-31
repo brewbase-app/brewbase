@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import {
+    DEFAULT_USER_PREFERENCES,
+    USER_PREFERENCE_OPTIONS,
+    saveUserPreferences,
+} from "../utils/userPreferences";
+
 import "../styles/PreferencesOnboardingPage.css";
 
 const steps = [
@@ -19,15 +25,7 @@ export default function PreferencesOnboardingPage() {
     const [step, setStep] = useState(0);
 
     const [preferences, setPreferences] = useState({
-        experienceLevel: "",
-        brewingMethods: [],
-        flavorProfiles: [],
-        acidity: "",
-        body: "",
-        regions: [],
-        processingMethods: [],
-        recommendationStyle: "",
-        allowExploration: false,
+        ...DEFAULT_USER_PREFERENCES,
     });
 
     const nextStep = async () => {
@@ -37,7 +35,7 @@ export default function PreferencesOnboardingPage() {
             setStep(step + 1);
 
         } else {
-
+            saveUserPreferences(preferences);
             navigate("/home");
         }
     };
@@ -78,12 +76,7 @@ export default function PreferencesOnboardingPage() {
                             Wybierz jedną opcję
                         </p>
 
-                        {[
-                            "Początkujący",
-                            "Średniozaawansowany",
-                            "Zaawansowany",
-                            "Jeszcze nie wiem",
-                        ].map((option) => (
+                        {USER_PREFERENCE_OPTIONS.experienceLevel.map((option) => (
                             <button
                                 type="button"
                                 key={option}
@@ -116,14 +109,7 @@ export default function PreferencesOnboardingPage() {
                             Możesz wybrać kilka opcji
                         </p>
 
-                        {[
-                            "Espresso",
-                            "V60",
-                            "Aeropress",
-                            "French Press",
-                            "Cold Brew",
-                            "Jeszcze nie wiem",
-                        ].map((method) => (
+                        {USER_PREFERENCE_OPTIONS.brewingMethods.map((method) => (
                             <button
                                 type="button"
                                 key={method}
@@ -156,14 +142,7 @@ export default function PreferencesOnboardingPage() {
                             Możesz wybrać kilka opcji
                         </p>
 
-                        {[
-                            "Czekoladowe",
-                            "Orzechowe",
-                            "Owocowe",
-                            "Kwiatowe",
-                            "Słodkie",
-                            "Jeszcze nie wiem",
-                        ].map((flavor) => (
+                        {USER_PREFERENCE_OPTIONS.flavorProfiles.map((flavor) => (
                             <button
                                 type="button"
                                 key={flavor}
@@ -196,12 +175,7 @@ export default function PreferencesOnboardingPage() {
                             Wybierz jedną opcję
                         </p>
 
-                        {[
-                            "Niska",
-                            "Średnia",
-                            "Wysoka",
-                            "Nie mam zdania",
-                        ].map((option) => (
+                        {USER_PREFERENCE_OPTIONS.acidity.map((option) => (
                             <button
                                 type="button"
                                 key={option}
@@ -229,12 +203,7 @@ export default function PreferencesOnboardingPage() {
                             Wybierz jedną opcję
                         </p>
 
-                        {[
-                            "Lekkie",
-                            "Zbalansowane",
-                            "Ciężkie",
-                            "Nie mam zdania",
-                        ].map((option) => (
+                        {USER_PREFERENCE_OPTIONS.body.map((option) => (
                             <button
                                 type="button"
                                 key={option}
@@ -267,14 +236,7 @@ export default function PreferencesOnboardingPage() {
                             Możesz wybrać kilka opcji
                         </p>
 
-                        {[
-                            "Etiopia",
-                            "Kolumbia",
-                            "Brazylia",
-                            "Kenia",
-                            "Gwatemala",
-                            "Nie mam preferencji",
-                        ].map((region) => (
+                        {USER_PREFERENCE_OPTIONS.regions.map((region) => (
                             <button
                                 type="button"
                                 key={region}
@@ -307,11 +269,7 @@ export default function PreferencesOnboardingPage() {
                             Wybierz jedną opcję
                         </p>
 
-                        {[
-                            "Bezpieczne wybory",
-                            "Zbalansowane",
-                            "Zaskocz mnie",
-                        ].map((style) => (
+                        {USER_PREFERENCE_OPTIONS.recommendationStyle.map((style) => (
                             <button
                                 type="button"
                                 key={style}

@@ -9,11 +9,12 @@ export class ApiError extends Error {
 
 export async function apiRequest(path, options = {}) {
     const token = localStorage.getItem("token");
+    const hasBody = options.body != null && options.body !== "";
 
     const response = await fetch(path, {
         ...options,
         headers: {
-            "Content-Type": "application/json",
+            ...(hasBody ? { "Content-Type": "application/json" } : {}),
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
             ...options.headers,
         },
@@ -43,5 +44,11 @@ export async function apiRequest(path, options = {}) {
         return null;
     }
 
-    return response.json();
+    const responseText = await response.text();
+
+    if (!responseText) {
+        return null;
+    }
+
+    return JSON.parse(responseText);
 }
