@@ -27,6 +27,7 @@ import {
     removeFavorite,
     rateRecipe
 } from "../api/recipeApi";
+import { getProfile } from "../api/profileApi";
 
 const RecipeDetails = () => {
     
@@ -42,15 +43,18 @@ const RecipeDetails = () => {
 
     const [isFavorite, setIsFavorite] = useState(false);
 
+    const [currentUserId, setCurrentUserId] = useState(null);
+
     useEffect(() => {
 
         const fetchRecipe = async () => {
 
             try {
 
-                const data = await getRecipeById(id);
-
-                console.log(data);
+                const [data, profile] = await Promise.all([
+                    getRecipeById(id),
+                    getProfile().catch(() => null),
+                ]);
 
                 const parsedRecipe = {
                     ...data,
@@ -63,6 +67,11 @@ const RecipeDetails = () => {
                 setRecipe(parsedRecipe);
 
                 setIsFavorite(data.isFavorite || false);
+
+                const profileUserId = profile?.userId ?? profile?.UserId;
+                setCurrentUserId(
+                    profileUserId != null ? Number(profileUserId) : null
+                );
 
             } catch (error) {
 
@@ -248,6 +257,12 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
 
         URL.revokeObjectURL(url);
     };
+
+    const recipeOwnerId = Number(recipe.userId ?? recipe.UserId);
+    const isOwner =
+        currentUserId != null &&
+        Number.isFinite(recipeOwnerId) &&
+        currentUserId === recipeOwnerId;
 
     return (
 
@@ -445,14 +460,16 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                             }}
                         >
 
-                            <button
-                                style={editButtonStyle}
-                                onClick={() =>
-                                    navigate(`/recipes/edit/${recipe.id}`)
-                                }
-                            >
-                                Edytuj
-                            </button>
+                            {isOwner && (
+                                <button
+                                    style={editButtonStyle}
+                                    onClick={() =>
+                                        navigate(`/recipes/edit/${recipe.id}`)
+                                    }
+                                >
+                                    Edytuj
+                                </button>
+                            )}
 
                             <button
                                 style={exportButtonStyle}

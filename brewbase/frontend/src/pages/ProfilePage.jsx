@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
     Link,
@@ -6,7 +6,6 @@ import {
 } from "react-router-dom";
 
 import {
-    Settings,
     Search,
     FileText,
     Users,
@@ -19,375 +18,563 @@ import {
 } from "lucide-react";
 
 import { getProfile } from "../api/profileApi";
+import { ApiError } from "../api/apiClient";
+import { getRecipes } from "../api/recipeApi";
+import {
+    followUser,
+    getFollowers,
+    getFollowing,
+    getUserProfile,
+    getUserProfileByLogin,
+    unfollowUser,
+} from "../api/communityApi";
+import { getUserRanking } from "../api/rankingApi";
 
 import "../styles/profile.css";
 
+function resolveUserId(entity) {
+    if (!entity) {
+        return null;
+    }
+
+    const rawId = entity.userId ?? entity.UserId;
+    const parsed = Number(rawId);
+
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatRelativeTime(dateString) {
+    if (!dateString) {
+        return "";
+    }
+
+    const date = new Date(dateString);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    const diffMs = Date.now() - date.getTime();
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (days <= 0) {
+        return "Dziś";
+    }
+
+    if (days === 1) {
+        return "Wczoraj";
+    }
+
+    if (days < 7) {
+        return `${days} dni temu`;
+    }
+
+    if (days < 30) {
+        const weeks = Math.floor(days / 7);
+        return weeks === 1 ? "1 tydzień temu" : `${weeks} tygodnie temu`;
+    }
+
+    return date.toLocaleDateString("pl-PL");
+}
+
+function sortRecipesByNewest(recipes) {
+    return [...recipes].sort((left, right) => {
+        const leftTime = new Date(left.createdAt ?? 0).getTime();
+        const rightTime = new Date(right.createdAt ?? 0).getTime();
+
+        return rightTime - leftTime;
+    });
+}
+
 function ProfilePage() {
-
-    // URL PARAM
-
     const { username } = useParams();
 
-    // PROFILE
+    const [currentUser, setCurrentUser] = useState(null);
+    const [viewedProfile, setViewedProfile] = useState(null);
+    const [rankingPosition, setRankingPosition] = useState(null);
+    const [discoverSource, setDiscoverSource] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [followersList, setFollowersList] = useState([]);
+    const [followingList, setFollowingList] = useState([]);
+    const [userRecipes, setUserRecipes] = useState([]);
+    const [remoteDiscoverUser, setRemoteDiscoverUser] = useState(null);
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [followLoading, setFollowLoading] = useState(false);
 
-    const [profile, setProfile] =
-        useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    const [loading, setLoading] =
-        useState(true);
+    const [openModal, setOpenModal] = useState(null);
 
-    // MODAL
+    const loadProfile = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError("");
 
-    const [openModal, setOpenModal] =
-        useState(null);
+            const me = await getProfile();
+            setCurrentUser(me);
 
-    useEffect(() => {
+            const currentUserId = resolveUserId(me);
 
-        const fetchProfile = async () => {
+            if (currentUserId == null) {
+                setError("Nie udało się ustalić ID użytkownika.");
+                setViewedProfile(null);
+                return;
+            }
+
+            let publicProfile;
+
+            if (username && username !== me.login) {
+                publicProfile = await getUserProfileByLogin(username);
+
+                if (!publicProfile) {
+                    setError("Nie znaleziono użytkownika.");
+                    setViewedProfile(null);
+                    return;
+                }
+            } else {
+                publicProfile = await getUserProfile(currentUserId);
+            }
+
+            const ranking = await getUserRanking(100);
+
+            let myFollowing = [];
 
             try {
-
-                const data =
-                    await getProfile();
-
-                console.log(data);
-
-                setProfile(data);
-
-            } catch (error) {
-
-                console.error(error);
-
-                alert(
-                    "Nie udało się pobrać profilu."
-                );
-
-            } finally {
-
-                setLoading(false);
+                myFollowing = await getFollowing(currentUserId);
+            } catch (followingError) {
+                console.error(followingError);
             }
-        };
 
-        fetchProfile();
+            const viewedUserId = resolveUserId(publicProfile);
 
-    }, []);
+            if (viewedUserId == null) {
+                setError("Nie udało się pobrać profilu użytkownika.");
+                setViewedProfile(null);
+                return;
+            }
 
-    // CURRENT PROFILE
+            let followers = [];
 
-    const viewedUsername =
-        username || profile?.login;
+            try {
+                followers = (await getFollowers(viewedUserId)) ?? [];
+            } catch (followersError) {
+                console.error(followersError);
+            }
 
-    // USERS
+            let recipes = [];
 
-    const users = [
-        {
-            username:
-                profile?.login || "user",
+            try {
+                recipes = sortRecipesByNewest(
+                    (await getRecipes({ userId: viewedUserId })) ?? []
+                );
+            } catch (recipesError) {
+                console.error(recipesError);
+            }
 
-            ranking:
-                profile?.activityPoints || 0,
+            setViewedProfile({
+                ...publicProfile,
+                userId: viewedUserId,
+            });
+            setFollowingList(myFollowing);
+            setFollowersList(followers);
+            setUserRecipes(recipes);
+            setRemoteDiscoverUser(null);
 
-            points:
-                profile?.activityPoints || 0,
+            const rankingEntry = ranking.find(
+                (entry) => resolveUserId(entry) === viewedUserId
+            );
+            setRankingPosition(rankingEntry?.position ?? null);
 
-            recipes:
-                profile?.recipesCount || 0,
+            setDiscoverSource(
+                ranking.filter(
+                    (entry) =>
+                        resolveUserId(entry) !== viewedUserId &&
+                        entry.login !== me.login
+                )
+            );
+            setSearchQuery("");
 
-            followers:
-                profile?.followersCount || 0,
+            const isOwnProfileView =
+                !username || username === me.login;
 
-            following:
-                profile?.followingCount || 0,
-        },
+            setIsFollowing(
+                isOwnProfileView ? false : Boolean(publicProfile.isFollowing)
+            );
+        } catch (loadError) {
+            console.error(loadError);
+            setError("Nie udało się pobrać profilu.");
+        } finally {
+            setLoading(false);
+        }
+    }, [username]);
 
-        {
-            username: "dailybrew",
-            ranking: 11,
-            points: 2488,
-            recipes: 54,
-            followers: 120,
-            following: 44,
-        },
+    useEffect(() => {
+        loadProfile();
+    }, [loadProfile]);
 
-        {
-            username: "coffeenerd",
-            ranking: 4,
-            points: 4120,
-            recipes: 89,
-            followers: 430,
-            following: 112,
-        },
+    useEffect(() => {
+        const query = searchQuery.trim();
 
-        {
-            username: "javaholic",
-            ranking: 18,
-            points: 1644,
-            recipes: 29,
-            followers: 87,
-            following: 31,
-        },
+        if (query.length < 2) {
+            setRemoteDiscoverUser(null);
+            return undefined;
+        }
 
-        {
-            username: "brew_king",
-            ranking: 8,
-            points: 3210,
-            recipes: 67,
-            followers: 156,
-            following: 72,
-        },
-
-        {
-            username: "coffee.flow",
-            ranking: 13,
-            points: 2012,
-            recipes: 48,
-            followers: 213,
-            following: 61,
-        },
-    ];
-
-    // FOLLOWERS / FOLLOWING
-
-    const followersList = [
-        "dailybrew",
-        "coffeenerd",
-        "brew_king"
-    ];
-
-    const followingList = [
-        "coffee.flow",
-        "javaholic"
-    ];
-
-    // PROFILE DATA
-
-    const currentUser =
-        users.find(
-            (u) =>
-                u.username === viewedUsername
-        ) || users[0];
-
-    // OWN PROFILE
-
-    const isOwnProfile =
-        viewedUsername ===
-        profile?.login;
-
-    // DISCOVER USERS
-
-    const discoverUsers =
-        users.filter(
-            (u) =>
-                u.username !== viewedUsername
+        const hasLocalMatch = discoverSource.some((user) =>
+            user.login.toLowerCase().includes(query.toLowerCase())
         );
 
-    // ACTIVITIES
+        if (hasLocalMatch) {
+            setRemoteDiscoverUser(null);
+            return undefined;
+        }
 
-    const activities = [
-        {
-            id: 1,
-            title: "Poranna jasność",
-            method: "V60",
-            coffee: "Ethiopia Yirgacheffe",
-            likes: 24,
-            rating: 4.8,
-            time: "2 dni temu",
-            icon: <Coffee size={22} />,
-        },
+        const timeoutId = setTimeout(async () => {
+            try {
+                const profile = await getUserProfileByLogin(query);
+                const profileUserId = resolveUserId(profile);
 
-        {
-            id: 2,
-            title: "Czekoladowy nastrój",
-            method: "Chemex",
-            coffee: "Brazil Santos",
-            likes: 18,
-            rating: 4.6,
-            time: "5 dni temu",
-            icon: <Coffee size={22} />,
-        },
+                if (
+                    !profile ||
+                    profileUserId == null ||
+                    profileUserId === resolveUserId(currentUser) ||
+                    profileUserId === resolveUserId(viewedProfile)
+                ) {
+                    setRemoteDiscoverUser(null);
+                    return;
+                }
 
-        {
-            id: 3,
-            title: "Niedzielny komfort",
-            method: "French Press",
-            coffee: "Colombia",
-            likes: 31,
-            rating: 4.7,
-            time: "1 tydzień temu",
-            icon: <Coffee size={22} />,
-        },
-    ];
+                setRemoteDiscoverUser({
+                    userId: profileUserId,
+                    login: profile.login,
+                    followersCount: profile.followersCount ?? 0,
+                });
+            } catch {
+                setRemoteDiscoverUser(null);
+            }
+        }, 400);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery, discoverSource, currentUser, viewedProfile]);
+
+    const viewedUsername = viewedProfile?.login ?? username ?? currentUser?.login;
+    const viewedUserId = resolveUserId(viewedProfile);
+    const currentUserId = resolveUserId(currentUser);
+    const isOwnProfile =
+        viewedUserId != null &&
+        currentUserId != null &&
+        currentUserId === viewedUserId;
+
+    const isUserFollowed = (userId) =>
+        followingList.some(
+            (user) => resolveUserId(user) === resolveUserId({ userId })
+        );
+
+    const discoverUsers = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
+
+        let users = query
+            ? discoverSource.filter((user) =>
+                  user.login.toLowerCase().includes(query)
+              )
+            : discoverSource.slice(0, 5);
+
+        if (
+            remoteDiscoverUser &&
+            !users.some(
+                (user) =>
+                    resolveUserId(user) === resolveUserId(remoteDiscoverUser)
+            )
+        ) {
+            users = [...users, remoteDiscoverUser];
+        }
+
+        return users;
+    }, [discoverSource, searchQuery, remoteDiscoverUser]);
+
+    const recentRecipes = userRecipes.slice(0, 3);
+
+    const updateDiscoverFollowersCount = (targetUserId, delta) => {
+        setDiscoverSource((previous) =>
+            previous.map((user) =>
+                resolveUserId(user) === targetUserId
+                    ? {
+                          ...user,
+                          followersCount: Math.max(
+                              0,
+                              (user.followersCount ?? 0) + delta
+                          ),
+                      }
+                    : user
+            )
+        );
+    };
+
+    const handleFollowToggle = async (targetUserId, targetLogin, targetLabel) => {
+        const normalizedTargetId = resolveUserId({ userId: targetUserId });
+
+        if (
+            normalizedTargetId == null ||
+            currentUserId == null ||
+            normalizedTargetId === currentUserId ||
+            followLoading
+        ) {
+            return;
+        }
+
+        const alreadyFollowing = isUserFollowed(normalizedTargetId);
+
+        try {
+            setFollowLoading(true);
+            setError("");
+
+            if (alreadyFollowing) {
+                await unfollowUser(normalizedTargetId);
+                setFollowingList((previous) =>
+                    previous.filter(
+                        (user) =>
+                            resolveUserId(user) !== normalizedTargetId
+                    )
+                );
+                updateDiscoverFollowersCount(normalizedTargetId, -1);
+
+                if (isOwnProfile) {
+                    setViewedProfile((previous) => ({
+                        ...previous,
+                        followingCount: Math.max(
+                            0,
+                            (previous.followingCount ?? 0) - 1
+                        ),
+                    }));
+                }
+
+                if (viewedUserId === normalizedTargetId) {
+                    setIsFollowing(false);
+                    setViewedProfile((previous) => ({
+                        ...previous,
+                        isFollowing: false,
+                        followersCount: Math.max(
+                            0,
+                            (previous.followersCount ?? 0) - 1
+                        ),
+                    }));
+                }
+            } else {
+                await followUser(normalizedTargetId);
+                setFollowingList((previous) => [
+                    ...previous,
+                    {
+                        userId: normalizedTargetId,
+                        login: targetLogin,
+                        label: targetLabel ?? null,
+                    },
+                ]);
+                updateDiscoverFollowersCount(normalizedTargetId, 1);
+
+                if (isOwnProfile) {
+                    setViewedProfile((previous) => ({
+                        ...previous,
+                        followingCount: (previous.followingCount ?? 0) + 1,
+                    }));
+                }
+
+                if (viewedUserId === normalizedTargetId) {
+                    setIsFollowing(true);
+                    setViewedProfile((previous) => ({
+                        ...previous,
+                        isFollowing: true,
+                        followersCount: (previous.followersCount ?? 0) + 1,
+                    }));
+                }
+            }
+        } catch (followError) {
+            console.error(followError);
+            setError(
+                followError instanceof ApiError
+                    ? followError.message
+                    : "Nie udało się zaktualizować obserwowania."
+            );
+        } finally {
+            setFollowLoading(false);
+        }
+    };
+
+    const modalUsers =
+        openModal === "followers" ? followersList : followingList;
+
+    const getRecipeSubtitle = (recipe) => {
+        const parts = [recipe.brewingMethod, recipe.coffee].filter(Boolean);
+        return parts.length > 0 ? parts.join(" • ") : "Receptura";
+    };
 
     if (loading) {
-
         return (
-
             <div className="profile-page">
-
                 <div
                     style={{
                         color: "white",
                         padding: "40px",
-                        fontSize: "20px"
+                        fontSize: "20px",
                     }}
                 >
                     Ładowanie profilu...
                 </div>
+            </div>
+        );
+    }
 
+    if (error && !viewedProfile) {
+        return (
+            <div className="profile-page">
+                <div
+                    style={{
+                        padding: "40px",
+                        fontSize: "18px",
+                        color: "#111",
+                    }}
+                >
+                    {error}
+                </div>
             </div>
         );
     }
 
     return (
-
         <div className="profile-page">
-
             <div className="profile-layout">
-
-                {/* MAIN */}
-
                 <main className="profile-main">
-
-                    {/* TOPBAR */}
+                    {error && (
+                        <div
+                            style={{
+                                marginBottom: "16px",
+                                padding: "12px 16px",
+                                borderRadius: "14px",
+                                background: "#fff3f3",
+                                border: "1px solid #f0d4d4",
+                                color: "#8f3f3f",
+                                fontSize: "14px",
+                            }}
+                        >
+                            {error}
+                        </div>
+                    )}
 
                     <div className="profile-topbar">
-
                         <div className="profile-heading">
-
                             <h1 className="profile-username">
                                 @{viewedUsername}
                             </h1>
 
+                            {viewedProfile?.label && (
+                                <p
+                                    style={{
+                                        marginTop: "10px",
+                                        fontSize: "16px",
+                                        color: "#666",
+                                        maxWidth: "640px",
+                                    }}
+                                >
+                                    {viewedProfile.label}
+                                </p>
+                            )}
                         </div>
 
                         <div className="profile-actions">
-
                             {isOwnProfile ? (
-
-                                <>
-                                    <Link
-                                        to="/profile/edit"
-                                        className="edit-profile-btn"
-                                    >
-
-                                        <Pencil size={16} />
-
-                                        Edytuj profil
-
-                                    </Link>
-
-                                    <button className="settings-btn">
-
-                                        <Settings size={16} />
-
-                                    </button>
-                                </>
-
+                                <Link
+                                    to="/profile/edit"
+                                    className="edit-profile-btn"
+                                >
+                                    <Pencil size={16} />
+                                    Edytuj profil
+                                </Link>
                             ) : (
-
                                 <>
-                                    <button className="follow-profile-btn">
-
-                                        <UserPlus size={16} />
-
-                                        Obserwuj
-
+                                    <button
+                                        type="button"
+                                        className={
+                                            isFollowing
+                                                ? "follow-profile-btn follow-profile-btn--following"
+                                                : "follow-profile-btn"
+                                        }
+                                        onClick={() =>
+                                            handleFollowToggle(
+                                                viewedUserId,
+                                                viewedProfile.login,
+                                                viewedProfile.label
+                                            )
+                                        }
+                                        disabled={followLoading}
+                                    >
+                                        {!isFollowing && (
+                                            <UserPlus size={16} />
+                                        )}
+                                        {followLoading
+                                            ? "..."
+                                            : isFollowing
+                                              ? "Obserwujesz"
+                                              : "Obserwuj"}
                                     </button>
 
                                     <button className="settings-btn">
-
                                         <MoreVertical size={16} />
-
                                     </button>
                                 </>
-
                             )}
-
                         </div>
-
                     </div>
 
-                    {/* RANKING */}
-
                     <div className="ranking-box">
-
                         <div className="ranking-item">
-
                             <div className="ranking-icon">
-
                                 <Trophy size={16} />
-
                             </div>
 
                             <div>
-
-                                <p>
-                                    Ranking
-                                </p>
-
+                                <p>Ranking</p>
                                 <h3>
-                                    #{currentUser.ranking}
+                                    {rankingPosition != null
+                                        ? `#${rankingPosition}`
+                                        : "—"}
                                 </h3>
-
                             </div>
-
                         </div>
 
                         <div className="ranking-divider" />
 
                         <div className="ranking-item">
-
                             <div className="ranking-icon">
-
                                 <Star size={16} />
-
                             </div>
 
                             <div>
-
-                                <p>
-                                    Punkty
-                                </p>
-
+                                <p>Punkty</p>
                                 <h3>
-                                    {currentUser.points}
+                                    {viewedProfile?.activityPoints ?? 0}
                                 </h3>
-
                             </div>
-
                         </div>
-
                     </div>
 
-                    {/* STATS */}
-
                     <div className="stats-grid">
-
-                        {/* RECIPES */}
-
-                        <div className="stat-card">
-
+                        <button
+                            type="button"
+                            className="stat-card clickable"
+                            onClick={() => setOpenModal("recipes")}
+                        >
                             <div className="stat-icon">
-
                                 <FileText size={18} />
-
                             </div>
 
                             <div>
-
                                 <h2>
-                                    {currentUser.recipes}
+                                    {viewedProfile?.recipesCount ??
+                                        userRecipes.length}
                                 </h2>
-
-                                <p>
-                                    Przepisy
-                                </p>
-
+                                <p>Przepisy</p>
                             </div>
-
-                        </div>
-
-                        {/* FOLLOWERS */}
+                        </button>
 
                         <button
                             type="button"
@@ -396,36 +583,23 @@ function ProfilePage() {
                                     ? "stat-card clickable"
                                     : "stat-card"
                             }
-
                             onClick={() => {
-
                                 if (isOwnProfile) {
                                     setOpenModal("followers");
                                 }
                             }}
                         >
-
                             <div className="stat-icon">
-
                                 <Users size={18} />
-
                             </div>
 
                             <div>
-
                                 <h2>
-                                    {currentUser.followers}
+                                    {viewedProfile?.followersCount ?? 0}
                                 </h2>
-
-                                <p>
-                                    Obserwujący
-                                </p>
-
+                                <p>Obserwujący</p>
                             </div>
-
                         </button>
-
-                        {/* FOLLOWING */}
 
                         <button
                             type="button"
@@ -434,278 +608,224 @@ function ProfilePage() {
                                     ? "stat-card clickable"
                                     : "stat-card"
                             }
-
                             onClick={() => {
-
                                 if (isOwnProfile) {
                                     setOpenModal("following");
                                 }
                             }}
                         >
-
                             <div className="stat-icon">
-
                                 <UserPlus size={18} />
-
                             </div>
 
                             <div>
-
                                 <h2>
-                                    {currentUser.following}
+                                    {viewedProfile?.followingCount ?? 0}
                                 </h2>
-
-                                <p>
-                                    Obserwowani
-                                </p>
-
+                                <p>Obserwowani</p>
                             </div>
-
                         </button>
-
                     </div>
-
-                    {/* ACTIVITY */}
 
                     <div className="activity-section">
-
                         <div className="activity-header">
-
-                            <h2>
-                                OSTATNIA AKTYWNOŚĆ
-                            </h2>
-
-                            <button>
-                                Zobacz wszystkie
-                            </button>
-
+                            <h2>OSTATNIA AKTYWNOŚĆ</h2>
                         </div>
 
-                        <div className="activity-list">
+                        {recentRecipes.length === 0 ? (
+                            <p className="activity-empty">
+                                Brak aktywności.
+                            </p>
+                        ) : (
+                            <div className="activity-list">
+                                {recentRecipes.map((recipe) => (
+                                    <Link
+                                        to={`/recipes/${recipe.id}`}
+                                        key={recipe.id}
+                                        className="activity-card"
+                                    >
+                                        <div className="activity-left">
+                                            <div className="activity-icon">
+                                                <Coffee size={22} />
+                                            </div>
 
-                            {activities.map((activity) => (
-
-                                <Link
-                                    to={`/recipes/${activity.id}`}
-                                    key={activity.id}
-                                    className="activity-card"
-                                >
-
-                                    <div className="activity-left">
-
-                                        <div className="activity-icon">
-
-                                            {activity.icon}
-
+                                            <div className="activity-info">
+                                                <h3>{recipe.title}</h3>
+                                                <p>
+                                                    {getRecipeSubtitle(recipe)}
+                                                </p>
+                                            </div>
                                         </div>
 
-                                        <div className="activity-info">
-
-                                            <h3>
-                                                {activity.title}
-                                            </h3>
-
+                                        <div className="activity-right">
                                             <p>
-
-                                                {activity.method}
-                                                {" • "}
-                                                {activity.coffee}
-
+                                                {formatRelativeTime(
+                                                    recipe.createdAt
+                                                )}
                                             </p>
-
-                                            <span>
-
-                                                ♥ {activity.likes}
-
-                                            </span>
-
                                         </div>
-
-                                    </div>
-
-                                    <div className="activity-right">
-
-                                        <div className="activity-rating">
-
-                                            <Star size={14} />
-
-                                            {activity.rating}
-
-                                        </div>
-
-                                        <p>
-                                            {activity.time}
-                                        </p>
-
-                                    </div>
-
-                                </Link>
-
-                            ))}
-
-                        </div>
-
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
                     </div>
-
                 </main>
 
-                {/* SIDEBAR */}
-
                 <aside className="profile-sidebar">
-
                     <div className="discover-card">
-
                         <div className="discover-header">
-
-                            <h2>
-                                ODKRYWAJ
-                            </h2>
-
+                            <h2>ODKRYWAJ</h2>
                         </div>
 
-                        {/* SEARCH */}
-
                         <div className="discover-search">
-
                             <Search size={16} />
-
                             <input
                                 type="text"
                                 placeholder="Szukaj użytkowników..."
+                                value={searchQuery}
+                                onChange={(event) =>
+                                    setSearchQuery(event.target.value)
+                                }
                             />
-
                         </div>
 
-                        {/* USERS */}
-
                         <div className="discover-users">
+                            {discoverUsers.length === 0 ? (
+                                <p className="discover-empty">
+                                    {searchQuery.trim()
+                                        ? "Nie znaleziono użytkowników."
+                                        : "Brak użytkowników do odkrycia."}
+                                </p>
+                            ) : (
+                            discoverUsers.map((user) => {
+                                const discoverUserId = resolveUserId(user);
+                                const discoverFollowed =
+                                    isUserFollowed(discoverUserId);
 
-                            {discoverUsers.map((user) => (
-
+                                return (
                                 <div
-                                    key={user.username}
+                                    key={discoverUserId ?? user.login}
                                     className="discover-user"
                                 >
-
                                     <Link
-                                        to={`/profile/${user.username}`}
+                                        to={`/profile/${user.login}`}
                                         className="discover-user-left"
                                     >
-
                                         <div className="discover-avatar">
-
-                                            {user.username
+                                            {user.login
                                                 .substring(0, 2)
                                                 .toUpperCase()}
-
                                         </div>
 
                                         <div className="discover-user-info">
-
-                                            <h3>
-                                                @{user.username}
-                                            </h3>
-
+                                            <h3>@{user.login}</h3>
                                             <p>
-
-                                                {user.followers}
-                                                {" "}
+                                                {user.followersCount}{" "}
                                                 obserwujących
-
                                             </p>
-
                                         </div>
-
                                     </Link>
 
-                                    <button className="observe-btn">
-
-                                        Obserwuj
-
+                                    <button
+                                        type="button"
+                                        className={
+                                            discoverFollowed
+                                                ? "observe-btn observe-btn--following"
+                                                : "observe-btn"
+                                        }
+                                        disabled={followLoading}
+                                        onClick={() =>
+                                            handleFollowToggle(
+                                                discoverUserId,
+                                                user.login
+                                            )
+                                        }
+                                    >
+                                        {discoverFollowed
+                                            ? "Obserwujesz"
+                                            : "Obserwuj"}
                                     </button>
-
                                 </div>
-
-                            ))}
-
+                                );
+                            })
+                            )}
                         </div>
-
                     </div>
-
                 </aside>
-
             </div>
 
-            {/* MODAL */}
-
             {openModal && (
-
                 <div
                     className="followers-modal-overlay"
-                    onClick={() =>
-                        setOpenModal(null)
-                    }
+                    onClick={() => setOpenModal(null)}
                 >
-
                     <div
                         className="followers-modal"
-                        onClick={(e) =>
-                            e.stopPropagation()
-                        }
+                        onClick={(event) => event.stopPropagation()}
                     >
-
                         <div className="followers-modal-header">
-
                             <h2>
-
                                 {openModal === "followers"
                                     ? "Obserwujący"
-                                    : "Obserwowani"}
-
+                                    : openModal === "following"
+                                      ? "Obserwowani"
+                                      : "Przepisy"}
                             </h2>
 
-                            <button
-                                onClick={() =>
-                                    setOpenModal(null)
-                                }
-                            >
-
+                            <button onClick={() => setOpenModal(null)}>
                                 ✕
-
                             </button>
-
                         </div>
 
                         <div className="followers-list">
-
-                            {(openModal === "followers"
-                                    ? followersList
-                                    : followingList
-                            ).map((user) => (
-
-                                <Link
-                                    key={user}
-                                    to={`/profile/${user}`}
-                                    className="followers-user"
-                                    onClick={() =>
-                                        setOpenModal(null)
-                                    }
-                                >
-
-                                    @{user}
-
-                                </Link>
-
-                            ))}
-
+                            {openModal === "recipes" ? (
+                                userRecipes.length === 0 ? (
+                                    <p className="modal-empty">
+                                        Brak przepisów do wyświetlenia.
+                                    </p>
+                                ) : (
+                                    userRecipes.map((recipe) => (
+                                        <Link
+                                            key={recipe.id}
+                                            to={`/recipes/${recipe.id}`}
+                                            className="followers-user profile-recipe-item"
+                                            onClick={() => setOpenModal(null)}
+                                        >
+                                            <span className="profile-recipe-title">
+                                                {recipe.title}
+                                            </span>
+                                            <span className="profile-recipe-meta">
+                                                {getRecipeSubtitle(recipe)}
+                                                {" · "}
+                                                {formatRelativeTime(
+                                                    recipe.createdAt
+                                                )}
+                                            </span>
+                                        </Link>
+                                    ))
+                                )
+                            ) : modalUsers.length === 0 ? (
+                                <p className="modal-empty">
+                                    {openModal === "followers"
+                                        ? "Brak obserwujących."
+                                        : "Brak obserwowanych użytkowników."}
+                                </p>
+                            ) : (
+                                modalUsers.map((user) => (
+                                    <Link
+                                        key={user.userId ?? user.login}
+                                        to={`/profile/${user.login}`}
+                                        className="followers-user"
+                                        onClick={() => setOpenModal(null)}
+                                    >
+                                        @{user.login}
+                                    </Link>
+                                ))
+                            )}
                         </div>
-
                     </div>
-
                 </div>
-
             )}
-
         </div>
     );
 }

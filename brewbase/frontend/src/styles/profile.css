@@ -100,6 +100,21 @@
     transition: 0.2s;
 }
 
+.follow-profile-btn--following {
+    border: 1px solid #d9d9d9;
+    background: white;
+    color: #111;
+}
+
+.follow-profile-btn--following:hover:not(:disabled) {
+    background: #f5f5f5;
+}
+
+.follow-profile-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
 .settings-btn {
     width: 44px;
     height: 44px;
@@ -309,6 +324,35 @@ button.stat-card.clickable:hover {
     cursor: pointer;
 }
 
+.activity-empty,
+.modal-empty {
+    margin: 0;
+    padding: 8px 4px 4px;
+
+    font-size: 14px;
+    color: #888;
+}
+
+.profile-recipe-item {
+    height: auto;
+    min-height: 48px;
+    padding: 12px 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.profile-recipe-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111;
+}
+
+.profile-recipe-meta {
+    font-size: 12px;
+    color: #888;
+}
+
 /* ACTIVITY LIST */
 
 .activity-list {
@@ -479,6 +523,20 @@ button.stat-card.clickable:hover {
     background: transparent;
 
     font-size: 13px;
+
+    color: #111;
+}
+
+.discover-search input::placeholder {
+    color: #999;
+}
+
+.discover-empty {
+    margin: 0;
+    padding: 12px 0 4px;
+
+    font-size: 13px;
+    color: #888;
 }
 
 /* USERS */
@@ -562,6 +620,23 @@ button.stat-card.clickable:hover {
     font-weight: 700;
 
     cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.observe-btn--following {
+    border: 1px solid #d9d9d9;
+    background: white;
+    color: #111;
+}
+
+.observe-btn--following:hover:not(:disabled) {
+    background: #f5f5f5;
+}
+
+.observe-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
 }
 
 /* MODAL */

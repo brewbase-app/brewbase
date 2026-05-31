@@ -201,6 +201,32 @@ select:focus {
 
 /* PREFERENCES TAGS */
 
+.preferences-helper {
+    margin: 0;
+
+    font-size: 13px;
+    line-height: 1.5;
+
+    color: #888;
+}
+
+.preferences-helper--intro {
+    margin-bottom: 18px;
+}
+
+.preferences-empty {
+    margin: 0 0 18px;
+    padding: 14px 16px;
+
+    border-radius: 16px;
+    border: 1px dashed #ddd;
+
+    background: #fafafa;
+
+    font-size: 13px;
+    color: #666;
+}
+
 .preferences-tags {
     display: flex;
     flex-wrap: wrap;

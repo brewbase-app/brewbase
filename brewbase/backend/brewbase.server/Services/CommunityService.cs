@@ -18,7 +18,6 @@ public class CommunityService : ICommunityService
         _currentUserProvider = currentUserProvider;
     }
 
-    //Follow user
     public async Task<bool> FollowUserAsync(int followedUserId)
     {
         var currentUserId = _currentUserProvider.GetUserId();
@@ -51,7 +50,7 @@ public class CommunityService : ICommunityService
         };
 
         _context.Follows.Add(follow);
-        
+
         _context.Notifications.Add(new Notification
         {
             UserId = followedUserId,
@@ -64,7 +63,6 @@ public class CommunityService : ICommunityService
         return true;
     }
 
-    //UnFollow
     public async Task<bool> UnfollowUserAsync(int followedUserId)
     {
         var currentUserId = _currentUserProvider.GetUserId();
@@ -81,13 +79,12 @@ public class CommunityService : ICommunityService
             return false;
 
         _context.Follows.Remove(follow);
-        
+
         await _context.SaveChangesAsync();
 
         return true;
     }
-    
-    //Stats numbers
+
     public async Task<FollowStatsResponseDto?> GetFollowStatsAsync()
     {
         var currentUserId = _currentUserProvider.GetUserId();
@@ -107,34 +104,43 @@ public class CommunityService : ICommunityService
             FollowingCount = followingCount
         };
     }
-    
-    //Public profile, get info about user
+
     public async Task<PublicUserProfileResponseDto?> GetPublicProfileAsync(int userId)
     {
-        var user = await _context.AppUsers
-            .Where(u => u.Id == userId)
-            .Select(u => new PublicUserProfileResponseDto
-            {
-                UserId = u.Id,
-                Login = u.Login,
-                Label = u.Label,
-                ActivityPoints = u.ActivityPoints,
+        return await BuildPublicProfileAsync(userId);
+    }
 
-                FollowersCount = _context.Follows
-                    .Count(f => f.FollowedId == u.Id),
-
-                FollowingCount = _context.Follows
-                    .Count(f => f.FollowerId == u.Id),
-
-                RecipesCount = _context.Recipes
-                    .Count(r => r.UserId == u.Id)
-            })
+    public async Task<PublicUserProfileResponseDto?> GetPublicProfileByLoginAsync(string login)
+    {
+        var userId = await _context.AppUsers
+            .Where(u => u.Login == login)
+            .Select(u => (int?)u.Id)
             .FirstOrDefaultAsync();
 
-        return user;
+        if (userId == null)
+            return null;
+
+        return await BuildPublicProfileAsync(userId.Value);
     }
-    
-    //following lists
+
+    public async Task<List<FollowUserListResponseDto>?> GetFollowersAsync(int userId)
+    {
+        var userExists = await _context.AppUsers.AnyAsync(u => u.Id == userId);
+
+        if (!userExists)
+            return null;
+
+        return await _context.Follows
+            .Where(f => f.FollowedId == userId)
+            .Select(f => new FollowUserListResponseDto
+            {
+                UserId = f.Follower.Id,
+                Login = f.Follower.Login,
+                Label = f.Follower.Label
+            })
+            .ToListAsync();
+    }
+
     public async Task<List<FollowUserListResponseDto>> GetFollowingAsync()
     {
         var currentUserId = _currentUserProvider.GetUserId();
@@ -152,7 +158,7 @@ public class CommunityService : ICommunityService
             })
             .ToListAsync();
     }
-    
+
     public async Task<List<UserActivityResponseDto>> GetFeedAsync()
     {
         var currentUserId = _currentUserProvider.GetUserId();
@@ -192,4 +198,39 @@ public class CommunityService : ICommunityService
             .ToList();
     }
 
+    private async Task<PublicUserProfileResponseDto?> BuildPublicProfileAsync(int userId)
+    {
+        var user = await _context.AppUsers
+            .Where(u => u.Id == userId)
+            .Select(u => new PublicUserProfileResponseDto
+            {
+                UserId = u.Id,
+                Login = u.Login,
+                Label = u.Label,
+                ActivityPoints = u.ActivityPoints,
+
+                FollowersCount = _context.Follows
+                    .Count(f => f.FollowedId == u.Id),
+
+                FollowingCount = _context.Follows
+                    .Count(f => f.FollowerId == u.Id),
+
+                RecipesCount = _context.Recipes
+                    .Count(r => r.UserId == u.Id)
+            })
+            .FirstOrDefaultAsync();
+
+        if (user == null)
+            return null;
+
+        var currentUserId = _currentUserProvider.GetUserId();
+
+        user.IsFollowing = currentUserId is > 0 and var viewerId
+                           && viewerId != userId
+                           && await _context.Follows.AnyAsync(f =>
+                               f.FollowerId == viewerId &&
+                               f.FollowedId == userId);
+
+        return user;
+    }
 }

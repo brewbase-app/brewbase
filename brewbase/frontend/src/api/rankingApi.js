@@ -4,8 +4,8 @@ export function getCoffeeRanking() {
     return apiRequest("/api/Ranking/coffees");
 }
 
-export function getUserRanking() {
-    return apiRequest("/api/Ranking/users");
+export function getUserRanking(limit = 100) {
+    return apiRequest(`/api/Ranking/users?limit=${limit}`);
 }
 
 export function getRecipeRanking() {
