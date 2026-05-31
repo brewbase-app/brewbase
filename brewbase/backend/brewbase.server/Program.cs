@@ -100,11 +100,19 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
 
-builder.Services.AddDbContext<BrewDbContext>(opt =>
+var configureBrewDbContext = (DbContextOptionsBuilder opt) =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     opt.UseNpgsql(connectionString);
-});
+};
+
+// Options as Singleton so IDbContextFactory (singleton) can coexist with scoped DbContext.
+builder.Services.AddDbContext<BrewDbContext>(
+    configureBrewDbContext,
+    contextLifetime: ServiceLifetime.Scoped,
+    optionsLifetime: ServiceLifetime.Singleton);
+
+builder.Services.AddDbContextFactory<BrewDbContext>(configureBrewDbContext);
 
 builder.Services.AddScoped<ICoffeeReadService, CoffeeReadService>();
 builder.Services.AddScoped<IRecipeReadService, RecipeReadService>();
@@ -127,6 +135,7 @@ builder.Services.AddScoped<ICoffeeFavoriteService, CoffeeFavoriteService>();
 builder.Services.AddScoped<IArticleReadService, ArticleReadService>();
 builder.Services.AddScoped<IArticleWriteService, ArticleWriteService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
 
 var app = builder.Build();
 

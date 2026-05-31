@@ -40,11 +40,16 @@ public sealed class CoffeeApiFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<DbContextOptions<BrewDbContext>>();
             services.RemoveAll<BrewDbContext>();
+            services.RemoveAll<IDbContextFactory<BrewDbContext>>();
 
-            services.AddDbContext<BrewDbContext>(options =>
-            {
-                options.UseSqlite(_connection);
-            });
+            Action<DbContextOptionsBuilder> configureSqlite = options => options.UseSqlite(_connection);
+
+            services.AddDbContext<BrewDbContext>(
+                configureSqlite,
+                contextLifetime: ServiceLifetime.Scoped,
+                optionsLifetime: ServiceLifetime.Singleton);
+
+            services.AddDbContextFactory<BrewDbContext>(configureSqlite);
 
             using var scope = services.BuildServiceProvider().CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
