@@ -127,6 +127,7 @@ builder.Services.AddScoped<ICoffeeFavoriteService, CoffeeFavoriteService>();
 builder.Services.AddScoped<IArticleReadService, ArticleReadService>();
 builder.Services.AddScoped<IArticleWriteService, ArticleWriteService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
 
 var app = builder.Build();
 

@@ -1,5 +1,5 @@
 -- database schema generated from ERD
--- Last modification date: 2026-03-18 13:04:04.822
+-- Last modification date: 2026-05-31 (global search infrastructure)
 
 -- =====================
 -- Tables
@@ -683,6 +683,62 @@ CREATE INDEX idx_follow_followed_id ON follow(followed_id);
 -- report
 CREATE INDEX idx_report_article_id ON report(article_id);
 CREATE INDEX idx_report_reported_by_user_id ON report(reported_by_user_id);
+
+-- =====================
+-- Global search (extensions, immutable text wrapper, trigram indexes)
+-- Incremental equivalent: migrations/013_global_search_extensions.sql
+-- =====================
+
+CREATE EXTENSION IF NOT EXISTS unaccent;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM pg_extension e
+        JOIN pg_namespace n ON n.oid = e.extnamespace
+        WHERE e.extname = 'unaccent'
+          AND n.nspname <> 'public'
+    ) THEN
+        ALTER EXTENSION unaccent SET SCHEMA public;
+    END IF;
+END $$;
+
+CREATE OR REPLACE FUNCTION brewbase_search_text(input text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+PARALLEL SAFE
+STRICT
+SET search_path TO public, extensions, pg_catalog
+AS $$
+    SELECT unaccent('unaccent'::regdictionary, lower(input))
+$$;
+
+CREATE INDEX idx_coffee_name_search
+    ON coffee USING gin (brewbase_search_text(name) gin_trgm_ops);
+
+CREATE INDEX idx_recipe_title_search
+    ON recipe USING gin (brewbase_search_text(title) gin_trgm_ops);
+
+CREATE INDEX idx_article_title_search
+    ON article USING gin (brewbase_search_text(title) gin_trgm_ops);
+
+CREATE INDEX idx_article_content_search
+    ON article USING gin (brewbase_search_text(content) gin_trgm_ops);
+
+CREATE INDEX idx_app_user_login_search
+    ON app_user USING gin (brewbase_search_text(login) gin_trgm_ops);
+
+CREATE INDEX idx_app_user_label_search
+    ON app_user USING gin (brewbase_search_text(COALESCE(label, '')) gin_trgm_ops);
+
+CREATE INDEX idx_quick_note_content_search
+    ON quick_note USING gin (brewbase_search_text(content) gin_trgm_ops);
+
+CREATE INDEX idx_cupping_session_name_search
+    ON cupping_session USING gin (brewbase_search_text(name) gin_trgm_ops);
 
 -- =====================
 -- Ranking refresh functions (required by backend; no pg_cron)

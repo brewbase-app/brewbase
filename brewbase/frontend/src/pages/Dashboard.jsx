@@ -6,8 +6,9 @@ import {
     useNavigate
 } from "react-router-dom";
 
+import GlobalSearch from "../components/GlobalSearch";
+
 import {
-    Search,
     Bell,
     MessageCircle,
     Coffee,
@@ -89,16 +90,7 @@ function Dashboard() {
 
                 <div className="top-actions">
 
-                    <div className="search-bar">
-
-                        <Search size={18} />
-
-                        <input
-                            type="text"
-                            placeholder="Szukaj kaw, receptur, metod..."
-                        />
-
-                    </div>
+                    <GlobalSearch />
 
                     <div className="top-icons">
 
