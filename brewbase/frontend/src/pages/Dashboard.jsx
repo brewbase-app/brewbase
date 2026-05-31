@@ -1,12 +1,13 @@
 import "../styles/Dashboard.css";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
     useNavigate
 } from "react-router-dom";
 
 import GlobalSearch from "../components/GlobalSearch";
+import { getQuickNotes } from "../api/quickNotesApi";
 
 import {
     Bell,
@@ -25,6 +26,21 @@ function Dashboard() {
 
     const [showNotifications, setShowNotifications] =
         useState(false);
+
+    const [quickNotesCount, setQuickNotesCount] = useState(null);
+
+    useEffect(() => {
+        const loadQuickNotesCount = async () => {
+            try {
+                const notes = await getQuickNotes();
+                setQuickNotesCount(notes.length);
+            } catch {
+                setQuickNotesCount(0);
+            }
+        };
+
+        loadQuickNotesCount();
+    }, []);
 
     const recommendedCoffees = [
         {
@@ -186,9 +202,9 @@ function Dashboard() {
 
                                 <FileText size={30} />
 
-                                <h2>18</h2>
+                                <h2>{quickNotesCount ?? "—"}</h2>
 
-                                <p>Quick Notes</p>
+                                <p>Szybkie notatki</p>
 
                             </div>
 
