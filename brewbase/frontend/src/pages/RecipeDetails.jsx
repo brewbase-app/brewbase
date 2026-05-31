@@ -17,7 +17,8 @@ import {
     FileText,
     Download,
     Heart,
-    Star
+    Star,
+    Flag
 } from "lucide-react";
 
 import {
@@ -469,6 +470,23 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                 CSV
                             </button>
 
+                            <button
+                                style={reportButtonStyle}
+                                onClick={() =>
+                                    navigate("/report", {
+                                        state: {
+                                            contentType: "recipe",
+                                            contentId: recipe.id,
+                                            contentTitle: recipe.title,
+                                            returnPath: `/recipes/${recipe.id}`,
+                                        },
+                                    })
+                                }
+                            >
+                                <Flag size={16} />
+                                Zgłoś treść
+                            </button>
+
                         </div>
 
                     </div>
@@ -666,6 +684,34 @@ const editButtonStyle = {
     padding: "10px 16px",
     borderRadius: "16px",
     border: "1px solid #d9d9d9",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "600"
+};
+
+const exportButtonStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    backgroundColor: "white",
+    color: "#2f2f2f",
+    padding: "10px 16px",
+    borderRadius: "16px",
+    border: "1px solid #d9d9d9",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "600"
+};
+
+const reportButtonStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    backgroundColor: "transparent",
+    color: "#6b6b6b",
+    padding: "10px 16px",
+    borderRadius: "16px",
+    border: "1px solid #d4d4d4",
     cursor: "pointer",
     fontSize: "14px",
     fontWeight: "600"

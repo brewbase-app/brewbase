@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import {
     Heart,
-    Star
+    Star,
+    Flag
 } from "lucide-react";
 
 import {
@@ -17,6 +18,7 @@ import "../../styles/wiki/CoffeeDetails.css";
 
 function CoffeeDetails() {
     const { id } = useParams();
+    const navigate = useNavigate();
 
     const [coffee, setCoffee] = useState(null);
     const [selectedRating, setSelectedRating] = useState(0);
@@ -245,9 +247,43 @@ function CoffeeDetails() {
                         </p>
                     </section>
                 )}
+
+                <section>
+                    <button
+                        type="button"
+                        style={reportButtonStyle}
+                        onClick={() =>
+                            navigate("/report", {
+                                state: {
+                                    contentType: "coffee",
+                                    contentId: coffee.id,
+                                    contentTitle: coffee.name,
+                                    returnPath: `/wiki/coffees/${coffee.id}`,
+                                },
+                            })
+                        }
+                    >
+                        <Flag size={16} />
+                        Zgłoś treść
+                    </button>
+                </section>
             </div>
         </div>
     );
 }
+
+const reportButtonStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "10px 16px",
+    border: "1px solid #d4d4d4",
+    borderRadius: "16px",
+    background: "transparent",
+    color: "#6b6b6b",
+    fontSize: "14px",
+    fontWeight: "600",
+    cursor: "pointer",
+};
 
 export default CoffeeDetails;

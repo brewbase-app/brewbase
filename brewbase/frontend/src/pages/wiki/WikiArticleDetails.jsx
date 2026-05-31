@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Flag } from "lucide-react";
 
 import { getArticleById } from "../../api/articlesApi";
 import { shouldUseCoffeeDetailRoute } from "../../utils/articleRouting";
@@ -66,9 +67,43 @@ function WikiArticleDetails() {
                 <section>
                     <p style={{ whiteSpace: "pre-wrap" }}>{article.content}</p>
                 </section>
+
+                <section>
+                    <button
+                        type="button"
+                        style={reportButtonStyle}
+                        onClick={() =>
+                            navigate("/report", {
+                                state: {
+                                    contentType: "article",
+                                    contentId: article.id,
+                                    contentTitle: article.title,
+                                    returnPath: `/wiki/articles/${article.id}`,
+                                },
+                            })
+                        }
+                    >
+                        <Flag size={16} />
+                        Zgłoś treść
+                    </button>
+                </section>
             </div>
         </div>
     );
 }
+
+const reportButtonStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "10px 16px",
+    border: "1px solid #d4d4d4",
+    borderRadius: "16px",
+    background: "transparent",
+    color: "#6b6b6b",
+    fontSize: "14px",
+    fontWeight: "600",
+    cursor: "pointer",
+};
 
 export default WikiArticleDetails;

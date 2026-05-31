@@ -72,6 +72,10 @@ import WikiArticleDetails from "./pages/wiki/WikiArticleDetails";
 import MyWikiArticles from "./pages/wiki/MyWikiArticles";
 import MyWikiArticleDetails from "./pages/wiki/MyWikiArticleDetails";
 
+/* REPORT */
+
+import ReportPage from "./pages/ReportPage";
+
 /* ADMIN */
 
 import AdminModeration from "./pages/AdminModeration";
@@ -363,11 +367,9 @@ const isAuthPage =
                             path="/wiki/roasteries/:id"
                             element={<RoasteryDetails />}
                         />
-                        {/* ADMIN */}
-
                         <Route
-                            path="/admin"
-                            element={<AdminModeration />}
+                            path="/report"
+                            element={<ReportPage />}
                         />
 
                         {/* ADMIN */}
