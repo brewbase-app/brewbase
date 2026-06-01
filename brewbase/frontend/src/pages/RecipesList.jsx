@@ -16,7 +16,9 @@ import {
     getRecipes,
     getMyRecipes,
     getFavoriteRecipes,
-    deleteRecipe
+    deleteRecipe,
+    addFavorite,
+    removeFavorite
 } from "../api/recipeApi";
 
 const formatDate = (date) => {
@@ -79,6 +81,44 @@ const RecipesList = ({ title }) => {
 
         data = recipes;
     }
+
+    const handleFavorite = async (recipeId, event) => {
+        event.stopPropagation();
+
+        const recipe = recipes.find((item) => item.id === recipeId);
+        if (!recipe) {
+            return;
+        }
+
+        const wasFavorite = recipe.isFavorite ?? false;
+
+        setRecipes((previous) =>
+            previous.map((item) =>
+                item.id === recipeId
+                    ? { ...item, isFavorite: !wasFavorite }
+                    : item
+            )
+        );
+
+        try {
+            if (wasFavorite) {
+                await removeFavorite(recipeId);
+            } else {
+                await addFavorite(recipeId);
+            }
+        } catch (error) {
+            setRecipes((previous) =>
+                previous.map((item) =>
+                    item.id === recipeId
+                        ? { ...item, isFavorite: wasFavorite }
+                        : item
+                )
+            );
+
+            console.error(error);
+            alert("Nie udało się zaktualizować ulubionych.");
+        }
+    };
 
     const handleDelete = async (id) => {
 
@@ -323,6 +363,29 @@ const RecipesList = ({ title }) => {
                         >
 
                             <button
+                                style={favoriteButtonStyle}
+                                onClick={(event) =>
+                                    handleFavorite(r.id, event)
+                                }
+                                aria-label={
+                                    r.isFavorite
+                                        ? "Usuń z ulubionych"
+                                        : "Dodaj do ulubionych"
+                                }
+                            >
+
+                                <Heart
+                                    size={18}
+                                    fill={
+                                        r.isFavorite
+                                            ? "#1f1f1f"
+                                            : "none"
+                                    }
+                                />
+
+                            </button>
+
+                            <button
                                 style={detailsButtonStyle}
                                 onClick={() =>
                                     navigate(`/recipes/${r.id}`)
@@ -380,6 +443,18 @@ const detailsButtonStyle = {
     gap: "8px",
     fontSize: "14px",
     fontWeight: "600"
+};
+
+const favoriteButtonStyle = {
+    backgroundColor: "#efefef",
+    color: "#2f2f2f",
+    padding: "12px 14px",
+    borderRadius: "18px",
+    border: "1px solid #dddddd",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
 };
 
 const deleteButtonStyle = {

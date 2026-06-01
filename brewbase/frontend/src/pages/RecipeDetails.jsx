@@ -89,22 +89,24 @@ const RecipeDetails = () => {
 
     const handleFavorite = async () => {
 
+        const wasFavorite = isFavorite;
+
+        setIsFavorite(!wasFavorite);
+
         try {
 
-            if (isFavorite) {
+            if (wasFavorite) {
 
                 await removeFavorite(recipe.id);
-
-                setIsFavorite(false);
 
             } else {
 
                 await addFavorite(recipe.id);
-
-                setIsFavorite(true);
             }
 
         } catch (error) {
+
+            setIsFavorite(wasFavorite);
 
             console.error(error);
 
@@ -391,61 +393,100 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
 
                                 {/* RATING */}
 
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "10px"
-                                    }}
-                                >
+                                {isOwner ? (
 
                                     <div
                                         style={{
                                             display: "flex",
-                                            gap: "4px"
+                                            alignItems: "center",
+                                            gap: "10px",
+                                            flexWrap: "wrap"
+                                        }}
+                                    >
+                                        <span
+                                            style={{
+                                                fontSize: "14px",
+                                                color: "#666"
+                                            }}
+                                        >
+                                            Nie możesz oceniać własnej receptury
+                                        </span>
+
+                                        <span
+                                            style={{
+                                                fontSize: "14px",
+                                                color: "#666"
+                                            }}
+                                        >
+                                            {recipe.averageRating
+                                                ? recipe.averageRating.toFixed(1)
+                                                : "Brak ocen"}
+
+                                            {" · "}
+
+                                            {recipe.ratingCount || 0} ocen
+                                        </span>
+                                    </div>
+
+                                ) : (
+
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "10px"
                                         }}
                                     >
 
-                                        {[1, 2, 3, 4, 5].map((star) => (
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                gap: "4px"
+                                            }}
+                                        >
 
-                                            <Star
-                                                key={star}
-                                                size={20}
-                                                style={{
-                                                    cursor: "pointer"
-                                                }}
-                                                fill={
-                                                    star <= userRating
-                                                        ? "#1f1f1f"
-                                                        : "none"
-                                                }
-                                                onClick={() =>
-                                                    handleRating(star)
-                                                }
-                                            />
+                                            {[1, 2, 3, 4, 5].map((star) => (
 
-                                        ))}
+                                                <Star
+                                                    key={star}
+                                                    size={20}
+                                                    style={{
+                                                        cursor: "pointer"
+                                                    }}
+                                                    fill={
+                                                        star <= userRating
+                                                            ? "#1f1f1f"
+                                                            : "none"
+                                                    }
+                                                    onClick={() =>
+                                                        handleRating(star)
+                                                    }
+                                                />
+
+                                            ))}
+
+                                        </div>
+
+                                        <span
+                                            style={{
+                                                fontSize: "14px",
+                                                color: "#666"
+                                            }}
+                                        >
+
+                                            {recipe.averageRating
+                                                ? recipe.averageRating.toFixed(1)
+                                                : "Brak ocen"}
+
+                                            {" · "}
+
+                                            {recipe.ratingCount || 0} ocen
+
+                                        </span>
 
                                     </div>
 
-                                    <span
-                                        style={{
-                                            fontSize: "14px",
-                                            color: "#666"
-                                        }}
-                                    >
-
-                                        {recipe.averageRating
-                                            ? recipe.averageRating.toFixed(1)
-                                            : "Brak ocen"}
-
-                                        {" · "}
-
-                                        {recipe.ratingCount || 0} ocen
-
-                                    </span>
-
-                                </div>
+                                )}
 
                             </div>
 

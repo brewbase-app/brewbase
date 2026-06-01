@@ -130,6 +130,7 @@ public class CoffeeController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RateCoffee(int id, [FromBody] RateRequestDto request)
     {
@@ -140,11 +141,18 @@ public class CoffeeController : ControllerBase
             return Unauthorized();
         }
 
-        var coffeeExists = await _context.Coffees.AnyAsync(c => c.Id == id);
+        var coffee = await _context.Coffees.FirstOrDefaultAsync(c => c.Id == id);
 
-        if (!coffeeExists)
+        if (coffee is null)
         {
             return NotFound(new SimpleErrorResponseDto { Message = "Coffee not found." });
+        }
+
+        if (coffee.CreatedByUserId == userId.Value)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new SimpleErrorResponseDto { Message = "You cannot rate your own coffee." });
         }
 
         var rating = await _context.CoffeeRatings

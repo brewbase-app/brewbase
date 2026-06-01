@@ -574,7 +574,7 @@ public class RecipeEndpointsTests : IDisposable
     }
     
     [Fact]
-    public async Task User1_RateExistingRecipe_ReturnsNoContent()
+    public async Task User1_RateOwnRecipe_ReturnsForbidden()
     {
         var body = """
             {"value":4}
@@ -582,18 +582,30 @@ public class RecipeEndpointsTests : IDisposable
 
         var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/rating", User1, body);
 
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task User2_RateOthersRecipe_ReturnsNoContent()
+    {
+        var body = """
+            {"value":4}
+            """;
+
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/rating", User2, body);
+
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
 
-        var rating = context.RecipeRatings.Single(r => r.RecipeId == 1 && r.UserId == User1);
+        var rating = context.RecipeRatings.Single(r => r.RecipeId == 1 && r.UserId == User2);
 
         Assert.Equal(4, rating.Value);
     }
 
     [Fact]
-    public async Task User1_RateExistingRecipeTwice_UpdatesPreviousRating()
+    public async Task User2_RateOthersRecipeTwice_UpdatesPreviousRating()
     {
         var firstBody = """
             {"value":2}
@@ -603,8 +615,8 @@ public class RecipeEndpointsTests : IDisposable
             {"value":5}
             """;
 
-        var firstResponse = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/2/rating", User1, firstBody);
-        var secondResponse = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/2/rating", User1, secondBody);
+        var firstResponse = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/rating", User2, firstBody);
+        var secondResponse = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/rating", User2, secondBody);
 
         Assert.Equal(HttpStatusCode.NoContent, firstResponse.StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, secondResponse.StatusCode);
@@ -613,7 +625,7 @@ public class RecipeEndpointsTests : IDisposable
         var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
 
         var ratings = context.RecipeRatings
-            .Where(r => r.RecipeId == 2 && r.UserId == User1)
+            .Where(r => r.RecipeId == 1 && r.UserId == User2)
             .ToList();
 
         Assert.Single(ratings);
@@ -649,6 +661,30 @@ public class RecipeEndpointsTests : IDisposable
     {
         var response = await _client.PostAsync("/api/Recipe/1/favorite", null);
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldAddOwnRecipeFavorite()
+    {
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/favorite", User1);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        Assert.True(await context.UserRecipeFavorites.AnyAsync(f => f.UserId == User1 && f.RecipeId == 1));
+    }
+
+    [Fact]
+    public async Task ShouldAddOthersRecipeFavorite()
+    {
+        var response = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe/1/favorite", User2);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        Assert.True(await context.UserRecipeFavorites.AnyAsync(f => f.UserId == User2 && f.RecipeId == 1));
     }
 
     [Fact]
@@ -737,6 +773,97 @@ public class RecipeEndpointsTests : IDisposable
 
         var recipe = await ParseResponseRootAsync(response);
         Assert.True(recipe.GetProperty("isFavorite").GetBoolean());
+    }
+
+    [Fact]
+    public async Task User1_Delete_OwnRecipeWithRatings_RemovesRatingsAndRecipe()
+    {
+        var createBody = ValidPublishBody.Replace("Valid Publish Title", "Delete With Ratings");
+        var createResponse = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", User1, createBody);
+        createResponse.EnsureSuccessStatusCode();
+        var created = await ParseResponseRootAsync(createResponse);
+        var recipeId = created.GetProperty("id").GetInt32();
+
+        await SendRecipeWriteAsync(HttpMethod.Post, $"/api/Recipe/{recipeId}/rating", User2, """{"value":4}""");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+            Assert.True(await context.RecipeRatings.AnyAsync(r => r.RecipeId == recipeId));
+        }
+
+        var response = await SendRecipeWriteAsync(HttpMethod.Delete, $"/api/Recipe/{recipeId}", devUserId: User1);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+            Assert.False(await context.Recipes.AnyAsync(r => r.Id == recipeId));
+            Assert.False(await context.RecipeRatings.AnyAsync(r => r.RecipeId == recipeId));
+        }
+    }
+
+    [Fact]
+    public async Task User1_Delete_OwnRecipeWithRecommendation_RemovesOnlyRecipeRecommendations()
+    {
+        var createBody = ValidPublishBody.Replace("Valid Publish Title", "Delete With Recommendation");
+        var createResponse = await SendRecipeWriteAsync(HttpMethod.Post, "/api/Recipe", User1, createBody);
+        createResponse.EnsureSuccessStatusCode();
+        var created = await ParseResponseRootAsync(createResponse);
+        var recipeId = created.GetProperty("id").GetInt32();
+
+        var generatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        int recipeRecommendationId;
+        int coffeeRecommendationId;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+            var recipeRecommendation = new Recommendation
+            {
+                Feedback = false,
+                Score = 80,
+                Algorithm = "test-algo",
+                GeneratedAt = generatedAt,
+                Source = "test-recipe-recommendation",
+                RecipeId = recipeId,
+                CoffeeId = null,
+                UserId = User1
+            };
+
+            var coffeeRecommendation = new Recommendation
+            {
+                Feedback = false,
+                Score = 90,
+                Algorithm = "test-algo",
+                GeneratedAt = generatedAt,
+                Source = "test-coffee-recommendation",
+                CoffeeId = 1,
+                RecipeId = null,
+                UserId = User1
+            };
+
+            context.Recommendations.AddRange(recipeRecommendation, coffeeRecommendation);
+            await context.SaveChangesAsync();
+
+            recipeRecommendationId = recipeRecommendation.Id;
+            coffeeRecommendationId = coffeeRecommendation.Id;
+        }
+
+        var response = await SendRecipeWriteAsync(HttpMethod.Delete, $"/api/Recipe/{recipeId}", devUserId: User1);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+            Assert.False(await context.Recipes.AnyAsync(r => r.Id == recipeId));
+            Assert.False(await context.Recommendations.AnyAsync(r => r.Id == recipeRecommendationId));
+            Assert.True(await context.Recommendations.AnyAsync(r => r.Id == coffeeRecommendationId));
+            Assert.False(await context.Recommendations.AnyAsync(r => r.RecipeId == recipeId));
+        }
     }
 
     [Fact]
