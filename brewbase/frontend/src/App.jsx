@@ -134,12 +134,32 @@ const isAuthPage =
         location.pathname !== "/onboarding";
 
     const handleBackClick = () => {
-        if (location.pathname.startsWith("/cupping/preview/")) {
-            navigate("/cupping/new");
+        if (location.pathname === "/cupping") {
+            navigate("/home");
             return;
         }
 
-        window.history.back();
+        if (location.pathname.startsWith("/cupping/")) {
+            navigate("/cupping");
+            return;
+        }
+
+        if (location.pathname.startsWith("/recipes/")) {
+            navigate("/recipes");
+            return;
+        }
+
+        if (location.pathname.startsWith("/wiki/")) {
+            navigate("/wiki");
+            return;
+        }
+
+        if (location.pathname.startsWith("/profile/")) {
+            navigate("/profile");
+            return;
+        }
+
+        navigate("/home");
     };
 
     return (
