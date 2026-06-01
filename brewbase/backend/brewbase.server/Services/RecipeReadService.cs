@@ -186,17 +186,20 @@ public class RecipeReadService : IRecipeReadService
 
         var notifications = await _context.Notifications
             .AsNoTracking()
-            .Where(notification =>
-                notification.UserId == recipeOwnerId &&
-                EF.Functions.ILike(notification.Content, "%przepis%") &&
-                EF.Functions.ILike(notification.Content, $"%{marker}%"))
+            .Where(notification => notification.UserId == recipeOwnerId)
             .OrderByDescending(notification => notification.CreatedAt)
             .Select(notification => notification.Content)
-            .Take(5)
+            .Take(20)
             .ToListAsync();
 
         foreach (var content in notifications)
         {
+            if (!content.Contains("przepis", StringComparison.OrdinalIgnoreCase) ||
+                !content.Contains(marker, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
             var markerIndex = content.IndexOf(marker, StringComparison.Ordinal);
 
             if (markerIndex < 0)
