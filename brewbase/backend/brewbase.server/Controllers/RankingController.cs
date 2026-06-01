@@ -1,5 +1,6 @@
 using brewbase.server.Dtos;
 using brewbase.server.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace brewbase.server.Controllers;
@@ -10,13 +11,16 @@ public class RankingController : ControllerBase
 {
     private readonly IRankingReadService _rankingReadService;
     private readonly IRankingRefreshService _rankingRefreshService;
+    private readonly IConfiguration _configuration;
 
     public RankingController(
         IRankingReadService rankingReadService,
-        IRankingRefreshService rankingRefreshService)
+        IRankingRefreshService rankingRefreshService,
+        IConfiguration configuration)
     {
         _rankingReadService = rankingReadService;
         _rankingRefreshService = rankingRefreshService;
+        _configuration = configuration;
     }
 
     [HttpGet("coffees")]
@@ -48,11 +52,47 @@ public class RankingController : ControllerBase
     
     [HttpPost("refresh")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> RefreshRankings()
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RefreshRankings(
+        [FromHeader(Name = "X-Ranking-Refresh-Secret")] string? secret,
+        CancellationToken cancellationToken)
     {
-        await _rankingRefreshService.RefreshAllRankingsAsync();
+        if (!IsRefreshAuthorized(secret))
+        {
+            return Unauthorized(new SimpleErrorResponseDto
+            {
+                Message = "Brak uprawnień do odświeżenia rankingów."
+            });
+        }
+
+        var refreshed = await _rankingRefreshService.TryRefreshAllRankingsAsync(cancellationToken);
+
+        if (!refreshed)
+        {
+            return StatusCode(
+                StatusCodes.Status409Conflict,
+                new SimpleErrorResponseDto
+                {
+                    Message = "Odświeżanie rankingów jest już w toku lub niedostępne w tym środowisku."
+                });
+        }
 
         return NoContent();
     }
-    
+
+    private bool IsRefreshAuthorized(string? secret)
+    {
+        if (User.IsInRole("Admin"))
+        {
+            return true;
+        }
+
+        var configuredSecret = _configuration["RankingRefresh:Secret"];
+
+        return !string.IsNullOrWhiteSpace(configuredSecret) &&
+               string.Equals(
+                   secret,
+                   configuredSecret,
+                   StringComparison.Ordinal);
+    }
 }

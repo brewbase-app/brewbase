@@ -32,7 +32,8 @@ public sealed class CoffeeApiFactory : WebApplicationFactory<Program>
                     ["DevUser:UserId"] = "1",
                     ["Jwt:Key"] = "TEST_SECRET_KEY_12345678901234567890",
                     ["Jwt:Issuer"] = "test",
-                    ["Jwt:Audience"] = "test"
+                    ["Jwt:Audience"] = "test",
+                    ["RankingRefresh:Enabled"] = "false"
                 });
         });
 

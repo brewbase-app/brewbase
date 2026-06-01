@@ -3,6 +3,7 @@
 using brewbase.server.Models;
 using brewbase.server.Services;
 using brewbase.server.Services.Validation;
+using brewbase.server.Configuration;
 using Microsoft.EntityFrameworkCore;
 using brewbase.server.Services.Interfaces;
 
@@ -145,6 +146,16 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICommunityService, CommunityService>();
 builder.Services.AddScoped<IRankingRefreshService, RankingRefreshService>();
+builder.Services.AddOptions<RankingRefreshOptions>()
+    .Bind(builder.Configuration.GetSection(RankingRefreshOptions.SectionName))
+    .PostConfigure<IHostEnvironment>((options, environment) =>
+    {
+        if (environment.IsProduction())
+        {
+            options.Enabled = true;
+        }
+    });
+builder.Services.AddHostedService<RankingRefreshBackgroundService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 

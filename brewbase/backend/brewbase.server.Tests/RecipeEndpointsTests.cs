@@ -997,6 +997,7 @@ public sealed class RecipeApiFactory : WebApplicationFactory<Program>
                 { "Jwt:Key", "TEST_SECRET_KEY_12345678901234567890" },
                 { "Jwt:Issuer", "test" },
                 { "Jwt:Audience", "test" },
+                { "RankingRefresh:Enabled", "false" },
                 // Override appsettings.json DevUser:UserId so requests without X-Dev-User-Id are unauthenticated.
                 { "DevUser:UserId", "0" }
             });

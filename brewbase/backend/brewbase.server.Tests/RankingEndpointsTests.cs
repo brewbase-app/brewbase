@@ -517,9 +517,19 @@ public class RankingEndpointsTests : IDisposable
     }
 
     [Fact]
-    public async Task ShouldReturnNoContentWhenRefreshingRankings()
+    public async Task ShouldReturnUnauthorizedWhenRefreshingRankingsWithoutCredentials()
     {
         var response = await _client.PostAsync("/api/Ranking/refresh", null);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldReturnNoContentWhenRefreshingRankingsAsAdmin()
+    {
+        var client = _factory.CreateAuthenticatedClient(userId: 2, role: "Admin");
+
+        var response = await client.PostAsync("/api/Ranking/refresh", null);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
