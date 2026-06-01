@@ -175,10 +175,15 @@ public class RecipeController : ControllerBase
                 new SimpleErrorResponseDto { Message = "You cannot rate your own recipe." });
         }
 
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
         var rating = await _context.RecipeRatings
             .FirstOrDefaultAsync(r => r.RecipeId == id && r.UserId == userId.Value);
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         if (rating is null)
         {
