@@ -125,13 +125,29 @@ const RecipeDetails = () => {
 
             setUserRating(value);
 
+            const updated = await getRecipeById(id);
+            setRecipe((previous) => ({
+                ...previous,
+                averageRating: updated.averageRating,
+                ratingCount: updated.ratingCount ?? 0,
+            }));
+
         } catch (error) {
 
             console.error(error);
 
-            alert(
-                "Nie udało się zapisać oceny."
-            );
+            const message =
+                error?.status === 403
+                    ? "Nie możesz oceniać własnej receptury."
+                    : error?.status === 401
+                      ? "Zaloguj się, aby wystawić ocenę."
+                      : error?.message &&
+                          typeof error.message === "string" &&
+                          error.message.trim().length > 0
+                        ? error.message
+                        : "Nie udało się zapisać oceny.";
+
+            alert(message);
         }
     };
 
