@@ -458,7 +458,7 @@ public class AdminService : IAdminService
 
     private async Task<int> CreateCatalogCoffeeFromArticleAsync(Article article)
     {
-        var (beanOriginCountry, varietyName, processingName, _) =
+        var (beanOriginCountry, varietyName, processingName, _, roasteryName) =
             CoffeeArticleMetadataParser.Parse(article.Content);
 
         var region = await _context.Regions
@@ -470,9 +470,7 @@ public class AdminService : IAdminService
                 .OrderBy(r => r.Id)
                 .FirstAsync();
 
-        var roastery = await _context.Roasteries
-            .OrderBy(r => r.Id)
-            .FirstAsync();
+        var roasteryId = await ResolveRoasteryIdAsync(roasteryName);
 
         int? varietyId = null;
         if (!string.IsNullOrWhiteSpace(varietyName))
@@ -496,7 +494,7 @@ public class AdminService : IAdminService
         {
             Name = article.Title,
             RegionId = region.Id,
-            RoasteryId = roastery.Id,
+            RoasteryId = roasteryId,
             VarietyId = varietyId,
             ProcessingMethodId = processingMethodId,
             CreatedByUserId = article.UserId,
@@ -507,5 +505,36 @@ public class AdminService : IAdminService
         await _context.SaveChangesAsync();
 
         return coffee.Id;
+    }
+
+    private async Task<int> ResolveRoasteryIdAsync(string? roasteryName)
+    {
+        if (string.IsNullOrWhiteSpace(roasteryName))
+        {
+            return (await _context.Roasteries
+                .OrderBy(roastery => roastery.Id)
+                .FirstAsync()).Id;
+        }
+
+        var trimmedName = roasteryName.Trim();
+        var existingId = await _context.Roasteries
+            .Where(roastery => roastery.Name == trimmedName)
+            .Select(roastery => (int?)roastery.Id)
+            .FirstOrDefaultAsync();
+
+        if (existingId.HasValue)
+        {
+            return existingId.Value;
+        }
+
+        var roastery = new Roastery
+        {
+            Name = trimmedName
+        };
+
+        _context.Roasteries.Add(roastery);
+        await _context.SaveChangesAsync();
+
+        return roastery.Id;
     }
 }

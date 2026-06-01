@@ -45,7 +45,7 @@ function mapCoffeeArticle(article) {
             article.flavorProfiles.length > 0
                 ? article.flavorProfiles
                 : metadata.flavorProfiles,
-        roastery: null,
+        roastery: article.roastery ?? metadata.roastery,
         authorLogin: article.authorLogin ?? null,
         isWikiArticle: true,
         coffeeId: article.coffeeId ?? null,

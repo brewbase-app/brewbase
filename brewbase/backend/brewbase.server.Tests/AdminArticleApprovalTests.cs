@@ -125,7 +125,15 @@ public class AdminArticleApprovalTests : IDisposable
     {
         var articleId = await SeedPendingCoffeeArticleAsync(
             "Unlinked coffee wiki",
-            coffeeId: null);
+            coffeeId: null,
+            content: """
+                Kraj pochodzenia ziaren: Etiopia
+                Odmiana: Heirloom
+                Obróbka ziaren: Washed
+                Palarnia: Hard Beans
+
+                Opis testowej kawy.
+                """);
 
         var response = await _adminClient.PatchAsync(
             $"/api/admin/articles/{articleId}/approve",
@@ -136,10 +144,13 @@ public class AdminArticleApprovalTests : IDisposable
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
         var article = await context.Articles.SingleAsync(a => a.Id == articleId);
+        var coffee = await context.Coffees
+            .Include(c => c.Roastery)
+            .SingleAsync(c => c.Id == article.CoffeeId);
 
         Assert.Equal("Approved", article.Status);
         Assert.NotNull(article.CoffeeId);
-        Assert.True(await context.Coffees.AnyAsync(coffee => coffee.Id == article.CoffeeId));
+        Assert.Equal("Hard Beans", coffee.Roastery.Name);
     }
 
     [Fact]
@@ -165,15 +176,23 @@ public class AdminArticleApprovalTests : IDisposable
         Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
     }
 
-    private async Task<int> SeedPendingCoffeeArticleAsync(string title, int? coffeeId)
+    private async Task<int> SeedPendingCoffeeArticleAsync(
+        string title,
+        int? coffeeId,
+        string? content = null)
     {
-        return await SeedPendingArticleAsync(title, "coffee", coffeeId);
+        return await SeedPendingArticleAsync(
+            title,
+            "coffee",
+            coffeeId,
+            content ?? $"{title} content");
     }
 
     private async Task<int> SeedPendingArticleAsync(
         string title,
         string module,
-        int? coffeeId)
+        int? coffeeId,
+        string? content = null)
     {
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
@@ -182,7 +201,7 @@ public class AdminArticleApprovalTests : IDisposable
         var article = new Article
         {
             Title = title,
-            Content = $"{title} content",
+            Content = content ?? $"{title} content",
             Module = module,
             Status = "Pending",
             CoffeeId = coffeeId,
@@ -195,6 +214,19 @@ public class AdminArticleApprovalTests : IDisposable
         await context.SaveChangesAsync();
 
         return article.Id;
+    }
+
+    private async Task<int> SeedPendingCoffeeArticleAsync(string title, int? coffeeId)
+    {
+        return await SeedPendingCoffeeArticleAsync(title, coffeeId, null);
+    }
+
+    private async Task<int> SeedPendingArticleAsync(
+        string title,
+        string module,
+        int? coffeeId)
+    {
+        return await SeedPendingArticleAsync(title, module, coffeeId, null);
     }
 
     private async Task<int> SeedApprovedCoffeeArticleAsync(string title, int coffeeId)

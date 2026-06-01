@@ -195,7 +195,7 @@ public class CoffeeReadService : ICoffeeReadService
                 continue;
             }
 
-            var (beanOriginCountry, variety, processingMethod, flavorProfiles) =
+            var (beanOriginCountry, variety, processingMethod, flavorProfiles, _) =
                 CoffeeArticleMetadataParser.Parse(linkedArticle.Content);
 
             if (!string.IsNullOrWhiteSpace(beanOriginCountry))
