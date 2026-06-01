@@ -276,9 +276,6 @@ CREATE TEMP TABLE tmp_user_ranking ON COMMIT DROP AS
                 public_recipe_count * 10
                 + coffee_rating_count * 3
                 + recipe_rating_count * 3
-                + quick_note_count * 2
-                + cupping_session_count * 8
-                + cupping_session_coffee_count * 2
                 + followers_count * 5
                 + received_recipe_favorite_count * 4
                 + published_article_count * 12
