@@ -19,6 +19,10 @@ export function getFollowing(userId) {
     return apiRequest("/api/community/following");
 }
 
+export function getCommunityFeed() {
+    return apiRequest("/api/community/feed");
+}
+
 export function followUser(userId) {
     return apiRequest(`/api/community/follow/${userId}`, {
         method: "POST",
