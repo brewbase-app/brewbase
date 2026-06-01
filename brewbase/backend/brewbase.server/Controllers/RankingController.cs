@@ -11,16 +11,13 @@ public class RankingController : ControllerBase
 {
     private readonly IRankingReadService _rankingReadService;
     private readonly IRankingRefreshService _rankingRefreshService;
-    private readonly IConfiguration _configuration;
 
     public RankingController(
         IRankingReadService rankingReadService,
-        IRankingRefreshService rankingRefreshService,
-        IConfiguration configuration)
+        IRankingRefreshService rankingRefreshService)
     {
         _rankingReadService = rankingReadService;
         _rankingRefreshService = rankingRefreshService;
-        _configuration = configuration;
     }
 
     [HttpGet("coffees")]
@@ -51,20 +48,12 @@ public class RankingController : ControllerBase
     }
     
     [HttpPost("refresh")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> RefreshRankings(
-        [FromHeader(Name = "X-Ranking-Refresh-Secret")] string? secret,
-        CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> RefreshRankings(CancellationToken cancellationToken)
     {
-        if (!IsRefreshAuthorized(secret))
-        {
-            return Unauthorized(new SimpleErrorResponseDto
-            {
-                Message = "Brak uprawnień do odświeżenia rankingów."
-            });
-        }
-
         var refreshed = await _rankingRefreshService.TryRefreshAllRankingsAsync(cancellationToken);
 
         if (!refreshed)
@@ -78,21 +67,5 @@ public class RankingController : ControllerBase
         }
 
         return NoContent();
-    }
-
-    private bool IsRefreshAuthorized(string? secret)
-    {
-        if (User.IsInRole("Admin"))
-        {
-            return true;
-        }
-
-        var configuredSecret = _configuration["RankingRefresh:Secret"];
-
-        return !string.IsNullOrWhiteSpace(configuredSecret) &&
-               string.Equals(
-                   secret,
-                   configuredSecret,
-                   StringComparison.Ordinal);
     }
 }
