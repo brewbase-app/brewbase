@@ -9,11 +9,13 @@ export class ApiError extends Error {
 
 import { getAuthToken } from "../utils/auth";
 
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
+
 export async function apiRequest(path, options = {}) {
     const token = getAuthToken();
     const hasBody = options.body != null && options.body !== "";
 
-    const response = await fetch(path, {
+    const response = await fetch(`${API_BASE}${path}`, {
         ...options,
         headers: {
             ...(hasBody ? { "Content-Type": "application/json" } : {}),
