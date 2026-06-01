@@ -2,8 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { apiRequest, ApiError } from "../api/apiClient";
-import { setAuthToken, setUserRole } from "../utils/auth";
-import { getProfile } from "../api/profileApi";
+import { establishAuthSession } from "../api/authSession";
 
 function Login() {
     const [login, setLogin] = useState("");
@@ -38,14 +37,7 @@ function Login() {
                 }),
             });
 
-            setAuthToken(data.token);
-
-            try {
-                const profile = await getProfile();
-                setUserRole(profile.role);
-            } catch {
-                setUserRole(null);
-            }
+            await establishAuthSession(data.token);
 
             navigate("/home");
         } catch (error) {

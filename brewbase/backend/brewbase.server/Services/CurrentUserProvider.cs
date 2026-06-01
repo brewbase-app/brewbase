@@ -1,5 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using brewbase.server.Authentication;
+using brewbase.server.Services;
 using Microsoft.AspNetCore.Hosting;
 
 namespace brewbase.server.Services;
@@ -31,7 +33,7 @@ public sealed class CurrentUserProvider : ICurrentUserProvider
         var httpContext = _httpContextAccessor.HttpContext;
         if (httpContext?.User.Identity?.IsAuthenticated == true)
         {
-            var fromClaims = TryParseUserIdFromClaims(httpContext.User);
+            var fromClaims = UserClaims.GetUserId(httpContext.User);
             if (fromClaims.HasValue)
             {
                 return fromClaims;
@@ -53,27 +55,6 @@ public sealed class CurrentUserProvider : ICurrentUserProvider
         if (int.TryParse(headerValue, out var fromHeader) && fromHeader > 0)
         {
             return fromHeader;
-        }
-
-        return null;
-    }
-
-    private static int? TryParseUserIdFromClaims(ClaimsPrincipal user)
-    {
-        var candidates = new[]
-        {
-            user.FindFirstValue(ClaimTypes.NameIdentifier),
-            user.FindFirstValue(JwtRegisteredClaimNames.Sub),
-            user.FindFirstValue("user_id"),
-            user.FindFirstValue("uid")
-        };
-
-        foreach (var value in candidates)
-        {
-            if (!string.IsNullOrEmpty(value) && int.TryParse(value, out var id) && id > 0)
-            {
-                return id;
-            }
         }
 
         return null;

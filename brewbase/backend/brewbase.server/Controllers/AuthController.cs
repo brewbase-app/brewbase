@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using brewbase.server.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using brewbase.server.Authentication;
 
 
 namespace brewbase.server.Controllers;
@@ -65,21 +66,11 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public IActionResult Me()
     {
-        var userIdRaw = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        int? userId = null;
-        if (userIdRaw != null && int.TryParse(userIdRaw, out var parsedId))
-        {
-            userId = parsedId;
-        }
-
-        var login = User.FindFirstValue("login");
-        var role = User.FindFirstValue(ClaimTypes.Role);
-
         return Ok(new
         {
-            userId,
-            login,
-            role
+            userId = UserClaims.GetUserId(User),
+            login = UserClaims.GetLogin(User),
+            role = UserClaims.GetRole(User),
         });
     }
 }

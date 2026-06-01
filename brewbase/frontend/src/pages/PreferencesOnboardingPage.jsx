@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 
 import {
     DEFAULT_USER_PREFERENCES,
     USER_PREFERENCE_OPTIONS,
     saveUserPreferences,
 } from "../utils/userPreferences";
+import { getAuthToken } from "../utils/auth";
 
 import "../styles/PreferencesOnboardingPage.css";
 
@@ -27,6 +28,10 @@ export default function PreferencesOnboardingPage() {
     const [preferences, setPreferences] = useState({
         ...DEFAULT_USER_PREFERENCES,
     });
+
+    if (!getAuthToken()) {
+        return <Navigate to="/login" replace />;
+    }
 
     const nextStep = async () => {
 

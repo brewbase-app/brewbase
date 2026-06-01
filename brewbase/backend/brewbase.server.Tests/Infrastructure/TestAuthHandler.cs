@@ -1,9 +1,11 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text.Encodings.Web;
+using brewbase.server.Authentication;
 using brewbase.server.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Text.Encodings.Web;
 
 namespace brewbase.server.Tests.Infrastructure;
 
@@ -31,14 +33,9 @@ public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationScheme
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
-        var claims = new[]
-        {
-            new Claim("sub", userId.ToString()),
-            new Claim("login", "test"),
-            new Claim("role", "User")
-        };
+        var identity = new ClaimsIdentity(UserClaims.Create(userId, "test", "User"), Scheme.Name);
+        UserClaims.Normalize(identity);
 
-        var identity = new ClaimsIdentity(claims, Scheme.Name);
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, Scheme.Name);
         return Task.FromResult(AuthenticateResult.Success(ticket));

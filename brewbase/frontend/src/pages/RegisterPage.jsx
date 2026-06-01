@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { apiRequest } from "../api/apiClient";
+import { establishAuthSession } from "../api/authSession";
 
 import "../styles/RegisterPage.css";
 
@@ -43,7 +44,7 @@ export default function RegisterPage() {
 
             setLoading(true);
 
-            await apiRequest("/api/Auth/register", {
+            const data = await apiRequest("/api/Auth/register", {
                 method: "POST",
                 body: JSON.stringify({
                     login: nickname,
@@ -52,6 +53,8 @@ export default function RegisterPage() {
                     passwordHint,
                 }),
             });
+
+            await establishAuthSession(data.token);
 
             navigate("/onboarding");
 

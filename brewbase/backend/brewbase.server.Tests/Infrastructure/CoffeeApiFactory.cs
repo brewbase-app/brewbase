@@ -1,3 +1,4 @@
+using brewbase.server.Authentication;
 using brewbase.server.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -67,16 +68,10 @@ public sealed class CoffeeApiFactory : WebApplicationFactory<Program>
     {
         var client = CreateClient();
 
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new Claim("user_id", userId.ToString()),
-            new Claim("login", role == "Admin" ? "admin.tester" : "coffee.tester"),
-            new Claim(ClaimTypes.Role, role),
-            new Claim("role", role),
-            new Claim("uid", userId.ToString())
-        };
+        var claims = UserClaims.Create(
+            userId,
+            role == "Admin" ? "admin.tester" : "coffee.tester",
+            role);
 
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes("TEST_SECRET_KEY_12345678901234567890"));
