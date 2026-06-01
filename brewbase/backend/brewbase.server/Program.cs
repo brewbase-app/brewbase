@@ -12,6 +12,10 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var swaggerEnabled = builder.Configuration.GetValue(
+    "Swagger:Enabled",
+    builder.Environment.IsDevelopment());
+
 // Add services to the container.
 /*
 builder.Services.AddAuthentication(options =>
@@ -57,10 +61,26 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("frontend", policy =>
     {
+        var configuredOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? Array.Empty<string>();
+
+        var allowedOrigins = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "http://localhost:5173",
+            "http://127.0.0.1:5173"
+        };
+
+        foreach (var origin in configuredOrigins)
+        {
+            if (!string.IsNullOrWhiteSpace(origin))
+            {
+                allowedOrigins.Add(origin.Trim());
+            }
+        }
+
         policy
-            .WithOrigins(
-                "http://localhost:5173",
-                "http://127.0.0.1:5173")
+            .WithOrigins(allowedOrigins.ToArray())
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -140,7 +160,7 @@ builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (swaggerEnabled)
 {
     app.UseSwagger();
     app.UseSwaggerUI();
