@@ -86,7 +86,7 @@ function Ranking() {
                     subtitle: [
                         `${user.publicRecipeCount ?? 0} receptur`,
                         `${user.followersCount ?? 0} obserwujących`,
-                        `${user.cuppingSessionCount ?? 0} sesji`
+                        `${user.coffeeRatingCount ?? 0} ocen kaw`
                     ].join(" • ")
                 }));
 
