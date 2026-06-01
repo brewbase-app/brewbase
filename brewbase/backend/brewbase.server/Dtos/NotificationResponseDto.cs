@@ -7,4 +7,6 @@ public class NotificationResponseDto
     public string Content { get; set; } = default!;
 
     public DateTime CreatedAt { get; set; }
+
+    public bool IsRead { get; set; }
 }

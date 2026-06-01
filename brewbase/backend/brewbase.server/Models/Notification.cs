@@ -13,5 +13,7 @@ public partial class Notification
 
     public DateTime CreatedAt { get; set; }
 
+    public bool IsRead { get; set; }
+
     public virtual AppUser User { get; set; } = null!;
 }
