@@ -54,7 +54,8 @@ public class AuthService : IAuthService
         return new AuthRegisterResponseDto
         {
             Id = user.Id,
-            Login = user.Login
+            Login = user.Login,
+            Token = GenerateJwt(user),
         };
     }
 
