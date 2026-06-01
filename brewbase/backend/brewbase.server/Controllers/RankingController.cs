@@ -51,6 +51,7 @@ public class RankingController : ControllerBase
     }
     
     [HttpPost("refresh")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshRankings(
