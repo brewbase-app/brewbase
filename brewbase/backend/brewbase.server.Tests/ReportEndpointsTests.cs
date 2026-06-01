@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using brewbase.server.Dtos;
 using brewbase.server.Models;
@@ -154,6 +155,89 @@ public class ReportEndpointsTests : IDisposable
         var response = await _userClient.GetAsync("/api/admin/reports");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_UpholdRecipeReport_MovesRecipeToDraftWithComment()
+    {
+        await SeedApprovedArticleAsync("Fallback wiki for recipe reports");
+        var recipeId = await SeedPublicRecipeAsync("Reported recipe");
+        var createReport = await _userClient.PostAsJsonAsync(
+            "/api/reports",
+            ValidReportBody(contentType: "recipe", contentId: recipeId));
+        Assert.Equal(HttpStatusCode.OK, createReport.StatusCode);
+
+        var reportId = await GetOpenReportIdForContentAsync("recipe", recipeId);
+
+        var uphold = await _adminClient.PatchAsJsonAsync(
+            $"/api/admin/reports/{reportId}/uphold",
+            new ModerateArticleRequestDto
+            {
+                Comment = "Treść narusza zasady społeczności."
+            });
+        Assert.Equal(HttpStatusCode.NoContent, uphold.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var recipe = await context.Recipes.SingleAsync(r => r.Id == recipeId);
+        Assert.False(recipe.IsPublic);
+        Assert.Equal("Treść narusza zasady społeczności.", recipe.ModerationComment);
+
+        var authorRecipe = await _userClient.GetAsync($"/api/Recipe/{recipeId}");
+        authorRecipe.EnsureSuccessStatusCode();
+        var payload = await authorRecipe.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(payload.GetProperty("isPublic").GetBoolean());
+        Assert.Equal(
+            "Treść narusza zasady społeczności.",
+            payload.GetProperty("moderationComment").GetString());
+    }
+
+    [Fact]
+    public async Task Admin_UpholdReport_WithoutComment_ReturnsBadRequest()
+    {
+        var articleId = await SeedApprovedArticleAsync("Uphold comment required");
+        await _userClient.PostAsJsonAsync(
+            $"/api/reports/article/{articleId}",
+            ValidReportBody());
+        var reportId = await GetOpenReportIdForArticleAsync(articleId);
+
+        var uphold = await _adminClient.PatchAsJsonAsync(
+            $"/api/admin/reports/{reportId}/uphold",
+            new ModerateArticleRequestDto
+            {
+                Comment = "   "
+            });
+
+        Assert.Equal(HttpStatusCode.BadRequest, uphold.StatusCode);
+    }
+
+    private async Task<int> SeedPublicRecipeAsync(string title)
+    {
+        var body = $$"""
+            {"title":"{{title}}","parameters":{"coffee":"18g","water":"300ml","temperature":"94°C","brewTime":"3:30"},"steps":"1. Bloom\n2. Pour","isPublic":true,"coffeeId":1,"brewingMethodId":1}
+            """;
+
+        var response = await _userClient.PostAsync(
+            "/api/Recipe",
+            new StringContent(body, Encoding.UTF8, "application/json"));
+        response.EnsureSuccessStatusCode();
+
+        var recipe = await response.Content.ReadFromJsonAsync<JsonElement>();
+        return recipe!.GetProperty("id").GetInt32();
+    }
+
+    private async Task<int> GetOpenReportIdForContentAsync(string contentType, int contentId)
+    {
+        var response = await _adminClient.GetAsync("/api/admin/reports?scope=open");
+        response.EnsureSuccessStatusCode();
+        var reports = await response.Content.ReadFromJsonAsync<List<JsonElement>>();
+
+        var match = reports!.First(report =>
+            report.GetProperty("contentType").GetString() == contentType
+            && report.GetProperty("contentId").GetInt32() == contentId);
+
+        return match.GetProperty("reportId").GetInt32();
     }
 
     private static CreateReportRequestDto ValidReportBody(

@@ -1,9 +1,10 @@
 export class ApiError extends Error {
-    constructor(message, status, errors = {}) {
+    constructor(message, status, errors = {}, passwordHint = null) {
         super(message);
         this.name = "ApiError";
         this.status = status;
         this.errors = errors;
+        this.passwordHint = passwordHint;
     }
 }
 
@@ -28,6 +29,7 @@ export async function apiRequest(path, options = {}) {
         const errorText = await response.text();
         let message = errorText || "Request failed";
         let errors = {};
+        let passwordHint = null;
 
         try {
             const parsed = JSON.parse(errorText);
@@ -39,11 +41,14 @@ export async function apiRequest(path, options = {}) {
             if (parsed?.errors && typeof parsed.errors === "object") {
                 errors = parsed.errors;
             }
+            if (parsed?.passwordHint) {
+                passwordHint = parsed.passwordHint;
+            }
         } catch {
             // keep raw text
         }
 
-        throw new ApiError(message, response.status, errors);
+        throw new ApiError(message, response.status, errors, passwordHint);
     }
 
     if (response.status === 204) {

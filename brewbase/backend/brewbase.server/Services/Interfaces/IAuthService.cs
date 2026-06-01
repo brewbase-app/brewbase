@@ -7,5 +7,5 @@ public interface IAuthService
 {
     string GenerateJwt(AppUser user);
     Task<AuthRegisterResponseDto> RegisterAsync(AuthRegisterRequestDto dto);
-    Task<string?> LoginAsync(AuthLoginRequestDto dto);
+    Task<AuthLoginResultDto> LoginAsync(AuthLoginRequestDto dto);
 }

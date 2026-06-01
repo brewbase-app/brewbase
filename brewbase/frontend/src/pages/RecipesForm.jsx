@@ -26,6 +26,7 @@ import {
     getBrewingMethodSelectPlaceholder,
     getCoffeeSelectPlaceholder
 } from "../utils/recipeCatalog";
+import { getRecipeModerationComment } from "../utils/recipeModeration";
 
 const RecipesForm = () => {
 
@@ -56,6 +57,8 @@ const RecipesForm = () => {
     const [catalogError, setCatalogError] = useState("");
     const [linkedCoffeeLabel, setLinkedCoffeeLabel] = useState("");
     const [linkedBrewingMethodLabel, setLinkedBrewingMethodLabel] = useState("");
+    const [moderationComment, setModerationComment] = useState("");
+    const [isPublicRecipe, setIsPublicRecipe] = useState(true);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -205,6 +208,8 @@ const RecipesForm = () => {
 
                 setLinkedCoffeeLabel(data.coffee || "");
                 setLinkedBrewingMethodLabel(data.brewingMethod || "");
+                setModerationComment(getRecipeModerationComment(data));
+                setIsPublicRecipe(Boolean(data.isPublic ?? data.IsPublic));
 
                 setFormData({
                     title: data.title || "",
@@ -292,6 +297,23 @@ const RecipesForm = () => {
                     </p>
 
                 </div>
+
+                {isEditing && !isPublicRecipe && moderationComment && (
+                    <div
+                        style={{
+                            marginBottom: "24px",
+                            padding: "16px 18px",
+                            borderRadius: "16px",
+                            backgroundColor: "#fff4e5",
+                            border: "1px solid #ffd8a8",
+                            color: "#5c4a1f",
+                            fontSize: "15px",
+                            lineHeight: 1.5,
+                        }}
+                    >
+                        <strong>Komentarz moderatora:</strong> {moderationComment}
+                    </div>
+                )}
 
                 {/* FORM */}
 

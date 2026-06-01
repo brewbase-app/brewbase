@@ -28,6 +28,7 @@ import {
     rateRecipe
 } from "../api/recipeApi";
 import { getProfile } from "../api/profileApi";
+import { getRecipeModerationComment } from "../utils/recipeModeration";
 
 const RecipeDetails = () => {
     
@@ -345,6 +346,22 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                 </div>
 
                             </div>
+
+                            {isOwner &&
+                                !recipe.isPublic &&
+                                getRecipeModerationComment(recipe) && (
+                                    <p
+                                        style={{
+                                            marginTop: "16px",
+                                            fontSize: "15px",
+                                            color: "#555555",
+                                            maxWidth: "720px",
+                                        }}
+                                    >
+                                        Komentarz moderatora:{" "}
+                                        {getRecipeModerationComment(recipe)}
+                                    </p>
+                                )}
 
                             {/* FAVORITES + RATING */}
 

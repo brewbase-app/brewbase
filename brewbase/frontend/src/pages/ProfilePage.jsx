@@ -172,18 +172,24 @@ function ProfilePage() {
                 console.error(recipesError);
             }
 
+            const rankingEntry = ranking.find(
+                (entry) => resolveUserId(entry) === viewedUserId
+            );
+
             setViewedProfile({
                 ...publicProfile,
                 userId: viewedUserId,
+                activityPoints:
+                    rankingEntry?.activityScore ??
+                    publicProfile.activityPoints ??
+                    publicProfile.ActivityPoints ??
+                    0,
             });
             setFollowingList(myFollowing);
             setFollowersList(followers);
             setUserRecipes(recipes);
             setRemoteDiscoverUser(null);
 
-            const rankingEntry = ranking.find(
-                (entry) => resolveUserId(entry) === viewedUserId
-            );
             setRankingPosition(rankingEntry?.position ?? null);
 
             setDiscoverSource(

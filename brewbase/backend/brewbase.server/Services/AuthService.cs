@@ -39,6 +39,7 @@ public class AuthService : IAuthService
             Email = dto.Email,
             Login = dto.Login,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+            PasswordHint = dto.PasswordHint.Trim(),
             Role = "User",
             ActivityPoints = 0,
             CreatedAt = DateTime.Now,
@@ -56,18 +57,26 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<string?> LoginAsync(AuthLoginRequestDto dto)
+    public async Task<AuthLoginResultDto> LoginAsync(AuthLoginRequestDto dto)
     {
         var user = await _context.AppUsers
             .FirstOrDefaultAsync(u => u.Login == dto.Login);
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-            return null;
+        {
+            return new AuthLoginResultDto
+            {
+                PasswordHint = user?.PasswordHint
+            };
+        }
 
         if (user.IsBlocked)
-            throw new Exception("User account is blocked");        
-        
-        return GenerateJwt(user);
+            throw new Exception("User account is blocked");
+
+        return new AuthLoginResultDto
+        {
+            Token = GenerateJwt(user)
+        };
     }
     
 

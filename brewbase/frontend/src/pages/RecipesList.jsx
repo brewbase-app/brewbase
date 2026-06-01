@@ -20,6 +20,7 @@ import {
     addFavorite,
     removeFavorite
 } from "../api/recipeApi";
+import { getRecipeModerationComment } from "../utils/recipeModeration";
 
 const formatDate = (date) => {
 
@@ -347,6 +348,21 @@ const RecipesList = ({ title }) => {
                                     </span>
 
                                 </div>
+
+                                {title === "Twoje receptury" &&
+                                    !r.isPublic &&
+                                    getRecipeModerationComment(r) && (
+                                        <p
+                                            style={{
+                                                marginTop: "10px",
+                                                fontSize: "14px",
+                                                color: "#555555",
+                                            }}
+                                        >
+                                            Komentarz moderatora:{" "}
+                                            {getRecipeModerationComment(r)}
+                                        </p>
+                                    )}
 
                             </div>
 

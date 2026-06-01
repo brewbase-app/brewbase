@@ -36,12 +36,27 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] AuthLoginRequestDto dto)
     {
-        var token = await _authService.LoginAsync(dto);
+        try
+        {
+            var result = await _authService.LoginAsync(dto);
 
-        if (token == null)
-            return Unauthorized("Invalid login or password");
+            if (result.Token == null)
+            {
+                return Unauthorized(new AuthLoginErrorResponseDto
+                {
+                    PasswordHint = result.PasswordHint
+                });
+            }
 
-        return Ok(new { token });
+            return Ok(new { token = result.Token });
+        }
+        catch (Exception ex) when (ex.Message == "User account is blocked")
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new SimpleErrorResponseDto
+            {
+                Message = "Konto użytkownika zostało zablokowane."
+            });
+        }
     }
 
     

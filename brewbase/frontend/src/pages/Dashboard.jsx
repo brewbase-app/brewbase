@@ -230,7 +230,7 @@ function Dashboard() {
         [notifications]
     );
 
-    const greetingName = profile?.login ?? "Kawoszu";
+    const greetingName = !isLoading ? profile?.login : null;
 
     const handleNotificationToggle = async () => {
         const willOpen = !showNotifications;
@@ -271,7 +271,7 @@ function Dashboard() {
             <div className="dashboard-top">
                 <div className="dashboard-top-head">
                     <div className="dashboard-greeting">
-                        <h1>Dzień dobry, {greetingName}!</h1>
+                        <h1>{greetingName ? `Dzień dobry, ${greetingName}!` : "Dzień dobry!"}</h1>
                         <p>Oto co dzieje się w Twoim kawowym świecie.</p>
                     </div>
 

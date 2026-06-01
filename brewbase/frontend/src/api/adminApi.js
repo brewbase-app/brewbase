@@ -115,12 +115,16 @@ export function dismissReport(reportId) {
     );
 }
 
-export function upholdReport(reportId) {
+export function upholdReport(reportId, comment = "") {
 
     return apiRequest(
         `/api/admin/reports/${reportId}/uphold`,
         {
             method: "PATCH",
+
+            body: JSON.stringify({
+                comment,
+            }),
         }
     );
 }

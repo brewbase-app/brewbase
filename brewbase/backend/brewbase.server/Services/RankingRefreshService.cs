@@ -13,7 +13,17 @@ public class RankingRefreshService : IRankingRefreshService
         _context = context;
     }
 
-    public async Task RefreshAllRankingsAsync()
+    public Task RefreshAllRankingsAsync()
+    {
+        return ExecuteRankingRefreshAsync("SELECT refresh_all_rankings();");
+    }
+
+    public Task RefreshUserRankingAsync()
+    {
+        return ExecuteRankingRefreshAsync("SELECT refresh_user_ranking();");
+    }
+
+    private async Task ExecuteRankingRefreshAsync(string sql)
     {
         var providerName = _context.Database.ProviderName ?? "";
 
@@ -22,6 +32,6 @@ public class RankingRefreshService : IRankingRefreshService
             return;
         }
 
-        await _context.Database.ExecuteSqlRawAsync("SELECT refresh_all_rankings();");
+        await _context.Database.ExecuteSqlRawAsync(sql);
     }
 }

@@ -24,5 +24,7 @@ public class RecipeListResponseDto
 
     public DateTime CreatedAt { get; set; }
 
+    public string? ModerationComment { get; set; }
+
     public bool IsFavorite { get; set; }
 }

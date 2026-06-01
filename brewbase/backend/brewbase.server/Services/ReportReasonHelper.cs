@@ -38,6 +38,9 @@ internal sealed class ReportPayload
 
     [JsonPropertyName("resolutionAction")]
     public string? ResolutionAction { get; set; }
+
+    [JsonPropertyName("moderationComment")]
+    public string? ModerationComment { get; set; }
 }
 
 internal static class ReportReasonHelper

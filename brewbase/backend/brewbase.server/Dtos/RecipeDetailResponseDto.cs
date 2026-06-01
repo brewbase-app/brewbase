@@ -24,6 +24,8 @@ public class RecipeDetailResponseDto
     
     public DateTime CreatedAt { get; set; }
 
+    public string? ModerationComment { get; set; }
+
     public double? AverageRating { get; set; }
 
     public int RatingCount { get; set; }
