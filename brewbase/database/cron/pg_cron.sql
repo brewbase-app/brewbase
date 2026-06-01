@@ -1,7 +1,7 @@
 -- automatyczne odświeżanie rankingów co godzinę przy użyciu pg_cron
--- wymaga PostgreSQL z rozszerzeniem pg_cron (niedostępne w domyślnym obrazie Dockera postgres).
--- należy uruchamiać tylko po schema.sql na środowiskach wspierających pg_cron (np. VM uczelni).
--- Lokalnie użyj POST /api/Ranking/refresh lub SELECT refresh_all_rankings(); zamiast tego.
+-- wymaga PostgreSQL z rozszerzeniem pg_cron (VM uczelni).
+-- Render/Docker bez pg_cron: backup to RankingRefreshBackgroundService w backendzie (co 60 min).
+-- Ręcznie: POST /api/Ranking/refresh (Admin JWT lub nagłówek X-Ranking-Refresh-Secret).
 
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
