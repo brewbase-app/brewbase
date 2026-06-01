@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace brewbase.server.Dtos;
 
-public sealed class AddCoffeeToTastingSessionRequestDto
+public sealed class AddCoffeeToCuppingSessionRequestDto
 {
     public int? CoffeeId { get; set; }
 

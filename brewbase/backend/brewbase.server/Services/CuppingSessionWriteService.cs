@@ -5,12 +5,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace brewbase.server.Services;
 
-public sealed class TastingSessionWriteService : ITastingSessionWriteService
+public sealed class CuppingSessionWriteService : ICuppingSessionWriteService
 {
     private readonly BrewDbContext _context;
     private readonly ICurrentUserProvider _currentUserProvider;
 
-    public TastingSessionWriteService(
+    public CuppingSessionWriteService(
         BrewDbContext context,
         ICurrentUserProvider currentUserProvider)
     {
@@ -18,7 +18,7 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
         _currentUserProvider = currentUserProvider;
     }
 
-    public async Task<TastingSessionResponseDto?> CreateAsync(CreateTastingSessionRequestDto request)
+    public async Task<CuppingSessionResponseDto?> CreateAsync(CreateCuppingSessionRequestDto request)
     {
         var userId = _currentUserProvider.GetUserId();
 
@@ -43,7 +43,7 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
         _context.CuppingSessions.Add(tastingSession);
         await _context.SaveChangesAsync();
 
-        return new TastingSessionResponseDto
+        return new CuppingSessionResponseDto
         {
             Id = tastingSession.Id,
             Name = tastingSession.Name,
@@ -54,16 +54,16 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
         };
     }
 
-    public async Task<TastingSessionWriteResult<TastingSessionResponseDto>> UpdateSessionAsync(
+    public async Task<CuppingSessionWriteResult<CuppingSessionResponseDto>> UpdateSessionAsync(
         int sessionId,
-        UpdateTastingSessionRequestDto request)
+        UpdateCuppingSessionRequestDto request)
     {
         var userId = _currentUserProvider.GetUserId();
 
         if (userId is null)
         {
-            return new TastingSessionWriteResult<TastingSessionResponseDto>(
-                TastingSessionWriteStatus.Unauthorized);
+            return new CuppingSessionWriteResult<CuppingSessionResponseDto>(
+                CuppingSessionWriteStatus.Unauthorized);
         }
 
         var session = await _context.CuppingSessions
@@ -73,8 +73,8 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
         if (session is null)
         {
-            return new TastingSessionWriteResult<TastingSessionResponseDto>(
-                TastingSessionWriteStatus.TastingSessionNotFound);
+            return new CuppingSessionWriteResult<CuppingSessionResponseDto>(
+                CuppingSessionWriteStatus.CuppingSessionNotFound);
         }
 
         session.Name = request.Name.Trim();
@@ -87,9 +87,9 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
         await _context.SaveChangesAsync();
 
-        return new TastingSessionWriteResult<TastingSessionResponseDto>(
-            TastingSessionWriteStatus.Success,
-            new TastingSessionResponseDto
+        return new CuppingSessionWriteResult<CuppingSessionResponseDto>(
+            CuppingSessionWriteStatus.Success,
+            new CuppingSessionResponseDto
             {
                 Id = session.Id,
                 Name = session.Name,
@@ -100,13 +100,13 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
             });
     }
 
-    public async Task<TastingSessionWriteStatus> DeleteSessionAsync(int sessionId)
+    public async Task<CuppingSessionWriteStatus> DeleteSessionAsync(int sessionId)
     {
         var userId = _currentUserProvider.GetUserId();
 
         if (userId is null)
         {
-            return TastingSessionWriteStatus.Unauthorized;
+            return CuppingSessionWriteStatus.Unauthorized;
         }
 
         var session = await _context.CuppingSessions
@@ -117,26 +117,26 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
         if (session is null)
         {
-            return TastingSessionWriteStatus.TastingSessionNotFound;
+            return CuppingSessionWriteStatus.CuppingSessionNotFound;
         }
 
         _context.CuppingSessionCoffees.RemoveRange(session.CuppingSessionCoffees);
         _context.CuppingSessions.Remove(session);
         await _context.SaveChangesAsync();
 
-        return TastingSessionWriteStatus.Success;
+        return CuppingSessionWriteStatus.Success;
     }
 	
-	public async Task<TastingSessionWriteResult<TastingSessionCoffeeResponseDto>> AddCoffeeAsync(
+	public async Task<CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>> AddCoffeeAsync(
     int sessionId,
-    AddCoffeeToTastingSessionRequestDto request)
+    AddCoffeeToCuppingSessionRequestDto request)
     {
         var userId = _currentUserProvider.GetUserId();
 
         if (userId is null)
         {
-            return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-                TastingSessionWriteStatus.Unauthorized);
+            return new CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>(
+                CuppingSessionWriteStatus.Unauthorized);
         }
 
         var sessionExists = await _context.CuppingSessions
@@ -144,8 +144,8 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
         if (!sessionExists)
         {
-            return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-                TastingSessionWriteStatus.TastingSessionNotFound);
+            return new CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>(
+                CuppingSessionWriteStatus.CuppingSessionNotFound);
         }
 
         var coffeeName = string.IsNullOrWhiteSpace(request.CoffeeName)
@@ -154,8 +154,8 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
         if (request.CoffeeId is null && coffeeName is null)
         {
-            return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-                TastingSessionWriteStatus.InvalidCoffeeData);
+            return new CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>(
+                CuppingSessionWriteStatus.InvalidCoffeeData);
         }
 
         Coffee? coffee = null;
@@ -167,8 +167,8 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
             if (coffee is null)
             {
-                return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-                    TastingSessionWriteStatus.CoffeeNotFound);
+                return new CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>(
+                    CuppingSessionWriteStatus.CoffeeNotFound);
             }
 
             var coffeeAlreadyAdded = await _context.CuppingSessionCoffees
@@ -178,8 +178,8 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
             if (coffeeAlreadyAdded)
             {
-                return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-                    TastingSessionWriteStatus.CoffeeAlreadyAdded);
+                return new CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>(
+                    CuppingSessionWriteStatus.CoffeeAlreadyAdded);
             }
         }
 
@@ -195,7 +195,7 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
         _context.CuppingSessionCoffees.Add(sessionCoffee);
         await _context.SaveChangesAsync();
 
-        var response = new TastingSessionCoffeeResponseDto
+        var response = new CuppingSessionCoffeeResponseDto
         {
             SessionCoffeeId = sessionCoffee.Id,
             CoffeeId = sessionCoffee.CoffeeId,
@@ -210,22 +210,22 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
             OverallScore = sessionCoffee.OverallScore
         };
 
-        return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-            TastingSessionWriteStatus.Success,
+        return new CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>(
+            CuppingSessionWriteStatus.Success,
             response);
     }
 	
-	public async Task<TastingSessionWriteResult<TastingSessionCoffeeResponseDto>> UpdateCoffeeAsync(
+	public async Task<CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>> UpdateCoffeeAsync(
     int sessionId,
     int sessionCoffeeId,
-    UpdateTastingSessionCoffeeRequestDto request)
+    UpdateCuppingSessionCoffeeRequestDto request)
     {
         var userId = _currentUserProvider.GetUserId();
 
         if (userId is null)
         {
-            return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-                TastingSessionWriteStatus.Unauthorized);
+            return new CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>(
+                CuppingSessionWriteStatus.Unauthorized);
         }
 
         var sessionExists = await _context.CuppingSessions
@@ -233,8 +233,8 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
         if (!sessionExists)
         {
-            return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-                TastingSessionWriteStatus.TastingSessionNotFound);
+            return new CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>(
+                CuppingSessionWriteStatus.CuppingSessionNotFound);
         }
 
         var sessionCoffee = await _context.CuppingSessionCoffees
@@ -245,8 +245,8 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
         if (sessionCoffee is null)
         {
-            return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-                TastingSessionWriteStatus.CoffeeNotInSession);
+            return new CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>(
+                CuppingSessionWriteStatus.CoffeeNotInSession);
         }
 
         sessionCoffee.Notes = string.IsNullOrWhiteSpace(request.Notes)
@@ -265,7 +265,7 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
         await _context.SaveChangesAsync();
 
-        var response = new TastingSessionCoffeeResponseDto
+        var response = new CuppingSessionCoffeeResponseDto
         {
             SessionCoffeeId = sessionCoffee.Id,
             CoffeeId = sessionCoffee.CoffeeId,
@@ -280,22 +280,22 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
             OverallScore = sessionCoffee.OverallScore
         };
 
-        return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-            TastingSessionWriteStatus.Success,
+        return new CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>(
+            CuppingSessionWriteStatus.Success,
             response);
     }
     
-    public async Task<TastingSessionWriteResult<TastingSessionCoffeeResponseDto>> UpdateCoffeeNoteAsync(
+    public async Task<CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>> UpdateCoffeeNoteAsync(
     int sessionId,
     int sessionCoffeeId,
-    UpdateTastingSessionCoffeeNoteRequestDto request)
+    UpdateCuppingSessionCoffeeNoteRequestDto request)
 {
     var userId = _currentUserProvider.GetUserId();
 
     if (userId is null)
     {
-        return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-            TastingSessionWriteStatus.Unauthorized);
+        return new CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>(
+            CuppingSessionWriteStatus.Unauthorized);
     }
 
     var sessionExists = await _context.CuppingSessions
@@ -303,8 +303,8 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
     if (!sessionExists)
     {
-        return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-            TastingSessionWriteStatus.TastingSessionNotFound);
+        return new CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>(
+            CuppingSessionWriteStatus.CuppingSessionNotFound);
     }
 
     var sessionCoffee = await _context.CuppingSessionCoffees
@@ -315,8 +315,8 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
     if (sessionCoffee is null)
     {
-        return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-            TastingSessionWriteStatus.CoffeeNotInSession);
+        return new CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>(
+            CuppingSessionWriteStatus.CoffeeNotInSession);
     }
 
     sessionCoffee.Notes = string.IsNullOrWhiteSpace(request.Notes)
@@ -325,7 +325,7 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
     await _context.SaveChangesAsync();
 
-    var response = new TastingSessionCoffeeResponseDto
+    var response = new CuppingSessionCoffeeResponseDto
     {
         SessionCoffeeId = sessionCoffee.Id,
         CoffeeId = sessionCoffee.CoffeeId,
@@ -340,18 +340,18 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
         OverallScore = sessionCoffee.OverallScore
     };
 
-    return new TastingSessionWriteResult<TastingSessionCoffeeResponseDto>(
-        TastingSessionWriteStatus.Success,
+    return new CuppingSessionWriteResult<CuppingSessionCoffeeResponseDto>(
+        CuppingSessionWriteStatus.Success,
         response);
 }
 
-    public async Task<TastingSessionWriteStatus> DeleteCoffeeAsync(int sessionId, int sessionCoffeeId)
+    public async Task<CuppingSessionWriteStatus> DeleteCoffeeAsync(int sessionId, int sessionCoffeeId)
     {
         var userId = _currentUserProvider.GetUserId();
 
         if (userId is null)
         {
-            return TastingSessionWriteStatus.Unauthorized;
+            return CuppingSessionWriteStatus.Unauthorized;
         }
 
         var sessionExists = await _context.CuppingSessions
@@ -359,7 +359,7 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
         if (!sessionExists)
         {
-            return TastingSessionWriteStatus.TastingSessionNotFound;
+            return CuppingSessionWriteStatus.CuppingSessionNotFound;
         }
 
         var sessionCoffee = await _context.CuppingSessionCoffees
@@ -369,12 +369,12 @@ public sealed class TastingSessionWriteService : ITastingSessionWriteService
 
         if (sessionCoffee is null)
         {
-            return TastingSessionWriteStatus.CoffeeNotInSession;
+            return CuppingSessionWriteStatus.CoffeeNotInSession;
         }
 
         _context.CuppingSessionCoffees.Remove(sessionCoffee);
         await _context.SaveChangesAsync();
 
-        return TastingSessionWriteStatus.Success;
+        return CuppingSessionWriteStatus.Success;
     }
 }

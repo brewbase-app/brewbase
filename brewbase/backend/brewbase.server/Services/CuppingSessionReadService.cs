@@ -5,21 +5,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace brewbase.server.Services;
 
-public class TastingSessionReadService : ITastingSessionReadService
+public class CuppingSessionReadService : ICuppingSessionReadService
 {
     private readonly BrewDbContext _context;
 
-    public TastingSessionReadService(BrewDbContext context)
+    public CuppingSessionReadService(BrewDbContext context)
     {
         _context = context;
     }
 
-    public async Task<List<TastingSessionListItemResponseDto>> GetUserSessionsAsync(int userId)
+    public async Task<List<CuppingSessionListItemResponseDto>> GetUserSessionsAsync(int userId)
     {
         return await _context.CuppingSessions
             .Where(session => session.UserId == userId)
             .OrderByDescending(session => session.CreatedAt)
-            .Select(session => new TastingSessionListItemResponseDto
+            .Select(session => new CuppingSessionListItemResponseDto
             {
                 Id = session.Id,
                 Name = session.Name,
@@ -31,11 +31,11 @@ public class TastingSessionReadService : ITastingSessionReadService
             .ToListAsync();
     }
 
-    public async Task<TastingSessionDetailsResponseDto?> GetSessionDetailsAsync(int id, int userId)
+    public async Task<CuppingSessionDetailsResponseDto?> GetSessionDetailsAsync(int id, int userId)
     {
         return await _context.CuppingSessions
             .Where(session => session.Id == id && session.UserId == userId)
-            .Select(session => new TastingSessionDetailsResponseDto
+            .Select(session => new CuppingSessionDetailsResponseDto
             {
                 Id = session.Id,
                 Name = session.Name,
@@ -43,7 +43,7 @@ public class TastingSessionReadService : ITastingSessionReadService
                 CreatedAt = session.CreatedAt,
                 SessionDate = session.SessionDate,
                 Coffees = session.CuppingSessionCoffees
-                    .Select(sessionCoffee => new TastingSessionCoffeeResponseDto
+                    .Select(sessionCoffee => new CuppingSessionCoffeeResponseDto
                     {
 						SessionCoffeeId = sessionCoffee.Id,
 						CoffeeId = sessionCoffee.CoffeeId,

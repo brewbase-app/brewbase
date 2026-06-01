@@ -1,6 +1,6 @@
 namespace brewbase.server.Dtos;
 
-public class UpdateTastingSessionCoffeeNoteRequestDto
+public class UpdateCuppingSessionCoffeeNoteRequestDto
 {
     public string? Notes { get; set; }
 }

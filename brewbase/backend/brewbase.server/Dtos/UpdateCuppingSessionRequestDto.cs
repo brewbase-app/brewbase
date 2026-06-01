@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace brewbase.server.Dtos;
 
-public sealed class CreateTastingSessionRequestDto
+public sealed class UpdateCuppingSessionRequestDto
 {
     [Required]
     [MaxLength(255)]
