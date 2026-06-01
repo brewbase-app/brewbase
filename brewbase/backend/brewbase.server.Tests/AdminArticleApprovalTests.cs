@@ -132,6 +132,14 @@ public class AdminArticleApprovalTests : IDisposable
             null);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+        var article = await context.Articles.SingleAsync(a => a.Id == articleId);
+
+        Assert.Equal("Approved", article.Status);
+        Assert.NotNull(article.CoffeeId);
+        Assert.True(await context.Coffees.AnyAsync(coffee => coffee.Id == article.CoffeeId));
     }
 
     [Fact]

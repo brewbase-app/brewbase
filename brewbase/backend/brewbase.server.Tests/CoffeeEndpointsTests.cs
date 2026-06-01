@@ -49,6 +49,11 @@ public class CoffeeEndpointsTests : IDisposable
         Assert.True(first.TryGetProperty("processingMethod", out _));
         Assert.True(first.TryGetProperty("variety", out _));
         Assert.True(first.TryGetProperty("createdByUserId", out _));
+        Assert.True(first.TryGetProperty("averageRating", out _));
+        Assert.True(first.TryGetProperty("ratingCount", out _));
+        Assert.True(first.TryGetProperty("beanOriginCountry", out _));
+        Assert.True(first.TryGetProperty("flavorProfiles", out _));
+        Assert.True(first.TryGetProperty("isFavorite", out _));
     }
 
     [Fact]

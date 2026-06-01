@@ -92,6 +92,14 @@ public class CoffeeFavoriteService : ICoffeeFavoriteService
                 ProcessingMethod = f.Coffee.ProcessingMethod != null ? f.Coffee.ProcessingMethod.Name : null,
                 Variety = f.Coffee.Variety != null ? f.Coffee.Variety.Name : null,
                 CreatedByUserId = f.Coffee.CreatedByUserId,
+                BeanOriginCountry = f.Coffee.Region != null && f.Coffee.Region.Country != null
+                    ? f.Coffee.Region.Country.Name
+                    : null,
+                AverageRating = _context.CoffeeRatings
+                    .Where(rating => rating.CoffeeId == f.CoffeeId)
+                    .Average(rating => (double?)rating.Value),
+                RatingCount = _context.CoffeeRatings
+                    .Count(rating => rating.CoffeeId == f.CoffeeId),
                 IsFavorite = true
             })
             .ToListAsync();

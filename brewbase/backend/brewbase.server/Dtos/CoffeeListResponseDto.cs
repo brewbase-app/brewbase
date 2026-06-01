@@ -18,5 +18,13 @@ public class CoffeeListResponseDto
 
     public int? CreatedByUserId { get; set; }
 
+    public double? AverageRating { get; set; }
+
+    public int RatingCount { get; set; }
+
+    public string? BeanOriginCountry { get; set; }
+
+    public List<string> FlavorProfiles { get; set; } = new();
+
     public bool IsFavorite { get; set; }
 }

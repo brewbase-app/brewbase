@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 
 import {
     Search,
-    Heart
+    Heart,
+    Star
 } from "lucide-react";
 
 import {
@@ -49,6 +50,9 @@ function mapCoffeeArticle(article) {
         isWikiArticle: true,
         coffeeId: article.coffeeId ?? null,
         articleId: article.id,
+        averageRating: null,
+        ratingCount: 0,
+        isFavorite: false,
     };
 }
 
@@ -91,19 +95,43 @@ function Coffees() {
     const catalogItems = coffees.map((coffee) => ({
         key: `catalog-${coffee.id}`,
         name: coffee.name,
-        beanOriginCountry: coffee.region ?? null,
+        beanOriginCountry:
+            coffee.beanOriginCountry ?? coffee.region ?? null,
         variety: coffee.variety ?? null,
         processingMethod: coffee.processingMethod ?? null,
-        flavorProfiles: [],
+        flavorProfiles: Array.isArray(coffee.flavorProfiles)
+            ? coffee.flavorProfiles
+            : [],
         roastery: coffee.roastery ?? null,
         authorLogin: null,
         isWikiArticle: false,
         coffeeId: coffee.id,
         articleId: null,
+        averageRating: coffee.averageRating ?? null,
+        ratingCount: coffee.ratingCount ?? 0,
         isFavorite: coffee.isFavorite ?? false,
     }));
 
-    const articleItems = articles.map(mapCoffeeArticle);
+    const catalogCoffeeIds = new Set(
+        catalogItems
+            .map((item) => item.coffeeId)
+            .filter((coffeeId) => coffeeId != null)
+    );
+
+    const catalogNames = new Set(
+        catalogItems.map((item) => (item.name ?? "").trim().toLowerCase())
+    );
+
+    const articleItems = articles
+        .map(mapCoffeeArticle)
+        .filter((item) => {
+            if (item.coffeeId != null && catalogCoffeeIds.has(item.coffeeId)) {
+                return false;
+            }
+
+            const normalizedName = (item.name ?? "").trim().toLowerCase();
+            return normalizedName === "" || !catalogNames.has(normalizedName);
+        });
 
     const allItems = [...catalogItems, ...articleItems];
 
@@ -127,6 +155,7 @@ function Coffees() {
 
     const flavorProfileOptions = buildFilterOptions(
         COFFEE_FLAVOR_PROFILES,
+        catalogItems.flatMap((item) => item.flavorProfiles),
         articleItems.flatMap((item) => item.flavorProfiles)
     );
 
@@ -188,7 +217,7 @@ function Coffees() {
         const matchesFlavorProfiles =
             selectedFlavorProfiles.length === 0 ||
             selectedFlavorProfiles.some((profile) =>
-                item.flavorProfiles.includes(profile)
+                (item.flavorProfiles ?? []).includes(profile)
             );
 
         return (
@@ -350,12 +379,12 @@ function Coffees() {
                             className="coffee-card"
                             key={item.key}
                             onClick={() => {
-                                if (item.isWikiArticle) {
-                                    navigate(`/wiki/articles/${item.articleId}`);
+                                if (item.coffeeId != null) {
+                                    navigate(`/wiki/coffees/${item.coffeeId}`);
                                     return;
                                 }
 
-                                navigate(`/wiki/coffees/${item.coffeeId}`);
+                                navigate(`/wiki/articles/${item.articleId}`);
                             }}
                         >
                             <div className="coffee-image" />
@@ -366,7 +395,7 @@ function Coffees() {
                                         {item.name}
                                     </h2>
 
-                                    {!item.isWikiArticle && (
+                                    {item.coffeeId != null && (
                                         <button
                                             className="favorite-button"
                                             onClick={(event) =>
@@ -374,6 +403,11 @@ function Coffees() {
                                                     item.coffeeId,
                                                     event
                                                 )
+                                            }
+                                            aria-label={
+                                                item.isFavorite
+                                                    ? "Usuń z ulubionych"
+                                                    : "Dodaj do ulubionych"
                                             }
                                         >
                                             <Heart
@@ -393,6 +427,27 @@ function Coffees() {
                                         "Brak kraju pochodzenia"}
                                 </p>
 
+                                <div className="coffee-card-rating">
+                                    <Star
+                                        size={14}
+                                        fill={
+                                            item.averageRating != null
+                                                ? "currentColor"
+                                                : "none"
+                                        }
+                                    />
+
+                                    <span>
+                                        {item.averageRating != null
+                                            ? item.averageRating.toFixed(1)
+                                            : "Brak ocen"}
+
+                                        {" · "}
+
+                                        {item.ratingCount ?? 0} ocen
+                                    </span>
+                                </div>
+
                                 <div className="coffee-tags">
                                     {item.variety && (
                                         <span>
@@ -406,7 +461,7 @@ function Coffees() {
                                         </span>
                                     )}
 
-                                    {item.flavorProfiles.map((profile) => (
+                                    {(item.flavorProfiles ?? []).map((profile) => (
                                         <span key={profile}>
                                             {profile}
                                         </span>

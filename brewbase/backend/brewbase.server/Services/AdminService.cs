@@ -112,6 +112,12 @@ public class AdminService : IAdminService
             }
         }
 
+        if (string.Equals(article.Module, "coffee", StringComparison.Ordinal)
+            && !article.CoffeeId.HasValue)
+        {
+            article.CoffeeId = await CreateCatalogCoffeeFromArticleAsync(article);
+        }
+
         article.Status = "Approved";
         article.ModeratedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         article.ModeratedByUserId = moderatorId;
@@ -448,5 +454,58 @@ public class AdminService : IAdminService
         await _context.SaveChangesAsync();
 
         return true;
+    }
+
+    private async Task<int> CreateCatalogCoffeeFromArticleAsync(Article article)
+    {
+        var (beanOriginCountry, varietyName, processingName, _) =
+            CoffeeArticleMetadataParser.Parse(article.Content);
+
+        var region = await _context.Regions
+            .Include(r => r.Country)
+            .FirstOrDefaultAsync(r =>
+                beanOriginCountry != null
+                && r.Country.Name == beanOriginCountry)
+            ?? await _context.Regions
+                .OrderBy(r => r.Id)
+                .FirstAsync();
+
+        var roastery = await _context.Roasteries
+            .OrderBy(r => r.Id)
+            .FirstAsync();
+
+        int? varietyId = null;
+        if (!string.IsNullOrWhiteSpace(varietyName))
+        {
+            varietyId = await _context.Varieties
+                .Where(variety => variety.Name == varietyName)
+                .Select(variety => (int?)variety.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        int? processingMethodId = null;
+        if (!string.IsNullOrWhiteSpace(processingName))
+        {
+            processingMethodId = await _context.ProcessingMethods
+                .Where(method => method.Name == processingName)
+                .Select(method => (int?)method.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        var coffee = new Coffee
+        {
+            Name = article.Title,
+            RegionId = region.Id,
+            RoasteryId = roastery.Id,
+            VarietyId = varietyId,
+            ProcessingMethodId = processingMethodId,
+            CreatedByUserId = article.UserId,
+            IsVerified = false
+        };
+
+        _context.Coffees.Add(coffee);
+        await _context.SaveChangesAsync();
+
+        return coffee.Id;
     }
 }
