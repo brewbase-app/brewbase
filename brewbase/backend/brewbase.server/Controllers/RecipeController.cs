@@ -146,6 +146,7 @@ public class RecipeController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(SimpleErrorResponseDto), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RateRecipe(int id, [FromBody] RateRequestDto request)
     {
@@ -156,12 +157,19 @@ public class RecipeController : ControllerBase
             return Unauthorized();
         }
 
-        var recipeExists = await RecipeReadService.WhereVisibleTo(_context.Recipes, userId.Value)
-            .AnyAsync(r => r.Id == id);
+        var recipe = await RecipeReadService.WhereVisibleTo(_context.Recipes, userId.Value)
+            .FirstOrDefaultAsync(r => r.Id == id);
 
-        if (!recipeExists)
+        if (recipe is null)
         {
             return NotFound(new SimpleErrorResponseDto { Message = "Recipe not found." });
+        }
+
+        if (recipe.UserId == userId.Value)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new SimpleErrorResponseDto { Message = "You cannot rate your own recipe." });
         }
 
         var rating = await _context.RecipeRatings
@@ -329,8 +337,20 @@ public class RecipeController : ControllerBase
             return Forbid();
         }
 
+        await _context.RecipeRatings
+            .Where(r => r.RecipeId == id)
+            .ExecuteDeleteAsync();
+
         await _context.UserRecipeFavorites
             .Where(f => f.RecipeId == id)
+            .ExecuteDeleteAsync();
+
+        await _context.RecipeRankings
+            .Where(r => r.RecipeId == id)
+            .ExecuteDeleteAsync();
+
+        await _context.Recommendations
+            .Where(r => r.RecipeId == id)
             .ExecuteDeleteAsync();
 
         _context.Recipes.Remove(recipe);

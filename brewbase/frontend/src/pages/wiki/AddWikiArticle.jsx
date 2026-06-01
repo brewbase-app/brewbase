@@ -19,6 +19,7 @@ import { BREWING_METHOD_OPTIONS } from "../../utils/brewingMethodOptions";
 import { ROASTING_STYLE_OPTIONS } from "../../utils/roastingStyleOptions";
 import { COFFEE_REGIONS } from "../../utils/coffeeRegions";
 import { COFFEE_FLAVOR_PROFILES } from "../../utils/coffeeFlavorProfiles";
+import { COFFEE_ROASTERIES } from "../../utils/coffeeRoasteries";
 
 const CATEGORY_OPTIONS = [
     { value: "coffee", label: "Kawy" },
@@ -67,6 +68,8 @@ function AddWikiArticle() {
     const [coffeeVariety, setCoffeeVariety] = useState("");
 
     const [coffeeProcessing, setCoffeeProcessing] = useState("");
+
+    const [coffeeRoastery, setCoffeeRoastery] = useState("");
 
     const [flavorProfiles, setFlavorProfiles] = useState([]);
 
@@ -187,6 +190,13 @@ function AddWikiArticle() {
             return;
         }
 
+        if (categoryValue === "coffee" && !linkedCoffeeId && !coffeeRoastery.trim()) {
+            setSubmitError(
+                "Podaj palarnię."
+            );
+            return;
+        }
+
         if (categoryValue === "roastery" && roastingStyles.length === 0) {
             setSubmitError(
                 "Wybierz co najmniej jeden styl palenia."
@@ -220,6 +230,12 @@ function AddWikiArticle() {
                     `Odmiana: ${coffeeVariety.trim()}`,
                     `Obróbka ziaren: ${coffeeProcessing.trim()}`,
                 ];
+
+                if (!linkedCoffeeId && coffeeRoastery.trim()) {
+                    metadataLines.push(
+                        `Palarnia: ${coffeeRoastery.trim()}`
+                    );
+                }
 
                 if (flavorProfiles.length > 0) {
                     metadataLines.push(
@@ -447,6 +463,23 @@ function AddWikiArticle() {
                                 />
 
                             </div>
+
+                            {!linkedCoffeeId && (
+                                <div className="form-group">
+
+                                    <label>
+                                        Palarnia
+                                    </label>
+
+                                    <ComboBoxInput
+                                        value={coffeeRoastery}
+                                        onChange={setCoffeeRoastery}
+                                        options={COFFEE_ROASTERIES}
+                                        placeholder="Wybierz z listy lub wpisz palarnię"
+                                    />
+
+                                </div>
+                            )}
 
                             <div className="form-group">
 

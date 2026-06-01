@@ -57,7 +57,7 @@ public class CoffeeReadService : ICoffeeReadService
             query = query.Skip(skip).Take(pageSize.Value);
         }
 
-        return await query
+        var coffees = await query
             .Select(c => new CoffeeListResponseDto
             {
                 Id = c.Id,
@@ -68,11 +68,23 @@ public class CoffeeReadService : ICoffeeReadService
                 ProcessingMethod = c.ProcessingMethod != null ? c.ProcessingMethod.Name : null,
                 Variety = c.Variety != null ? c.Variety.Name : null,
                 CreatedByUserId = c.CreatedByUserId,
+                BeanOriginCountry = c.Region != null && c.Region.Country != null
+                    ? c.Region.Country.Name
+                    : null,
+                AverageRating = _context.CoffeeRatings
+                    .Where(rating => rating.CoffeeId == c.Id)
+                    .Average(rating => (double?)rating.Value),
+                RatingCount = _context.CoffeeRatings
+                    .Count(rating => rating.CoffeeId == c.Id),
                 IsFavorite = currentUserId.HasValue
                     && _context.UserCoffeeFavorites.Any(f =>
                         f.UserId == currentUserId.Value && f.CoffeeId == c.Id)
             })
             .ToListAsync();
+
+        await EnrichListFromLinkedWikiArticlesAsync(coffees);
+
+        return coffees;
     }
 
     public async Task<CoffeeDetailResponseDto?> GetByIdAsync(int id, int? currentUserId = null)
@@ -148,5 +160,61 @@ public class CoffeeReadService : ICoffeeReadService
                 Name = coffee.Name
             })
             .ToListAsync();
+    }
+
+    private async Task EnrichListFromLinkedWikiArticlesAsync(List<CoffeeListResponseDto> coffees)
+    {
+        if (coffees.Count == 0)
+        {
+            return;
+        }
+
+        var coffeeIds = coffees.Select(coffee => coffee.Id).ToList();
+
+        var linkedArticles = await _context.Articles
+            .AsNoTracking()
+            .Where(article =>
+                article.Module == CoffeeModule
+                && article.Status == ApprovedStatus
+                && article.CoffeeId != null
+                && coffeeIds.Contains(article.CoffeeId.Value))
+            .Select(article => new
+            {
+                CoffeeId = article.CoffeeId!.Value,
+                article.Content
+            })
+            .ToListAsync();
+
+        foreach (var coffee in coffees)
+        {
+            var linkedArticle = linkedArticles
+                .FirstOrDefault(article => article.CoffeeId == coffee.Id);
+
+            if (linkedArticle is null)
+            {
+                continue;
+            }
+
+            var (beanOriginCountry, variety, processingMethod, flavorProfiles, _) =
+                CoffeeArticleMetadataParser.Parse(linkedArticle.Content);
+
+            if (!string.IsNullOrWhiteSpace(beanOriginCountry))
+            {
+                coffee.BeanOriginCountry = beanOriginCountry;
+            }
+
+            if (string.IsNullOrWhiteSpace(coffee.Variety) && !string.IsNullOrWhiteSpace(variety))
+            {
+                coffee.Variety = variety;
+            }
+
+            if (string.IsNullOrWhiteSpace(coffee.ProcessingMethod)
+                && !string.IsNullOrWhiteSpace(processingMethod))
+            {
+                coffee.ProcessingMethod = processingMethod;
+            }
+
+            coffee.FlavorProfiles = flavorProfiles.ToList();
+        }
     }
 }

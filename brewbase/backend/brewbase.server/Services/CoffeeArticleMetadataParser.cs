@@ -5,6 +5,7 @@ public static class CoffeeArticleMetadataParser
     private const string BeanOriginCountryPrefix = "Kraj pochodzenia ziaren: ";
     private const string VarietyPrefix = "Odmiana: ";
     private const string ProcessingPrefix = "Obróbka ziaren: ";
+    private const string RoasteryPrefix = "Palarnia: ";
     private const string FlavorProfilePrefix = "Profil smakowy: ";
 
     public static string[] ParseFlavorProfiles(string? content)
@@ -25,17 +26,18 @@ public static class CoffeeArticleMetadataParser
         return Array.Empty<string>();
     }
 
-    public static (string? BeanOriginCountry, string? Variety, string? ProcessingMethod, string[] FlavorProfiles) Parse(
+    public static (string? BeanOriginCountry, string? Variety, string? ProcessingMethod, string[] FlavorProfiles, string? Roastery) Parse(
         string? content)
     {
         if (string.IsNullOrWhiteSpace(content))
         {
-            return (null, null, null, Array.Empty<string>());
+            return (null, null, null, Array.Empty<string>(), null);
         }
 
         string? beanOriginCountry = null;
         string? variety = null;
         string? processingMethod = null;
+        string? roastery = null;
         string[] flavorProfiles = Array.Empty<string>();
 
         foreach (var line in content.Split('\n'))
@@ -52,6 +54,10 @@ public static class CoffeeArticleMetadataParser
             {
                 processingMethod = line[ProcessingPrefix.Length..].Trim();
             }
+            else if (line.StartsWith(RoasteryPrefix, StringComparison.Ordinal))
+            {
+                roastery = line[RoasteryPrefix.Length..].Trim();
+            }
             else if (line.StartsWith(FlavorProfilePrefix, StringComparison.Ordinal))
             {
                 flavorProfiles = ParseFlavorProfileValues(
@@ -59,7 +65,7 @@ public static class CoffeeArticleMetadataParser
             }
         }
 
-        return (beanOriginCountry, variety, processingMethod, flavorProfiles);
+        return (beanOriginCountry, variety, processingMethod, flavorProfiles, roastery);
     }
 
     private static string[] ParseFlavorProfileValues(string rawValue)

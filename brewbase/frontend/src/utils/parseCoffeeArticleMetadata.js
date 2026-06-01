@@ -25,6 +25,7 @@ export function parseCoffeeArticleMetadata(content) {
             beanOriginCountry: null,
             variety: null,
             processingMethod: null,
+            roastery: null,
             flavorProfiles: [],
         };
     }
@@ -36,6 +37,7 @@ export function parseCoffeeArticleMetadata(content) {
         ),
         variety: readLineValue(content, "Odmiana: "),
         processingMethod: readLineValue(content, "Obróbka ziaren: "),
+        roastery: readLineValue(content, "Palarnia: "),
         flavorProfiles: parseFlavorProfiles(content),
     };
 }

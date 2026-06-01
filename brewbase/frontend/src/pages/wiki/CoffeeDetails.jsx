@@ -13,6 +13,7 @@ import {
     rateCoffee,
     removeCoffeeFavorite
 } from "../../api/coffeeApi";
+import { getProfile } from "../../api/profileApi";
 
 import "../../styles/wiki/CoffeeDetails.css";
 
@@ -26,15 +27,24 @@ function CoffeeDetails() {
     const [isRated, setIsRated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
+    const [currentUserId, setCurrentUserId] = useState(null);
 
     const loadCoffee = async () => {
         try {
             setIsLoading(true);
             setError("");
 
-            const data = await getCoffeeById(id);
+            const [data, profile] = await Promise.all([
+                getCoffeeById(id),
+                getProfile().catch(() => null),
+            ]);
 
             setCoffee(data);
+
+            const profileUserId = profile?.userId ?? profile?.UserId;
+            setCurrentUserId(
+                profileUserId != null ? Number(profileUserId) : null
+            );
         } catch {
             setError("Nie udało się pobrać kawy.");
         } finally {
@@ -99,6 +109,13 @@ function CoffeeDetails() {
 
     const averageRating = coffee.averageRating ?? 0;
     const ratingCount = coffee.ratingCount ?? 0;
+    const coffeeCreatorId = Number(
+        coffee.createdByUserId ?? coffee.CreatedByUserId
+    );
+    const isOwner =
+        currentUserId != null &&
+        Number.isFinite(coffeeCreatorId) &&
+        currentUserId === coffeeCreatorId;
 
     return (
         <div className="article-page">
@@ -167,37 +184,45 @@ function CoffeeDetails() {
                             </span>
                         </div>
 
-                        <div className="stars-container">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                    key={star}
-                                    className="star-button"
-                                    onMouseEnter={() => setHoveredRating(star)}
-                                    onMouseLeave={() => setHoveredRating(0)}
-                                    onClick={() => setSelectedRating(star)}
-                                >
-                                    <Star
-                                        fill={
-                                            star <= (hoveredRating || selectedRating)
-                                                ? "currentColor"
-                                                : "none"
-                                        }
-                                    />
-                                </button>
-                            ))}
-                        </div>
-
-                        <button
-                            className="submit-rating-button"
-                            onClick={handleRating}
-                        >
-                            Oceń
-                        </button>
-
-                        {isRated && (
+                        {isOwner ? (
                             <p className="rating-success">
-                                Dziękujemy za ocenę!
+                                Nie możesz oceniać własnej kawy
                             </p>
+                        ) : (
+                            <>
+                                <div className="stars-container">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            className="star-button"
+                                            onMouseEnter={() => setHoveredRating(star)}
+                                            onMouseLeave={() => setHoveredRating(0)}
+                                            onClick={() => setSelectedRating(star)}
+                                        >
+                                            <Star
+                                                fill={
+                                                    star <= (hoveredRating || selectedRating)
+                                                        ? "currentColor"
+                                                        : "none"
+                                                }
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <button
+                                    className="submit-rating-button"
+                                    onClick={handleRating}
+                                >
+                                    Oceń
+                                </button>
+
+                                {isRated && (
+                                    <p className="rating-success">
+                                        Dziękujemy za ocenę!
+                                    </p>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>

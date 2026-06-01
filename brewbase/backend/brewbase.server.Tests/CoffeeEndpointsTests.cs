@@ -49,6 +49,11 @@ public class CoffeeEndpointsTests : IDisposable
         Assert.True(first.TryGetProperty("processingMethod", out _));
         Assert.True(first.TryGetProperty("variety", out _));
         Assert.True(first.TryGetProperty("createdByUserId", out _));
+        Assert.True(first.TryGetProperty("averageRating", out _));
+        Assert.True(first.TryGetProperty("ratingCount", out _));
+        Assert.True(first.TryGetProperty("beanOriginCountry", out _));
+        Assert.True(first.TryGetProperty("flavorProfiles", out _));
+        Assert.True(first.TryGetProperty("isFavorite", out _));
     }
 
     [Fact]
@@ -273,9 +278,19 @@ public class CoffeeEndpointsTests : IDisposable
     }
     
     [Fact]
-    public async Task ShouldRateExistingCoffee()
+    public async Task ShouldRateOwnCoffee_ReturnsForbidden()
     {
         var client = _factory.CreateAuthenticatedClient();
+
+        var response = await client.PostAsJsonAsync("/api/Coffee/1/rating", new { value = 4 });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShouldRateOthersCoffee_ReturnsNoContent()
+    {
+        var client = _factory.CreateAuthenticatedClient(userId: 2);
 
         var response = await client.PostAsJsonAsync("/api/Coffee/1/rating", new { value = 4 });
 
@@ -284,7 +299,7 @@ public class CoffeeEndpointsTests : IDisposable
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
 
-        var rating = context.CoffeeRatings.Single(r => r.CoffeeId == 1 && r.UserId == 1);
+        var rating = context.CoffeeRatings.Single(r => r.CoffeeId == 1 && r.UserId == 2);
 
         Assert.Equal(4, rating.Value);
     }
@@ -292,7 +307,7 @@ public class CoffeeEndpointsTests : IDisposable
     [Fact]
     public async Task ShouldUpdateExistingCoffeeRating()
     {
-        var client = _factory.CreateAuthenticatedClient();
+        var client = _factory.CreateAuthenticatedClient(userId: 2);
 
         var firstResponse = await client.PostAsJsonAsync("/api/Coffee/2/rating", new { value = 2 });
         var secondResponse = await client.PostAsJsonAsync("/api/Coffee/2/rating", new { value = 5 });
@@ -304,7 +319,7 @@ public class CoffeeEndpointsTests : IDisposable
         var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
 
         var ratings = context.CoffeeRatings
-            .Where(r => r.CoffeeId == 2 && r.UserId == 1)
+            .Where(r => r.CoffeeId == 2 && r.UserId == 2)
             .ToList();
 
         Assert.Single(ratings);

@@ -64,7 +64,7 @@ public sealed class ArticleReadService : IArticleReadService
 
                 if (article.Module == "coffee")
                 {
-                    (beanOriginCountry, variety, processingMethod, flavorProfiles) =
+                    (beanOriginCountry, variety, processingMethod, flavorProfiles, _) =
                         CoffeeArticleMetadataParser.Parse(article.Content);
                 }
 
