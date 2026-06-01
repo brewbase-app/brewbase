@@ -9,19 +9,19 @@ using Xunit;
 
 namespace brewbase.server.Tests;
 
-public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
+public class CuppingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
 {
     private readonly CoffeeApiFactory _factory;
     private readonly HttpClient _client;
 
-    public TastingSessionEndpointsTests(CoffeeApiFactory factory)
+    public CuppingSessionEndpointsTests(CoffeeApiFactory factory)
     {
         _factory = factory;
 		_client = _factory.CreateAuthenticatedClient();    
 	}
 
     [Fact]
-    public async Task ShouldCreateTastingSession()
+    public async Task ShouldCreateCuppingSession()
     {
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
@@ -36,7 +36,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
             description = "Testing coffees from Ethiopia"
         };
 
-        var response = await _client.PostAsJsonAsync("/api/TastingSessions", request);
+        var response = await _client.PostAsJsonAsync("/api/CuppingSessions", request);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
@@ -64,16 +64,16 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
         var request = new
         {
             name = "",
-            description = "Invalid tasting session"
+            description = "Invalid cupping session"
         };
 
-        var response = await _client.PostAsJsonAsync("/api/TastingSessions", request);
+        var response = await _client.PostAsJsonAsync("/api/CuppingSessions", request);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
-    public async Task ShouldReturnUserTastingSessions()
+    public async Task ShouldReturnUserCuppingSessions()
     {
         var firstSessionName = $"User session 1 {Guid.NewGuid()}";
         var secondSessionName = $"User session 2 {Guid.NewGuid()}";
@@ -110,7 +110,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
 
         await context.SaveChangesAsync();
 
-        var response = await _client.GetAsync("/api/TastingSessions");
+        var response = await _client.GetAsync("/api/CuppingSessions");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -122,7 +122,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
     }
 
     [Fact]
-    public async Task ShouldReturnTastingSessionDetailsById()
+    public async Task ShouldReturnCuppingSessionDetailsById()
     {
         var sessionName = $"Details session {Guid.NewGuid()}";
 
@@ -142,7 +142,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
         context.CuppingSessions.Add(session);
         await context.SaveChangesAsync();
 
-        var response = await _client.GetAsync($"/api/TastingSessions/{session.Id}");
+        var response = await _client.GetAsync($"/api/CuppingSessions/{session.Id}");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -157,9 +157,9 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
     }
 
     [Fact]
-    public async Task ShouldReturnNotFoundWhenTastingSessionDoesNotExist()
+    public async Task ShouldReturnNotFoundWhenCuppingSessionDoesNotExist()
     {
-        var response = await _client.GetAsync("/api/TastingSessions/999999");
+        var response = await _client.GetAsync("/api/CuppingSessions/999999");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -182,7 +182,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
             createdAt = new DateTime(2000, 1, 1)
         };
 
-        var response = await _client.PostAsJsonAsync("/api/TastingSessions", request);
+        var response = await _client.PostAsJsonAsync("/api/CuppingSessions", request);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
@@ -194,7 +194,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
     }
 	
 	[Fact]
-    public async Task ShouldAddCoffeeToTastingSession()
+    public async Task ShouldAddCoffeeToCuppingSession()
     {
         var sessionName = $"Add coffee session {Guid.NewGuid()}";
 
@@ -220,7 +220,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
 			notes = "Bright acidity and floral aroma"
         };
 
-        var response = await _client.PostAsJsonAsync($"/api/TastingSessions/{session.Id}/coffees", request);
+        var response = await _client.PostAsJsonAsync($"/api/CuppingSessions/{session.Id}/coffees", request);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
@@ -240,7 +240,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
         Assert.NotNull(savedSessionCoffee);
 		Assert.Equal("Bright acidity and floral aroma", savedSessionCoffee.Notes);
 
-        var detailsResponse = await _client.GetAsync($"/api/TastingSessions/{session.Id}");
+        var detailsResponse = await _client.GetAsync($"/api/CuppingSessions/{session.Id}");
 
         Assert.Equal(HttpStatusCode.OK, detailsResponse.StatusCode);
 
@@ -253,7 +253,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
     }
 
     [Fact]
-    public async Task ShouldReturnNotFoundWhenAddingMissingCoffeeToTastingSession()
+    public async Task ShouldReturnNotFoundWhenAddingMissingCoffeeToCuppingSession()
     {
         var sessionName = $"Missing coffee session {Guid.NewGuid()}";
 
@@ -278,26 +278,26 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
             coffeeId = 999999
         };
 
-        var response = await _client.PostAsJsonAsync($"/api/TastingSessions/{session.Id}/coffees", request);
+        var response = await _client.PostAsJsonAsync($"/api/CuppingSessions/{session.Id}/coffees", request);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task ShouldReturnNotFoundWhenAddingCoffeeToMissingTastingSession()
+    public async Task ShouldReturnNotFoundWhenAddingCoffeeToMissingCuppingSession()
     {
         var request = new
         {
             coffeeId = 1
         };
 
-        var response = await _client.PostAsJsonAsync("/api/TastingSessions/999999/coffees", request);
+        var response = await _client.PostAsJsonAsync("/api/CuppingSessions/999999/coffees", request);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task ShouldReturnConflictWhenAddingSameCoffeeTwiceToTastingSession()
+    public async Task ShouldReturnConflictWhenAddingSameCoffeeTwiceToCuppingSession()
     {
         var sessionName = $"Duplicate coffee session {Guid.NewGuid()}";
 
@@ -331,7 +331,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
             coffeeId = 1
         };
 
-        var response = await _client.PostAsJsonAsync($"/api/TastingSessions/{session.Id}/coffees", request);
+        var response = await _client.PostAsJsonAsync($"/api/CuppingSessions/{session.Id}/coffees", request);
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
 
@@ -344,7 +344,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
     }
 
     [Fact]
-    public async Task ShouldReturnNotFoundWhenAddingCoffeeToOtherUserTastingSession()
+    public async Task ShouldReturnNotFoundWhenAddingCoffeeToOtherUserCuppingSession()
     {
         var sessionName = $"Other user add coffee session {Guid.NewGuid()}";
 
@@ -369,7 +369,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
             coffeeId = 1
         };
 
-        var response = await _client.PostAsJsonAsync($"/api/TastingSessions/{session.Id}/coffees", request);
+        var response = await _client.PostAsJsonAsync($"/api/CuppingSessions/{session.Id}/coffees", request);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -410,7 +410,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
     }
 
 	[Fact]
-    public async Task ShouldSaveNoteForCoffeeInTastingSession()
+    public async Task ShouldSaveNoteForCoffeeInCuppingSession()
     {
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
@@ -444,7 +444,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
         };
 
         var response = await _client.PutAsJsonAsync(
-            $"/api/TastingSessions/{session.Id}/coffees/{sessionCoffee.Id}/note",
+            $"/api/CuppingSessions/{session.Id}/coffees/{sessionCoffee.Id}/note",
             request);
         
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -467,7 +467,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
     }
 
     [Fact]
-    public async Task ShouldUpdateCoffeeEvaluationInTastingSession()
+    public async Task ShouldUpdateCoffeeEvaluationInCuppingSession()
     {
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
@@ -508,7 +508,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
         };
 
         var response = await _client.PutAsJsonAsync(
-            $"/api/TastingSessions/{session.Id}/coffees/{sessionCoffee.Id}",
+            $"/api/CuppingSessions/{session.Id}/coffees/{sessionCoffee.Id}",
             request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -530,7 +530,7 @@ public class TastingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
     }
 
 [Fact]
-public async Task ShouldUpdateExistingCoffeeNoteInTastingSession()
+public async Task ShouldUpdateExistingCoffeeNoteInCuppingSession()
 {
     using var scope = _factory.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
@@ -565,7 +565,7 @@ public async Task ShouldUpdateExistingCoffeeNoteInTastingSession()
     };
 
     var response = await _client.PutAsJsonAsync(
-        $"/api/TastingSessions/{session.Id}/coffees/{sessionCoffee.Id}/note",
+        $"/api/CuppingSessions/{session.Id}/coffees/{sessionCoffee.Id}/note",
         request);
 
     Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -580,7 +580,7 @@ public async Task ShouldUpdateExistingCoffeeNoteInTastingSession()
 }
 
 [Fact]
-public async Task ShouldReturnNotFoundWhenSavingNoteForCoffeeOutsideTastingSession()
+public async Task ShouldReturnNotFoundWhenSavingNoteForCoffeeOutsideCuppingSession()
 {
     using var scope = _factory.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
@@ -604,14 +604,14 @@ public async Task ShouldReturnNotFoundWhenSavingNoteForCoffeeOutsideTastingSessi
     };
 
     var response = await _client.PutAsJsonAsync(
-        $"/api/TastingSessions/{session.Id}/coffees/1",
+        $"/api/CuppingSessions/{session.Id}/coffees/1",
         request);
 
     Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 }
 
 [Fact]
-public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserTastingSession()
+public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserCuppingSession()
 {
     using var scope = _factory.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
@@ -645,14 +645,14 @@ public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserTastingSession()
     };
 
     var response = await _client.PutAsJsonAsync(
-        $"/api/TastingSessions/{session.Id}/coffees/1",
+        $"/api/CuppingSessions/{session.Id}/coffees/1",
         request);
 
     Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 }
 
     [Fact]
-    public async Task ShouldUpdateTastingSession()
+    public async Task ShouldUpdateCuppingSession()
     {
         var sessionName = $"Update session {Guid.NewGuid()}";
         var updatedName = $"Updated session {Guid.NewGuid()}";
@@ -680,7 +680,7 @@ public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserTastingSession()
             sessionDate = new DateTime(2026, 5, 15)
         };
 
-        var response = await _client.PutAsJsonAsync($"/api/TastingSessions/{session.Id}", request);
+        var response = await _client.PutAsJsonAsync($"/api/CuppingSessions/{session.Id}", request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -701,7 +701,7 @@ public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserTastingSession()
     }
 
     [Fact]
-    public async Task ShouldDeleteTastingSession()
+    public async Task ShouldDeleteCuppingSession()
     {
         var sessionName = $"Delete session {Guid.NewGuid()}";
 
@@ -730,7 +730,7 @@ public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserTastingSession()
 
         await context.SaveChangesAsync();
 
-        var response = await _client.DeleteAsync($"/api/TastingSessions/{session.Id}");
+        var response = await _client.DeleteAsync($"/api/CuppingSessions/{session.Id}");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
@@ -742,7 +742,7 @@ public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserTastingSession()
     }
 
     [Fact]
-    public async Task ShouldDeleteCoffeeFromTastingSession()
+    public async Task ShouldDeleteCoffeeFromCuppingSession()
     {
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
@@ -771,7 +771,7 @@ public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserTastingSession()
         await context.SaveChangesAsync();
 
         var response = await _client.DeleteAsync(
-            $"/api/TastingSessions/{session.Id}/coffees/{sessionCoffee.Id}");
+            $"/api/CuppingSessions/{session.Id}/coffees/{sessionCoffee.Id}");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
@@ -782,7 +782,7 @@ public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserTastingSession()
     }
 
     [Fact]
-    public async Task ShouldAddCustomCoffeeToTastingSession()
+    public async Task ShouldAddCustomCoffeeToCuppingSession()
     {
         var sessionName = $"Custom coffee session {Guid.NewGuid()}";
         var customCoffeeName = $"Guest coffee {Guid.NewGuid()}";
@@ -809,7 +809,7 @@ public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserTastingSession()
             notes = "Sample note"
         };
 
-        var response = await _client.PostAsJsonAsync($"/api/TastingSessions/{session.Id}/coffees", request);
+        var response = await _client.PostAsJsonAsync($"/api/CuppingSessions/{session.Id}/coffees", request);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
@@ -823,7 +823,7 @@ public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserTastingSession()
     }
 
     [Fact]
-    public async Task ShouldReturnNotFoundWhenDeletingOtherUserTastingSession()
+    public async Task ShouldReturnNotFoundWhenDeletingOtherUserCuppingSession()
     {
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
@@ -841,7 +841,7 @@ public async Task ShouldReturnNotFoundWhenEditingNoteInOtherUserTastingSession()
         context.CuppingSessions.Add(session);
         await context.SaveChangesAsync();
 
-        var response = await _client.DeleteAsync($"/api/TastingSessions/{session.Id}");
+        var response = await _client.DeleteAsync($"/api/CuppingSessions/{session.Id}");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }

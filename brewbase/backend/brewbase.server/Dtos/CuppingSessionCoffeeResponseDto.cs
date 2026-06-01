@@ -1,6 +1,6 @@
 namespace brewbase.server.Dtos;
 
-public class TastingSessionCoffeeResponseDto
+public class CuppingSessionCoffeeResponseDto
 {
     public int SessionCoffeeId { get; set; }
     public int? CoffeeId { get; set; }

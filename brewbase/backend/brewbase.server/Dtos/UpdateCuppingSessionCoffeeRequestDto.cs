@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace brewbase.server.Dtos;
 
-public sealed class UpdateTastingSessionCoffeeRequestDto
+public sealed class UpdateCuppingSessionCoffeeRequestDto
 {
     [MaxLength(1000)]
     public string? Notes { get; set; }
