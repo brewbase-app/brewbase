@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { apiRequest } from "../api/apiClient";
+import { apiRequest, ApiError } from "../api/apiClient";
 import { setAuthToken, setUserRole } from "../utils/auth";
 import { getProfile } from "../api/profileApi";
 
 function Login() {
     const [login, setLogin] = useState("");
     const [password, setPassword] = useState("");
+    const [loginError, setLoginError] = useState("");
+    const [passwordHint, setPasswordHint] = useState("");
 
     const navigate = useNavigate(); //  dodane
 
@@ -24,6 +26,8 @@ function Login() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoginError("");
+        setPasswordHint("");
 
         try {
             const data = await apiRequest("/api/Auth/login", {
@@ -45,11 +49,15 @@ function Login() {
 
             navigate("/home");
         } catch (error) {
-            alert(
+            setLoginError(
                 error instanceof Error
                     ? error.message
                     : "Nieprawidłowe dane logowania"
             );
+
+            if (error instanceof ApiError && error.passwordHint) {
+                setPasswordHint(error.passwordHint);
+            }
         }
     };
 
@@ -67,7 +75,11 @@ function Login() {
                         type="text"
                         placeholder="login"
                         value={login}
-                        onChange={(e) => setLogin(e.target.value)}
+                        onChange={(e) => {
+                            setLogin(e.target.value);
+                            setPasswordHint("");
+                            setLoginError("");
+                        }}
                     />
 
                     <input
@@ -75,8 +87,22 @@ function Login() {
                         type="password"
                         placeholder="hasło"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                            setPassword(e.target.value);
+                            setPasswordHint("");
+                            setLoginError("");
+                        }}
                     />
+
+                    {loginError && (
+                        <p style={styles.error}>{loginError}</p>
+                    )}
+
+                    {passwordHint && (
+                        <div style={styles.hintBox}>
+                            <strong>Podpowiedź do hasła:</strong> {passwordHint}
+                        </div>
+                    )}
 
                     <div style={styles.buttonContainer}>
                         <button style={styles.button} type="submit">
@@ -128,6 +154,24 @@ const styles = {
         marginBottom: "15px",
         borderRadius: "8px",
         border: "1px solid #999",
+        boxSizing: "border-box",
+    },
+    error: {
+        color: "#b42318",
+        fontSize: "14px",
+        marginBottom: "12px",
+        textAlign: "left",
+    },
+    hintBox: {
+        backgroundColor: "#fff8e8",
+        border: "1px solid #f0d59b",
+        borderRadius: "10px",
+        padding: "12px 14px",
+        marginBottom: "15px",
+        fontSize: "14px",
+        color: "#5c4a1f",
+        textAlign: "left",
+        lineHeight: 1.5,
     },
     button: {
         width: "70%",

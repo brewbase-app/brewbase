@@ -24,6 +24,6 @@ public interface IAdminService
 
     Task<ReportModerationResult> DismissReportAsync(int reportId);
 
-    Task<ReportModerationResult> UpholdReportAsync(int reportId);
+    Task<ReportModerationResult> UpholdReportAsync(int reportId, ModerateArticleRequestDto dto);
     
 }

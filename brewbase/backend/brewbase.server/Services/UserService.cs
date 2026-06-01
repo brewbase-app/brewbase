@@ -31,7 +31,10 @@ public class UserService : IUserService
                 Login = u.Login,
                 Email = u.Email,
                 Role = u.Role,
-                ActivityPoints = u.ActivityPoints
+                ActivityPoints = _context.UserRankings
+                    .Where(ranking => ranking.UserId == u.Id)
+                    .Select(ranking => (int?)ranking.ActivityScore)
+                    .FirstOrDefault() ?? 0
             })
             .FirstOrDefaultAsync();
 

@@ -17,6 +17,8 @@ import {
     upholdReport,
 } from "../api/adminApi";
 
+import ConfirmDialog from "../components/ConfirmDialog";
+
 import "../styles/AdminModeration.css";
 
 const REPORT_CONTENT_TYPE_LABELS = {
@@ -101,6 +103,9 @@ function AdminModeration() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [rejectComment, setRejectComment] = useState("");
+    const [upholdComment, setUpholdComment] = useState("");
+    const [showUpholdConfirm, setShowUpholdConfirm] = useState(false);
+    const [isUpholding, setIsUpholding] = useState(false);
     const [showRejectForm, setShowRejectForm] = useState(false);
     const [actionError, setActionError] = useState("");
 
@@ -125,6 +130,13 @@ function AdminModeration() {
 
         fetchModeration();
     }, []);
+
+    useEffect(() => {
+        setUpholdComment("");
+        setShowUpholdConfirm(false);
+        setIsUpholding(false);
+        setActionError("");
+    }, [selectedItem?.id, selectedItem?.type]);
 
     const moderationItems = [
         ...pendingArticles,
@@ -195,27 +207,56 @@ function AdminModeration() {
         }
     };
 
-    const handleUpholdReport = async () => {
+    const handleOpenUpholdConfirm = () => {
         if (selectedItem?.type !== "report" || selectedItem.status !== "open") {
             return;
         }
 
-        const confirmed = window.confirm(
-            "Zatwierdzić zgłoszenie i usunąć/ukryć zgłoszoną treść?"
-        );
+        const comment = upholdComment.trim();
 
-        if (!confirmed) {
+        if (!comment) {
+            setActionError("Komentarz moderacji jest wymagany przy usuwaniu treści.");
             return;
         }
 
         setActionError("");
+        setShowUpholdConfirm(true);
+    };
+
+    const handleCloseUpholdConfirm = () => {
+        if (isUpholding) {
+            return;
+        }
+
+        setShowUpholdConfirm(false);
+    };
+
+    const handleConfirmUpholdReport = async () => {
+        if (selectedItem?.type !== "report" || selectedItem.status !== "open") {
+            return;
+        }
+
+        const comment = upholdComment.trim();
+
+        if (!comment) {
+            setActionError("Komentarz moderacji jest wymagany przy usuwaniu treści.");
+            setShowUpholdConfirm(false);
+            return;
+        }
+
+        setActionError("");
+        setIsUpholding(true);
 
         try {
-            await upholdReport(selectedItem.id);
+            await upholdReport(selectedItem.id, comment);
             await refreshReports();
             setSelectedItem(null);
+            setUpholdComment("");
+            setShowUpholdConfirm(false);
         } catch (err) {
             setActionError(err.message);
+        } finally {
+            setIsUpholding(false);
         }
     };
 
@@ -502,6 +543,20 @@ function AdminModeration() {
                                 )}
 
                                 {!isHistoryReport && (
+                                    <div className="preview-section">
+                                        <label>Komentarz moderacji</label>
+                                        <textarea
+                                            className="admin-reject-textarea"
+                                            value={upholdComment}
+                                            placeholder="Wyjaśnij autorowi, dlaczego treść została usunięta..."
+                                            onChange={(event) =>
+                                                setUpholdComment(event.target.value)
+                                            }
+                                        />
+                                    </div>
+                                )}
+
+                                {!isHistoryReport && (
                                     <div className="moderation-actions">
                                         <button
                                             type="button"
@@ -514,7 +569,7 @@ function AdminModeration() {
                                         <button
                                             type="button"
                                             className="accept-button"
-                                            onClick={handleUpholdReport}
+                                            onClick={handleOpenUpholdConfirm}
                                         >
                                             <CheckCircle2 size={18} />
                                             Zatwierdź zgłoszenie i usuń treść
@@ -621,6 +676,23 @@ function AdminModeration() {
                     )}
                 </div>
             </div>
+
+            <ConfirmDialog
+                isOpen={showUpholdConfirm}
+                title="Zatwierdzić zgłoszenie i usunąć treść?"
+                description={
+                    selectedItem?.type === "report"
+                        ? `Zatwierdzasz zgłoszenie dotyczące „${selectedItem.contentTitle}” (${getContentTypeLabel(selectedItem.contentType)}). Treść zostanie usunięta lub ukryta, a autor otrzyma Twój komentarz moderacji.`
+                        : "Treść zostanie usunięta lub ukryta."
+                }
+                confirmLabel="Zatwierdź i usuń"
+                cancelLabel="Anuluj"
+                isConfirming={isUpholding}
+                confirmingLabel="Usuwanie..."
+                onConfirm={handleConfirmUpholdReport}
+                onClose={handleCloseUpholdConfirm}
+                variant="danger"
+            />
         </div>
     );
 }

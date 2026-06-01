@@ -61,7 +61,7 @@ public class RecipeReadService : IRecipeReadService
         var skip = (safePage - 1) * safePageSize;
         query = query.Skip(skip).Take(safePageSize);
 
-        return await query
+        var recipes = await query
             .Select(r => new RecipeListResponseDto
             {
                 Id = r.Id,
@@ -75,15 +75,20 @@ public class RecipeReadService : IRecipeReadService
                 BrewingMethod = r.BrewingMethod != null ? r.BrewingMethod.Name : null,
                 Coffee = r.Coffee != null ? r.Coffee.Name : null,
                 CreatedAt = r.CreatedAt,
+                ModerationComment = r.ModerationComment,
                 IsFavorite = _context.UserRecipeFavorites.Any(f =>
                     f.UserId == currentUserId && f.RecipeId == r.Id)
             })
             .ToListAsync();
+
+        await ApplyModerationCommentFallbacksAsync(recipes);
+
+        return recipes;
     }
 
     public async Task<RecipeDetailResponseDto?> GetByIdAsync(int id, int currentUserId)
     {
-        return await WhereVisibleTo(_context.Recipes.AsNoTracking(), currentUserId)
+        var recipe = await WhereVisibleTo(_context.Recipes.AsNoTracking(), currentUserId)
             .Where(r => r.Id == id)
             .Select(r => new RecipeDetailResponseDto
             {
@@ -98,6 +103,7 @@ public class RecipeReadService : IRecipeReadService
                 BrewingMethod = r.BrewingMethod != null ? r.BrewingMethod.Name : null,
                 Coffee = r.Coffee != null ? r.Coffee.Name : null,
                 CreatedAt = r.CreatedAt,
+                ModerationComment = r.ModerationComment,
                 AverageRating = _context.RecipeRatings
                     .Where(rating => rating.RecipeId == r.Id)
                     .Average(rating => (double?)rating.Value),
@@ -107,7 +113,112 @@ public class RecipeReadService : IRecipeReadService
                     f.UserId == currentUserId && f.RecipeId == r.Id)
             })
             .FirstOrDefaultAsync();
+
+        if (recipe != null)
+        {
+            await ApplyModerationCommentFallbackAsync(recipe);
+        }
+
+        return recipe;
     }
+
+    private async Task ApplyModerationCommentFallbacksAsync(IList<RecipeListResponseDto> recipes)
+    {
+        if (!recipes.Any(recipe =>
+                string.IsNullOrWhiteSpace(recipe.ModerationComment) && !recipe.IsPublic))
+        {
+            return;
+        }
+
+        var reports = await _context.Reports
+            .AsNoTracking()
+            .Select(report => new ReportReference(report.Reason, report.ArticleId))
+            .ToListAsync();
+
+        foreach (var recipe in recipes)
+        {
+            if (string.IsNullOrWhiteSpace(recipe.ModerationComment) && !recipe.IsPublic)
+            {
+                recipe.ModerationComment = ResolveModerationCommentFromReports(
+                    recipe.Id,
+                    reports)
+                    ?? await ResolveModerationCommentFromNotificationsAsync(recipe.UserId);
+            }
+        }
+    }
+
+    private async Task ApplyModerationCommentFallbackAsync(RecipeDetailResponseDto recipe)
+    {
+        if (!string.IsNullOrWhiteSpace(recipe.ModerationComment) || recipe.IsPublic)
+        {
+            return;
+        }
+
+        var reports = await _context.Reports
+            .AsNoTracking()
+            .Select(report => new ReportReference(report.Reason, report.ArticleId))
+            .ToListAsync();
+
+        recipe.ModerationComment = ResolveModerationCommentFromReports(recipe.Id, reports)
+            ?? await ResolveModerationCommentFromNotificationsAsync(recipe.UserId);
+    }
+
+    private static string? ResolveModerationCommentFromReports(
+        int recipeId,
+        IEnumerable<ReportReference> reports)
+    {
+        return reports
+            .Select(report =>
+                ReportReasonHelper.Parse(report.Reason, report.ArticleId))
+            .Where(payload =>
+                string.Equals(payload.ContentType, "recipe", StringComparison.OrdinalIgnoreCase) &&
+                payload.ContentId == recipeId &&
+                payload.Status == ReportStatuses.Upheld &&
+                !string.IsNullOrWhiteSpace(payload.ModerationComment))
+            .OrderByDescending(payload => payload.ResolvedAt ?? DateTime.MinValue)
+            .Select(payload => payload.ModerationComment)
+            .FirstOrDefault();
+    }
+
+    private async Task<string?> ResolveModerationCommentFromNotificationsAsync(int recipeOwnerId)
+    {
+        const string marker = "Komentarz moderacji:";
+
+        var notifications = await _context.Notifications
+            .AsNoTracking()
+            .Where(notification => notification.UserId == recipeOwnerId)
+            .OrderByDescending(notification => notification.CreatedAt)
+            .Select(notification => notification.Content)
+            .Take(20)
+            .ToListAsync();
+
+        foreach (var content in notifications)
+        {
+            if (!content.Contains("przepis", StringComparison.OrdinalIgnoreCase) ||
+                !content.Contains(marker, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var markerIndex = content.IndexOf(marker, StringComparison.Ordinal);
+
+            if (markerIndex < 0)
+            {
+                continue;
+            }
+
+            var comment = content[(markerIndex + marker.Length)..].Trim();
+
+            if (!string.IsNullOrWhiteSpace(comment))
+            {
+                return comment;
+            }
+        }
+
+        return null;
+    }
+
+    private sealed record ReportReference(string Reason, int ArticleId);
 
     /// <summary>
     /// Public recipes, or private recipes owned by <paramref name="currentUserId"/>.

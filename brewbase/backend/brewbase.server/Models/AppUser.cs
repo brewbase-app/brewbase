@@ -23,6 +23,8 @@ public partial class AppUser
 
     public DateTime CreatedAt { get; set; }
 
+    public string? PasswordHint { get; set; }
+
     public virtual ICollection<Article> ArticleModeratedByUsers { get; set; } = new List<Article>();
 
     public virtual ICollection<Article> ArticleUsers { get; set; } = new List<Article>();

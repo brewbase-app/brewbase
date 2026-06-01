@@ -16,6 +16,7 @@ public class RecipeController : ControllerBase
     private readonly IRecipeReadService _recipeReadService;
     private readonly IRecipeFavoriteService _recipeFavoriteService;
     private readonly IRecipeValidationService _recipeValidationService;
+    private readonly IRankingRefreshService _rankingRefreshService;
     private readonly BrewDbContext _context;
     private readonly ICurrentUserProvider _currentUserProvider;
 
@@ -23,12 +24,14 @@ public class RecipeController : ControllerBase
         IRecipeReadService recipeReadService,
         IRecipeFavoriteService recipeFavoriteService,
         IRecipeValidationService recipeValidationService,
+        IRankingRefreshService rankingRefreshService,
         BrewDbContext context,
         ICurrentUserProvider currentUserProvider)
     {
         _recipeReadService = recipeReadService;
         _recipeFavoriteService = recipeFavoriteService;
         _recipeValidationService = recipeValidationService;
+        _rankingRefreshService = rankingRefreshService;
         _context = context;
         _currentUserProvider = currentUserProvider;
     }
@@ -242,6 +245,7 @@ public class RecipeController : ControllerBase
 
         _context.Recipes.Add(entity);
         await _context.SaveChangesAsync();
+        await _rankingRefreshService.RefreshAllRankingsAsync();
 
         var detail = await _recipeReadService.GetByIdAsync(entity.Id, userId.Value);
         if (detail is null)
@@ -299,7 +303,13 @@ public class RecipeController : ControllerBase
         recipe.CoffeeId = NormalizeForeignKey(request.CoffeeId);
         recipe.BrewingMethodId = NormalizeForeignKey(request.BrewingMethodId);
 
+        if (request.IsPublic)
+        {
+            recipe.ModerationComment = null;
+        }
+
         await _context.SaveChangesAsync();
+        await _rankingRefreshService.RefreshAllRankingsAsync();
 
         var detail = await _recipeReadService.GetByIdAsync(id, userId.Value);
         if (detail is null)
@@ -355,6 +365,7 @@ public class RecipeController : ControllerBase
 
         _context.Recipes.Remove(recipe);
         await _context.SaveChangesAsync();
+        await _rankingRefreshService.RefreshAllRankingsAsync();
 
         return NoContent();
     }

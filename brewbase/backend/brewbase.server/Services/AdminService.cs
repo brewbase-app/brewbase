@@ -9,11 +9,16 @@ public class AdminService : IAdminService
 {
     private readonly BrewDbContext _context;
     private readonly ICurrentUserProvider _currentUserProvider;
+    private readonly IRankingRefreshService _rankingRefreshService;
 
-    public AdminService(BrewDbContext context, ICurrentUserProvider currentUserProvider)
+    public AdminService(
+        BrewDbContext context,
+        ICurrentUserProvider currentUserProvider,
+        IRankingRefreshService rankingRefreshService)
     {
         _context = context;
         _currentUserProvider = currentUserProvider;
+        _rankingRefreshService = rankingRefreshService;
     }
 
     public async Task<List<AdminUserListResponseDto>> GetUsersAsync()
@@ -131,7 +136,8 @@ public class AdminService : IAdminService
         });
 
         await _context.SaveChangesAsync();
-        
+        await _rankingRefreshService.RefreshUserRankingAsync();
+
         return new ArticleApproveResultDto
         {
             Status = ArticleApproveStatus.Approved
@@ -256,20 +262,22 @@ public class AdminService : IAdminService
             removeContent: false);
     }
 
-    public Task<ReportModerationResult> UpholdReportAsync(int reportId)
+    public Task<ReportModerationResult> UpholdReportAsync(int reportId, ModerateArticleRequestDto dto)
     {
         return ResolveReportAsync(
             reportId,
             ReportStatuses.Upheld,
             "content_removed",
-            removeContent: true);
+            removeContent: true,
+            moderationComment: dto.Comment!.Trim());
     }
 
     private async Task<ReportModerationResult> ResolveReportAsync(
         int reportId,
         string status,
         string resolutionAction,
-        bool removeContent)
+        bool removeContent,
+        string? moderationComment = null)
     {
         var moderatorId = _currentUserProvider.GetUserId();
 
@@ -305,7 +313,7 @@ public class AdminService : IAdminService
 
         if (removeContent)
         {
-            var removed = await RemoveReportedContentAsync(payload);
+            var removed = await RemoveReportedContentAsync(payload, moderationComment);
 
             if (!removed)
                 return ReportModerationResult.ContentNotFound;
@@ -316,7 +324,8 @@ public class AdminService : IAdminService
             payload.ContentId,
             status,
             resolutionAction,
-            moderatorLogin);
+            moderatorLogin,
+            moderationComment);
 
         return ReportModerationResult.Success;
     }
@@ -326,7 +335,8 @@ public class AdminService : IAdminService
         int contentId,
         string status,
         string resolutionAction,
-        string moderatorLogin)
+        string moderatorLogin,
+        string? moderationComment = null)
     {
         var reports = await _context.Reports.ToListAsync();
         var resolvedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
@@ -351,31 +361,42 @@ public class AdminService : IAdminService
             payload.ResolvedByLogin = moderatorLogin;
             payload.ResolutionAction = resolutionAction;
 
+            if (status == ReportStatuses.Upheld &&
+                resolutionAction == "content_removed" &&
+                !string.IsNullOrWhiteSpace(moderationComment))
+            {
+                payload.ModerationComment = moderationComment.Trim();
+            }
+
             report.Reason = ReportReasonHelper.Encode(payload);
         }
 
         await _context.SaveChangesAsync();
     }
 
-    private async Task<bool> RemoveReportedContentAsync(ReportPayload payload)
+    private async Task<bool> RemoveReportedContentAsync(
+        ReportPayload payload,
+        string? moderationComment)
     {
         switch (payload.ContentType.ToLowerInvariant())
         {
             case "article":
-                return await RemoveReportedArticleAsync(payload.ContentId);
+                return await RemoveReportedArticleAsync(payload.ContentId, moderationComment);
 
             case "recipe":
-                return await RemoveReportedRecipeAsync(payload.ContentId);
+                return await RemoveReportedRecipeAsync(payload.ContentId, moderationComment);
 
             case "coffee":
-                return await RemoveReportedCoffeeContentAsync(payload.ContentId);
+                return await RemoveReportedCoffeeContentAsync(payload.ContentId, moderationComment);
 
             default:
                 return false;
         }
     }
 
-    private async Task<bool> RemoveReportedArticleAsync(int articleId)
+    private async Task<bool> RemoveReportedArticleAsync(
+        int articleId,
+        string? moderationComment)
     {
         var article = await _context.Articles
             .FirstOrDefaultAsync(a => a.Id == articleId);
@@ -391,7 +412,9 @@ public class AdminService : IAdminService
         _context.Notifications.Add(new Notification
         {
             UserId = article.UserId,
-            Content = "Twój artykuł został usunięty w wyniku moderacji zgłoszenia.",
+            Content = string.IsNullOrWhiteSpace(moderationComment)
+                ? "Twój artykuł został usunięty w wyniku moderacji zgłoszenia."
+                : $"Twój artykuł został usunięty w wyniku moderacji zgłoszenia. Komentarz moderacji: {moderationComment}",
             CreatedAt = DateTime.Now
         });
 
@@ -400,7 +423,9 @@ public class AdminService : IAdminService
         return true;
     }
 
-    private async Task<bool> RemoveReportedRecipeAsync(int recipeId)
+    private async Task<bool> RemoveReportedRecipeAsync(
+        int recipeId,
+        string? moderationComment)
     {
         var recipe = await _context.Recipes
             .FirstOrDefaultAsync(r => r.Id == recipeId);
@@ -409,11 +434,14 @@ public class AdminService : IAdminService
             return false;
 
         recipe.IsPublic = false;
+        recipe.ModerationComment = moderationComment?.Trim();
 
         _context.Notifications.Add(new Notification
         {
             UserId = recipe.UserId,
-            Content = "Twój przepis został ukryty w wyniku moderacji zgłoszenia.",
+            Content = string.IsNullOrWhiteSpace(moderationComment)
+                ? "Twój przepis został przeniesiony do wersji roboczej w wyniku moderacji zgłoszenia."
+                : $"Twój przepis został przeniesiony do wersji roboczej w wyniku moderacji zgłoszenia. Komentarz moderacji: {moderationComment}",
             CreatedAt = DateTime.Now
         });
 
@@ -422,7 +450,9 @@ public class AdminService : IAdminService
         return true;
     }
 
-    private async Task<bool> RemoveReportedCoffeeContentAsync(int coffeeId)
+    private async Task<bool> RemoveReportedCoffeeContentAsync(
+        int coffeeId,
+        string? moderationComment)
     {
         var coffeeExists = await _context.Coffees
             .AnyAsync(coffee => coffee.Id == coffeeId);
@@ -446,7 +476,9 @@ public class AdminService : IAdminService
             _context.Notifications.Add(new Notification
             {
                 UserId = article.UserId,
-                Content = "Artykuł wiki powiązany z kawą został usunięty w wyniku moderacji zgłoszenia.",
+                Content = string.IsNullOrWhiteSpace(moderationComment)
+                    ? "Artykuł wiki powiązany z kawą został usunięty w wyniku moderacji zgłoszenia."
+                    : $"Artykuł wiki powiązany z kawą został usunięty w wyniku moderacji zgłoszenia. Komentarz moderacji: {moderationComment}",
                 CreatedAt = DateTime.Now
             });
         }

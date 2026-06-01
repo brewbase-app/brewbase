@@ -118,6 +118,7 @@ CREATE TABLE notification (
                               user_id int  NOT NULL,
                               content text  NOT NULL,
                               created_at timestamp  NOT NULL,
+                              is_read boolean  NOT NULL DEFAULT false,
                               CONSTRAINT notification_pk PRIMARY KEY (id)
 );
 
@@ -149,6 +150,7 @@ CREATE TABLE recipe (
                         brewing_method_id int,
                         coffee_id int,
                         created_at timestamp  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        moderation_comment text  NULL,
                         CONSTRAINT recipe_pk PRIMARY KEY (id)
 );
 
@@ -258,6 +260,7 @@ CREATE TABLE app_user (
                           label varchar(255)  NULL,
                           is_blocked boolean  NOT NULL DEFAULT FALSE,
                           created_at timestamp  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                          password_hint varchar(255)  NULL,
                           CONSTRAINT app_user_pk PRIMARY KEY (id)
 );
 

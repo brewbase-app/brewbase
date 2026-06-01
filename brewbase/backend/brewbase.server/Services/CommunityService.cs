@@ -207,7 +207,10 @@ public class CommunityService : ICommunityService
                 UserId = u.Id,
                 Login = u.Login,
                 Label = u.Label,
-                ActivityPoints = u.ActivityPoints,
+                ActivityPoints = _context.UserRankings
+                    .Where(ranking => ranking.UserId == u.Id)
+                    .Select(ranking => (int?)ranking.ActivityScore)
+                    .FirstOrDefault() ?? 0,
 
                 FollowersCount = _context.Follows
                     .Count(f => f.FollowedId == u.Id),

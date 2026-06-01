@@ -137,10 +137,20 @@ public class AdminController : ControllerBase
     }
 
     [HttpPatch("reports/{reportId}/uphold")]
-    public async Task<IActionResult> UpholdReport(int reportId)
+    public async Task<IActionResult> UpholdReport(
+        int reportId,
+        [FromBody] ModerateArticleRequestDto dto)
     {
+        if (string.IsNullOrWhiteSpace(dto.Comment))
+        {
+            return BadRequest(new SimpleErrorResponseDto
+            {
+                Message = "Komentarz moderacji jest wymagany przy usuwaniu treści."
+            });
+        }
+
         return MapReportModerationResult(
-            await _adminService.UpholdReportAsync(reportId));
+            await _adminService.UpholdReportAsync(reportId, dto));
     }
 
     private IActionResult MapReportModerationResult(ReportModerationResult result)

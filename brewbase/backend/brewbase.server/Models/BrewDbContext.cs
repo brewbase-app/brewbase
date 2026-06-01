@@ -100,6 +100,9 @@ public partial class BrewDbContext : DbContext
             entity.Property(e => e.PasswordHash)
                 .HasMaxLength(255)
                 .HasColumnName("password_hash");
+            entity.Property(e => e.PasswordHint)
+                .HasMaxLength(255)
+                .HasColumnName("password_hint");
             entity.Property(e => e.Role)
                 .HasMaxLength(50)
                 .HasColumnName("role");
@@ -481,6 +484,7 @@ public partial class BrewDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");
             entity.Property(e => e.IsPublic).HasColumnName("is_public");
+            entity.Property(e => e.ModerationComment).HasColumnName("moderation_comment");
             entity.Property(e => e.Parameters)
                 .HasColumnType("jsonb")
                 .HasColumnName("parameters");

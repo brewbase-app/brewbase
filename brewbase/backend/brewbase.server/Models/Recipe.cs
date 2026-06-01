@@ -31,6 +31,8 @@ public partial class Recipe
 
     public DateTime CreatedAt { get; set; }
 
+    public string? ModerationComment { get; set; }
+
     public virtual BrewingMethod? BrewingMethod { get; set; }
 
     public virtual Coffee? Coffee { get; set; }

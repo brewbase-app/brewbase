@@ -16,4 +16,9 @@ public class AuthRegisterRequestDto
     [MinLength(6)]
     [MaxLength(100)]
     public string Password { get; set; } = null!;
+
+    [Required]
+    [MinLength(3)]
+    [MaxLength(255)]
+    public string PasswordHint { get; set; } = null!;
 }
