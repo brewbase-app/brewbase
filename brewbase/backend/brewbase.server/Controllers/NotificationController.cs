@@ -27,4 +27,12 @@ public class NotificationController : ControllerBase
 
         return Ok(notifications);
     }
+
+    [HttpPost("read")]
+    public async Task<IActionResult> MarkAllAsRead()
+    {
+        await _notificationService.MarkAllAsReadAsync();
+
+        return NoContent();
+    }
 }

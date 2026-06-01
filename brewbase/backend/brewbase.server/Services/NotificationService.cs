@@ -30,9 +30,24 @@ public class NotificationService : INotificationService
             {
                 Id = n.Id,
                 Content = n.Content,
-                CreatedAt = n.CreatedAt
+                CreatedAt = n.CreatedAt,
+                IsRead = n.IsRead
             })
             .ToListAsync();
+    }
+
+    public async Task MarkAllAsReadAsync()
+    {
+        var userId = _currentUserProvider.GetUserId();
+
+        if (userId == null)
+        {
+            return;
+        }
+
+        await _context.Notifications
+            .Where(n => n.UserId == userId && !n.IsRead)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(n => n.IsRead, true));
     }
     
 }
