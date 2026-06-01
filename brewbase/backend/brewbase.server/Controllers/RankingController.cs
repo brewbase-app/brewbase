@@ -1,3 +1,4 @@
+using brewbase.server.Authentication;
 using brewbase.server.Dtos;
 using brewbase.server.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -83,7 +84,7 @@ public class RankingController : ControllerBase
 
     private bool IsRefreshAuthorized(string? secret)
     {
-        if (User.IsInRole("Admin"))
+        if (UserClaims.IsInRole(User, "Admin"))
         {
             return true;
         }

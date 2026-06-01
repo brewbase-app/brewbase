@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Text;
 using brewbase.server.Dtos;
 using Microsoft.EntityFrameworkCore;
+using brewbase.server.Authentication;
 
 namespace brewbase.server.Services;
 
@@ -82,12 +83,7 @@ public class AuthService : IAuthService
 
     public string GenerateJwt(AppUser user)
     {
-        var claims = new[]
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim("login", user.Login),
-            new Claim("role", user.Role)
-        };
+        var claims = UserClaims.Create(user);
 
         var keyString = _config["Jwt:Key"];
 
