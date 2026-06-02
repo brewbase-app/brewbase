@@ -14,6 +14,8 @@ import {
     updateProfile
 } from "../api/profileApi";
 
+import { getFlavorProfiles } from "../api/flavorProfileApi";
+
 import {
     DEFAULT_USER_PREFERENCES,
     USER_PREFERENCE_OPTIONS,
@@ -76,6 +78,8 @@ function EditProfilePage() {
         ...DEFAULT_USER_PREFERENCES,
     });
     const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+    const [flavorProfileOptions, setFlavorProfileOptions] = useState([]);
+    const [flavorProfilesError, setFlavorProfilesError] = useState("");
 
     const [usernameError, setUsernameError] = useState("");
     const [emailError, setEmailError] = useState("");
@@ -99,6 +103,23 @@ function EditProfilePage() {
         fetchProfile();
         setPreferences(loadUserPreferences());
         setPreferencesLoaded(true);
+
+        const loadFlavorProfiles = async () => {
+            try {
+                const data = await getFlavorProfiles();
+                setFlavorProfileOptions(
+                    (Array.isArray(data) ? data : []).map(
+                        (profile) => profile.name
+                    )
+                );
+            } catch {
+                setFlavorProfilesError(
+                    "Nie udało się pobrać profili smakowych."
+                );
+            }
+        };
+
+        loadFlavorProfiles();
     }, []);
 
     const setSinglePreference = (field, value) => {
@@ -338,7 +359,7 @@ function EditProfilePage() {
                         <PreferenceTagGroup
                             label="Preferowane profile smakowe"
                             hint="Możesz wybrać kilka opcji"
-                            options={USER_PREFERENCE_OPTIONS.flavorProfiles}
+                            options={flavorProfileOptions}
                             selectedValues={preferences.flavorProfiles}
                             multiple
                             onSelect={(option) =>
@@ -348,6 +369,12 @@ function EditProfilePage() {
                                 )
                             }
                         />
+
+                        {flavorProfilesError && (
+                            <p className="preferences-helper">
+                                {flavorProfilesError}
+                            </p>
+                        )}
 
                         <PreferenceTagGroup
                             label="Preferowana kwasowość"

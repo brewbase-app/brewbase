@@ -8,6 +8,7 @@ function MultiSelectInput({
     onChange,
     allowCustom = false,
     customPlaceholder = "Inny...",
+    onAddCustom,
 }) {
     const [customValue, setCustomValue] = useState("");
 
@@ -24,7 +25,7 @@ function MultiSelectInput({
         onChange([...value, option]);
     };
 
-    const addCustomOption = () => {
+    const addCustomOption = async () => {
         const trimmedValue = customValue.trim();
 
         if (!trimmedValue || value.includes(trimmedValue)) {
@@ -32,7 +33,18 @@ function MultiSelectInput({
             return;
         }
 
-        onChange([...value, trimmedValue]);
+        let optionToAdd = trimmedValue;
+
+        if (onAddCustom) {
+            optionToAdd = await onAddCustom(trimmedValue);
+        }
+
+        if (!optionToAdd || value.includes(optionToAdd)) {
+            setCustomValue("");
+            return;
+        }
+
+        onChange([...value, optionToAdd]);
         setCustomValue("");
     };
 

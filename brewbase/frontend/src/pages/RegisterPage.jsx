@@ -19,13 +19,18 @@ export default function RegisterPage() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
+    const minPasswordLength = 6;
+
     const passwordsMatch =
         password === repeatPassword || repeatPassword === "";
+
+    const passwordTooShort =
+        password.length > 0 && password.length < minPasswordLength;
 
     const isFormValid =
         nickname.trim().length >= 3 &&
         email.includes("@") &&
-        password.length >= 6 &&
+        password.length >= minPasswordLength &&
         passwordHint.trim().length >= 3 &&
         passwordsMatch;
 
@@ -117,6 +122,18 @@ export default function RegisterPage() {
                             setPassword(e.target.value)
                         }
                     />
+
+                    <p className="hint-description">
+                        Hasło musi mieć co najmniej {minPasswordLength}{" "}
+                        znaków.
+                    </p>
+
+                    {passwordTooShort && (
+                        <p className="field-error">
+                            Hasło jest za krótkie (minimum{" "}
+                            {minPasswordLength} znaków).
+                        </p>
+                    )}
 
                     <input
                         type="password"

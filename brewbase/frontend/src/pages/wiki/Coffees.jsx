@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import "../../styles/wiki/Coffees.css";
 
@@ -17,13 +17,13 @@ import {
 } from "../../api/coffeeApi";
 
 import { getArticles } from "../../api/articlesApi";
+import { getFlavorProfiles } from "../../api/flavorProfileApi";
 
 import MultiSelectInput from "../../components/MultiSelectInput";
 
 import { BEAN_ORIGIN_COUNTRIES } from "../../utils/beanOriginCountries";
 import { COFFEE_VARIETIES } from "../../utils/coffeeVarieties";
 import { COFFEE_PROCESSING_METHODS } from "../../utils/coffeeProcessingMethods";
-import { COFFEE_FLAVOR_PROFILES } from "../../utils/coffeeFlavorProfiles";
 import {
     buildFilterOptions,
     parseCoffeeArticleMetadata,
@@ -66,6 +66,7 @@ function Coffees() {
     const [selectedProcessing, setSelectedProcessing] = useState("");
     const [selectedVariety, setSelectedVariety] = useState("");
     const [selectedFlavorProfiles, setSelectedFlavorProfiles] = useState([]);
+    const [flavorProfileNames, setFlavorProfileNames] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -75,13 +76,21 @@ function Coffees() {
                 setIsLoading(true);
                 setError("");
 
-                const [coffeeData, articleData] = await Promise.all([
+                const [coffeeData, articleData, flavorProfilesData] =
+                    await Promise.all([
                     getCoffees(),
                     getArticles("coffee"),
+                    getFlavorProfiles(),
                 ]);
 
                 setCoffees(Array.isArray(coffeeData) ? coffeeData : []);
                 setArticles(Array.isArray(articleData) ? articleData : []);
+                setFlavorProfileNames(
+                    (Array.isArray(flavorProfilesData)
+                        ? flavorProfilesData
+                        : []
+                    ).map((profile) => profile.name)
+                );
             } catch {
                 setError("Nie udało się pobrać kaw.");
             } finally {
@@ -153,10 +162,14 @@ function Coffees() {
         articleItems.map((item) => item.variety)
     );
 
-    const flavorProfileOptions = buildFilterOptions(
-        COFFEE_FLAVOR_PROFILES,
-        catalogItems.flatMap((item) => item.flavorProfiles),
-        articleItems.flatMap((item) => item.flavorProfiles)
+    const flavorProfileOptions = useMemo(
+        () =>
+            buildFilterOptions(
+                flavorProfileNames,
+                catalogItems.flatMap((item) => item.flavorProfiles),
+                articleItems.flatMap((item) => item.flavorProfiles)
+            ),
+        [flavorProfileNames, catalogItems, articleItems]
     );
 
     const handleFavorite = async (coffeeId, event) => {
