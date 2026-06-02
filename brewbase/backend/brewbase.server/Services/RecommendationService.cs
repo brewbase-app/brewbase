@@ -87,15 +87,20 @@ public class RecommendationService : IRecommendationService
             preference.UserPreferenceRegions
                 .Select(x => x.RegionId)
                 .ToHashSet();
+        
+        var preferredFlavorProfiles =
+            preference.UserPreferenceFlavorProfiles
+                .Select(x => x.FlavorProfileId)
+                .ToHashSet();
 
         var coffees = await _context.Coffees
             .Include(x => x.CoffeeRankings)
             .Include(x => x.Body)
             .Include(x => x.Acidity)
+            .Include(x => x.CoffeeFlavorProfiles)
             .ToListAsync();
 
-        var result =
-            new List<CoffeeRecommendationDto>();
+        var result = new List<CoffeeRecommendationDto>();
 
         foreach (var coffee in coffees)
         {
@@ -119,6 +124,14 @@ public class RecommendationService : IRecommendationService
             {
                 matchScore += 15;
             }
+            
+            var matchingFlavorProfiles =
+                coffee.CoffeeFlavorProfiles
+                    .Count(x =>
+                        preferredFlavorProfiles.Contains(
+                            x.FlavorProfileId));
+
+            matchScore += matchingFlavorProfiles * 5;
 
             var ranking = coffee.CoffeeRankings
                 .OrderByDescending(x => x.RefreshedAt)
@@ -187,9 +200,15 @@ public class RecommendationService : IRecommendationService
             preference.UserPreferenceBrewingMethods
                 .Select(x => x.BrewingMethodId)
                 .ToHashSet();
+        
+        var preferredFlavorProfiles =
+            preference.UserPreferenceFlavorProfiles
+                .Select(x => x.FlavorProfileId)
+                .ToHashSet();
 
         var recipes = await _context.Recipes
             .Include(x => x.Coffee)
+            .ThenInclude(x => x.CoffeeFlavorProfiles)
             .Include(x => x.RecipeRankings)
             .Where(x => x.IsPublic)
             .ToListAsync();
@@ -213,6 +232,17 @@ public class RecommendationService : IRecommendationService
                     recipe.Coffee.RegionId))
             {
                 matchScore += 15;
+            }
+
+            if (recipe.Coffee != null)
+            {
+                var matchingFlavorProfiles =
+                    recipe.Coffee.CoffeeFlavorProfiles
+                        .Count(x =>
+                            preferredFlavorProfiles.Contains(
+                                x.FlavorProfileId));
+
+                matchScore += matchingFlavorProfiles * 5;
             }
 
             var ranking = recipe.RecipeRankings

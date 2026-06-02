@@ -6,7 +6,6 @@ public partial class FlavorProfile
 
     public string Name { get; set; } = null!;
 
-    public virtual ICollection<UserPreferenceFlavorProfile>
-        UserPreferenceFlavorProfiles { get; set; }
-        = new List<UserPreferenceFlavorProfile>();
+    public virtual ICollection<UserPreferenceFlavorProfile> UserPreferenceFlavorProfiles { get; set; } = new List<UserPreferenceFlavorProfile>();
+    public virtual ICollection<CoffeeFlavorProfile> CoffeeFlavorProfiles { get; set; } = new List<CoffeeFlavorProfile>();
 }
