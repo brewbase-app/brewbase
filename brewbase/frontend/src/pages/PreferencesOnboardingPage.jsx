@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 
 import {
@@ -9,6 +9,7 @@ import {
 import { getAuthToken } from "../utils/auth";
 
 import { savePreferences } from "../api/preferenceApi";
+import { getOnboardingFlavorProfiles } from "../api/flavorProfileApi";
 
 import "../styles/PreferencesOnboardingPage.css";
 
@@ -31,6 +32,33 @@ export default function PreferencesOnboardingPage() {
         ...DEFAULT_USER_PREFERENCES,
     });
 
+    const [flavorProfiles, setFlavorProfiles] = useState([]);
+    const [selectedFlavorProfileIds, setSelectedFlavorProfileIds] = useState([]);
+    const [flavorPreferencesUndecided, setFlavorPreferencesUndecided] =
+        useState(false);
+    const [flavorProfilesLoading, setFlavorProfilesLoading] = useState(true);
+    const [flavorProfilesError, setFlavorProfilesError] = useState("");
+
+    useEffect(() => {
+        const loadFlavorProfiles = async () => {
+            try {
+                setFlavorProfilesLoading(true);
+                setFlavorProfilesError("");
+
+                const data = await getOnboardingFlavorProfiles(10);
+                setFlavorProfiles(Array.isArray(data) ? data : []);
+            } catch {
+                setFlavorProfilesError(
+                    "Nie udało się pobrać profili smakowych."
+                );
+            } finally {
+                setFlavorProfilesLoading(false);
+            }
+        };
+
+        loadFlavorProfiles();
+    }, []);
+
     if (!getAuthToken()) {
         return <Navigate to="/login" replace />;
     }
@@ -42,7 +70,18 @@ export default function PreferencesOnboardingPage() {
             setStep(step + 1);
 
         } else {
-            saveUserPreferences(preferences);
+            const selectedFlavorProfileNames = flavorPreferencesUndecided
+                ? []
+                : flavorProfiles
+                      .filter((profile) =>
+                          selectedFlavorProfileIds.includes(profile.id)
+                      )
+                      .map((profile) => profile.name);
+
+            saveUserPreferences({
+                ...preferences,
+                flavorProfiles: selectedFlavorProfileNames,
+            });
 
             const dto = {
                 experienceLevel: preferences.experienceLevel,
@@ -59,8 +98,9 @@ export default function PreferencesOnboardingPage() {
                 allowExploration:
                 preferences.allowExploration,
 
-                flavorProfiles:
-                preferences.flavorProfiles,
+                flavorProfileIds: flavorPreferencesUndecided
+                    ? []
+                    : selectedFlavorProfileIds,
 
                 brewingMethods:
                 preferences.brewingMethods,
@@ -80,6 +120,20 @@ export default function PreferencesOnboardingPage() {
         if (step > 0) {
             setStep(step - 1);
         }
+    };
+
+    const toggleFlavorProfile = (profileId) => {
+        setFlavorPreferencesUndecided(false);
+        setSelectedFlavorProfileIds((current) =>
+            current.includes(profileId)
+                ? current.filter((id) => id !== profileId)
+                : [...current, profileId]
+        );
+    };
+
+    const selectFlavorPreferencesUndecided = () => {
+        setFlavorPreferencesUndecided(true);
+        setSelectedFlavorProfileIds([]);
     };
 
     const toggleArrayValue = (field, value) => {
@@ -174,28 +228,57 @@ export default function PreferencesOnboardingPage() {
                         </h2>
 
                         <p className="field-description">
-                            Możesz wybrać kilka opcji
+                            Wybierz profile smakowe lub zaznacz, że
+                            jeszcze nie wiesz
                         </p>
 
-                        {USER_PREFERENCE_OPTIONS.flavorProfiles.map((flavor) => (
-                            <button
-                                type="button"
-                                key={flavor}
-                                className={
-                                    preferences.flavorProfiles.includes(flavor)
-                                        ? "selected"
-                                        : ""
-                                }
-                                onClick={() =>
-                                    toggleArrayValue(
-                                        "flavorProfiles",
-                                        flavor
-                                    )
-                                }
-                            >
-                                {flavor}
-                            </button>
-                        ))}
+                        {flavorProfilesLoading && (
+                            <p className="field-description">
+                                Ładowanie profili smakowych...
+                            </p>
+                        )}
+
+                        {flavorProfilesError && (
+                            <p className="field-description">
+                                {flavorProfilesError}
+                            </p>
+                        )}
+
+                        {!flavorProfilesLoading &&
+                            !flavorProfilesError && (
+                            <>
+                                <button
+                                    type="button"
+                                    className={
+                                        flavorPreferencesUndecided
+                                            ? "selected"
+                                            : ""
+                                    }
+                                    onClick={selectFlavorPreferencesUndecided}
+                                >
+                                    Nie wiem jeszcze
+                                </button>
+
+                                {flavorProfiles.map((profile) => (
+                                    <button
+                                        type="button"
+                                        key={profile.id}
+                                        className={
+                                            selectedFlavorProfileIds.includes(
+                                                profile.id
+                                            )
+                                                ? "selected"
+                                                : ""
+                                        }
+                                        onClick={() =>
+                                            toggleFlavorProfile(profile.id)
+                                        }
+                                    >
+                                        {profile.name}
+                                    </button>
+                                ))}
+                            </>
+                        )}
                     </>
                 );
 
