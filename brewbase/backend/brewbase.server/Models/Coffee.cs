@@ -40,6 +40,14 @@ public partial class Coffee
     public virtual Roastery Roastery { get; set; } = null!;
 
     public virtual Variety? Variety { get; set; }
+    
+    public int? AcidityId { get; set; }
+
+    public int? BodyId { get; set; }
+
+    public virtual Acidity? Acidity { get; set; }
+
+    public virtual Body? Body { get; set; }
 
     public virtual ICollection<UserCoffeeFavorite> UserCoffeeFavorites { get; set; } = new List<UserCoffeeFavorite>();
 

@@ -1,0 +1,8 @@
+﻿using DefaultNamespace;
+
+namespace brewbase.server.Services.Interfaces;
+
+public interface  IRecommendationService
+{
+    Task<RecommendationResponseDto> GetRecommendationsAsync();
+}

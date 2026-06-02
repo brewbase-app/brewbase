@@ -15,6 +15,8 @@ import { getCoffeeRanking, getRecipeRanking } from "../api/rankingApi";
 import { getCommunityFeed } from "../api/communityApi";
 import { getNotifications, markNotificationsAsRead } from "../api/notificationsApi";
 
+import { getRecommendations } from "../api/preferenceApi";
+
 import {
     Bell,
     Coffee,
@@ -149,8 +151,9 @@ function Dashboard() {
                     notesData,
                     recipesData,
                     sessionsData,
-                    coffeesRanking,
-                    recipesRanking,
+                    recommendationsData, //dodane teraz
+                    /*coffeesRanking,
+                    recipesRanking,*/
                     favoritesCoffeesData,
                     favoritesRecipesData,
                     notificationsData,
@@ -160,8 +163,9 @@ function Dashboard() {
                     getQuickNotes(),
                     getMyRecipes(),
                     getCuppingSessions(),
-                    getCoffeeRanking(4),
-                    getRecipeRanking(4),
+                   /* getCoffeeRanking(4),
+                    getRecipeRanking(4),*/
+                    getRecommendations(), //Dodane teraz
                     getFavoriteCoffees(),
                     getFavoriteRecipes(),
                     getNotifications().catch(() => []),
@@ -172,8 +176,10 @@ function Dashboard() {
                 setQuickNotes(Array.isArray(notesData) ? notesData : []);
                 setMyRecipes(Array.isArray(recipesData) ? recipesData : []);
                 setCuppingSessions(Array.isArray(sessionsData) ? sessionsData : []);
-                setRecommendedCoffees(Array.isArray(coffeesRanking) ? coffeesRanking : []);
-                setRecommendedRecipes(Array.isArray(recipesRanking) ? recipesRanking : []);
+                /*setRecommendedCoffees(Array.isArray(coffeesRanking) ? coffeesRanking : []);
+                setRecommendedRecipes(Array.isArray(recipesRanking) ? recipesRanking : []);*/
+                setRecommendedCoffees(recommendationsData?.coffees ?? []); //Dodane teraz
+                setRecommendedRecipes(recommendationsData?.recipes ?? []); //Dodane teraz
                 setFavoriteCoffees(Array.isArray(favoritesCoffeesData) ? favoritesCoffeesData : []);
                 setFavoriteRecipes(Array.isArray(favoritesRecipesData) ? favoritesRecipesData : []);
                 setNotifications(Array.isArray(notificationsData) ? notificationsData : []);

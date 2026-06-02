@@ -8,6 +8,8 @@ import {
 } from "../utils/userPreferences";
 import { getAuthToken } from "../utils/auth";
 
+import { savePreferences } from "../api/preferenceApi";
+
 import "../styles/PreferencesOnboardingPage.css";
 
 const steps = [
@@ -41,6 +43,34 @@ export default function PreferencesOnboardingPage() {
 
         } else {
             saveUserPreferences(preferences);
+
+            const dto = {
+                experienceLevel: preferences.experienceLevel,
+
+                preferredRoastLevel: "Średnie",
+
+                preferredAcidity: preferences.acidity,
+
+                preferredBody: preferences.body,
+
+                recommendationStyle:
+                preferences.recommendationStyle,
+
+                allowExploration:
+                preferences.allowExploration,
+
+                flavorProfiles:
+                preferences.flavorProfiles,
+
+                brewingMethods:
+                preferences.brewingMethods,
+
+                regions:
+                preferences.regions
+            };
+
+            await savePreferences(dto);
+
             navigate("/home");
         }
     };
