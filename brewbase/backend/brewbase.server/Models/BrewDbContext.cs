@@ -74,6 +74,10 @@ public partial class BrewDbContext : DbContext
 
 	public virtual DbSet<UserPreferenceRegion> UserPreferenceRegions { get; set; }
     
+    public virtual DbSet<Acidity> Acidities { get; set; }
+
+    public virtual DbSet<Body> Bodies { get; set; }
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AppUser>(entity =>
@@ -115,6 +119,40 @@ public partial class BrewDbContext : DbContext
             entity.Property(e => e.Role)
                 .HasMaxLength(50)
                 .HasColumnName("role");
+        });
+        
+        modelBuilder.Entity<Acidity>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("acidity_pk");
+
+            entity.ToTable("acidity");
+
+            entity.HasIndex(e => e.Name, "acidity_name_key").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+
+            entity.Property(e => e.Name)
+                .HasMaxLength(255)
+                .HasColumnName("name");
+
+            entity.Property(e => e.Description).HasColumnName("description");
+        });
+
+        modelBuilder.Entity<Body>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("body_pk");
+
+            entity.ToTable("body");
+
+            entity.HasIndex(e => e.Name, "body_name_key").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+
+            entity.Property(e => e.Name)
+                .HasMaxLength(255)
+                .HasColumnName("name");
+
+            entity.Property(e => e.Description).HasColumnName("description");
         });
 
         modelBuilder.Entity<Article>(entity =>
@@ -215,6 +253,8 @@ public partial class BrewDbContext : DbContext
             entity.Property(e => e.RegionId).HasColumnName("region_id");
             entity.Property(e => e.RoasteryId).HasColumnName("roastery_id");
             entity.Property(e => e.VarietyId).HasColumnName("variety_id");
+            entity.Property(e => e.AcidityId).HasColumnName("acidity_id");
+            entity.Property(e => e.BodyId).HasColumnName("body_id");
 
             entity.HasOne(d => d.CreatedByUser).WithMany(p => p.Coffees)
                 .HasForeignKey(d => d.CreatedByUserId)
@@ -238,6 +278,16 @@ public partial class BrewDbContext : DbContext
             entity.HasOne(d => d.Variety).WithMany(p => p.Coffees)
                 .HasForeignKey(d => d.VarietyId)
                 .HasConstraintName("coffee_varieties");
+            
+            entity.HasOne(d => d.Acidity)
+                .WithMany(p => p.Coffees)
+                .HasForeignKey(d => d.AcidityId)
+                .HasConstraintName("coffee_acidity_fk");
+
+            entity.HasOne(d => d.Body)
+                .WithMany(p => p.Coffees)
+                .HasForeignKey(d => d.BodyId)
+                .HasConstraintName("coffee_body_fk");
         });
 
         modelBuilder.Entity<CoffeeRanking>(entity =>
