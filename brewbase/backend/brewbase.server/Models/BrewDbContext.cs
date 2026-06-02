@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DefaultNamespace;
 using Microsoft.EntityFrameworkCore;
 
 namespace brewbase.server.Models;
@@ -64,6 +65,14 @@ public partial class BrewDbContext : DbContext
     public virtual DbSet<UserCoffeeFavorite> UserCoffeeFavorites { get; set; }
 
     public virtual DbSet<Variety> Varieties { get; set; }
+
+	public virtual DbSet<FlavorProfile> FlavorProfiles { get; set; }
+
+	public virtual DbSet<UserPreferenceFlavorProfile> UserPreferenceFlavorProfiles { get; set; }
+
+	public virtual DbSet<UserPreferenceBrewingMethod> UserPreferenceBrewingMethods { get; set; }
+
+	public virtual DbSet<UserPreferenceRegion> UserPreferenceRegions { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -705,11 +714,116 @@ public partial class BrewDbContext : DbContext
                 .HasColumnName("preferred_roast_level");
             entity.Property(e => e.QuizCompleted).HasColumnName("quiz_completed");
             entity.Property(e => e.UserId).HasColumnName("user_id");
-
+            entity.Property(e => e.ExperienceLevel)
+                .HasMaxLength(50)
+                .HasColumnName("experience_level");
+            entity.Property(e => e.PreferredAcidity)
+                .HasMaxLength(50)
+                .HasColumnName("preferred_acidity");
+            entity.Property(e => e.PreferredBody)
+                .HasMaxLength(50)
+                .HasColumnName("preferred_body");
+            entity.Property(e => e.RecommendationStyle)
+                .HasMaxLength(50)
+                .HasColumnName("recommendation_style");
+            entity.Property(e => e.AllowExploration)
+                .HasColumnName("allow_exploration");
             entity.HasOne(d => d.User).WithMany(p => p.UserPreferences)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("user_preferences_user");
+        });
+
+		modelBuilder.Entity<FlavorProfile>(entity =>
+		{
+    		entity.HasKey(e => e.Id).HasName("flavor_profile_pk");
+
+    		entity.ToTable("flavor_profile");
+
+    		entity.Property(e => e.Id).HasColumnName("id");
+
+    		entity.Property(e => e.Name).HasMaxLength(100).HasColumnName("name");
+		});
+        
+        modelBuilder.Entity<UserPreferenceFlavorProfile>(entity =>
+        {
+            entity.HasKey(e => new
+            {
+                e.UserPreferenceId,
+                e.FlavorProfileId
+            });
+
+            entity.ToTable("user_preference_flavor_profile");
+
+            entity.Property(e => e.UserPreferenceId)
+                .HasColumnName("user_preference_id");
+
+            entity.Property(e => e.FlavorProfileId)
+                .HasColumnName("flavor_profile_id");
+
+            entity.HasOne(d => d.UserPreference)
+                .WithMany(p => p.UserPreferenceFlavorProfiles)
+                .HasForeignKey(d => d.UserPreferenceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.FlavorProfile)
+                .WithMany(p => p.UserPreferenceFlavorProfiles)
+                .HasForeignKey(d => d.FlavorProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        modelBuilder.Entity<UserPreferenceBrewingMethod>(entity =>
+        {
+            entity.HasKey(e => new
+            {
+                e.UserPreferenceId,
+                e.BrewingMethodId
+            });
+
+            entity.ToTable("user_preference_brewing_method");
+
+            entity.Property(e => e.UserPreferenceId)
+                .HasColumnName("user_preference_id");
+
+            entity.Property(e => e.BrewingMethodId)
+                .HasColumnName("brewing_method_id");
+
+            entity.HasOne(d => d.UserPreference)
+                .WithMany(p => p.UserPreferenceBrewingMethods)
+                .HasForeignKey(d => d.UserPreferenceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.BrewingMethod)
+                .WithMany()
+                .HasForeignKey(d => d.BrewingMethodId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        modelBuilder.Entity<UserPreferenceRegion>(entity =>
+        {
+            entity.HasKey(e => new
+            {
+                e.UserPreferenceId,
+                e.RegionId
+            });
+
+            entity.ToTable("user_preference_region");
+
+            entity.Property(e => e.UserPreferenceId)
+                .HasColumnName("user_preference_id");
+
+            entity.Property(e => e.RegionId)
+                .HasColumnName("region_id");
+
+            entity.HasOne(d => d.UserPreference)
+                .WithMany(p => p.UserPreferenceRegions)
+                .HasForeignKey(d => d.UserPreferenceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.Region)
+                .WithMany()
+                .HasForeignKey(d => d.RegionId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<UserRanking>(entity =>

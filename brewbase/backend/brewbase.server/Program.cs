@@ -186,6 +186,9 @@ builder.Services.AddScoped<IArticleWriteService, ArticleWriteService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
 
+builder.Services.AddScoped<IPreferenceService, PreferenceService>();
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
