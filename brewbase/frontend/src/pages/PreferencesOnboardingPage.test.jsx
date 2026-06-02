@@ -13,6 +13,10 @@ import {
 
 const navigateMock = vi.fn();
 
+vi.mock("../api/preferenceApi", () => ({
+    savePreferences: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock("react-router-dom", async () => {
     const actual = await vi.importActual("react-router-dom");
 
@@ -22,9 +26,13 @@ vi.mock("react-router-dom", async () => {
     };
 });
 
+import { savePreferences } from "../api/preferenceApi";
+
 describe("PreferencesOnboardingPage", () => {
     beforeEach(() => {
         navigateMock.mockReset();
+        vi.mocked(savePreferences).mockClear();
+        vi.mocked(savePreferences).mockResolvedValue(null);
     });
 
     it("redirects unauthenticated users to login", () => {
@@ -79,6 +87,7 @@ describe("PreferencesOnboardingPage", () => {
         await user.click(screen.getByRole("button", { name: "Zakończ" }));
 
         await waitFor(() => {
+            expect(savePreferences).toHaveBeenCalledTimes(1);
             expect(navigateMock).toHaveBeenCalledWith("/home");
         });
 
