@@ -23,6 +23,15 @@ public class FlavorProfilesController : ControllerBase
         return Ok(profiles);
     }
 
+    [HttpGet("search")]
+    public async Task<IActionResult> Search(
+        [FromQuery] string? q,
+        [FromQuery] int limit = 20)
+    {
+        var profiles = await _flavorProfileService.SearchAsync(q, limit);
+        return Ok(profiles);
+    }
+
     [HttpGet("random")]
     public async Task<IActionResult> GetRandom([FromQuery] int limit = 10)
     {

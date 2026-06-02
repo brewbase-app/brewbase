@@ -18,6 +18,24 @@ export function getRandomFlavorProfiles(limit = 10) {
     );
 }
 
+export function searchFlavorProfiles(query, limit = 20) {
+    const params = new URLSearchParams();
+
+    if (query) {
+        params.set("q", query);
+    }
+
+    if (limit) {
+        params.set("limit", String(limit));
+    }
+
+    const queryString = params.toString();
+
+    return apiRequest(
+        `/api/flavor-profiles/search${queryString ? `?${queryString}` : ""}`
+    );
+}
+
 export function createFlavorProfile(name) {
     return apiRequest("/api/flavor-profiles", {
         method: "POST",

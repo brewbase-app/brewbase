@@ -14,6 +14,7 @@ import {
 } from "../../api/flavorProfileApi";
 
 import ComboBoxInput from "../../components/ComboBoxInput";
+import FlavorProfilePicker from "../../components/FlavorProfilePicker";
 import MultiSelectInput from "../../components/MultiSelectInput";
 
 import { BEAN_ORIGIN_COUNTRIES } from "../../utils/beanOriginCountries";
@@ -525,12 +526,9 @@ function AddWikiArticle() {
                                     Profil smakowy
                                 </label>
 
-                                <MultiSelectInput
-                                    options={flavorProfileOptions}
+                                <FlavorProfilePicker
                                     value={flavorProfiles}
                                     onChange={setFlavorProfiles}
-                                    allowCustom
-                                    onAddCustom={handleCreateFlavorProfile}
                                 />
 
                             </div>

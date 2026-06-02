@@ -94,6 +94,91 @@ public class FlavorProfileEndpointsTests : IDisposable
     }
 
     [Fact]
+    public async Task ShouldReturnExistingFlavorProfileWhenDiacriticsDiffer()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        context.FlavorProfiles.Add(new FlavorProfile { Name = "Ogórek" });
+        await context.SaveChangesAsync();
+
+        var response = await _authenticatedClient.PostAsJsonAsync(
+            "/api/flavor-profiles",
+            new { name = "ogorek" });
+
+        response.EnsureSuccessStatusCode();
+
+        var profile = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Ogórek", profile.GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public async Task ShouldSearchFlavorProfilesIgnoringDiacriticsAndCase()
+    {
+        var response = await _client.GetAsync("/api/flavor-profiles/search?q=jasmin");
+        response.EnsureSuccessStatusCode();
+
+        var profiles = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(JsonValueKind.Array, profiles.ValueKind);
+        Assert.True(profiles.GetArrayLength() > 0);
+
+        var first = profiles[0];
+        Assert.Equal("Jaśmin", first.GetProperty("name").GetString());
+        Assert.True(first.GetProperty("isExactMatch").GetBoolean());
+    }
+
+    [Fact]
+    public async Task ShouldSearchFlavorProfilesIgnoringSpaces()
+    {
+        var response = await _client.GetAsync(
+            "/api/flavor-profiles/search?q=%20%20CYTRUSY%20%20");
+
+        response.EnsureSuccessStatusCode();
+
+        var profiles = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var first = profiles[0];
+
+        Assert.Equal("Cytrusy", first.GetProperty("name").GetString());
+        Assert.True(first.GetProperty("isExactMatch").GetBoolean());
+    }
+
+    [Fact]
+    public async Task ShouldSuggestFuzzyMatchesForCommonTypos()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        context.FlavorProfiles.Add(new FlavorProfile { Name = "Truskawka" });
+        await context.SaveChangesAsync();
+
+        var response = await _client.GetAsync(
+            "/api/flavor-profiles/search?q=tuksawka");
+
+        response.EnsureSuccessStatusCode();
+
+        var profiles = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var first = profiles[0];
+
+        Assert.Equal("Truskawka", first.GetProperty("name").GetString());
+        Assert.True(first.GetProperty("isFuzzyMatch").GetBoolean());
+        Assert.False(first.GetProperty("isExactMatch").GetBoolean());
+        Assert.True(first.GetProperty("similarityScore").GetDouble() >= 0.72);
+    }
+
+    [Fact]
+    public async Task ShouldAllowCreatingNewProfileWhenOnlyFuzzyMatchExists()
+    {
+        var response = await _authenticatedClient.PostAsJsonAsync(
+            "/api/flavor-profiles",
+            new { name = "czekoldaa" });
+
+        response.EnsureSuccessStatusCode();
+
+        var profile = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("czekoldaa", profile.GetProperty("name").GetString());
+    }
+
+    [Fact]
     public async Task ShouldReturnRandomFlavorProfilesLimitedToRequestedCount()
     {
         var response = await _client.GetAsync("/api/flavor-profiles/random?limit=2");
