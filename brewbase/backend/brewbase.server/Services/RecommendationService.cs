@@ -120,6 +120,7 @@ public class RecommendationService : IRecommendationService
                 {
                     CoffeeId = coffee.Id,
                     Name = coffee.Name,
+                    AverageRating = ranking?.AverageRating ?? 0,
                     MatchScore = matchScore,
                     PopularityScore = popularityScore,
                     FinalScore = finalScore
@@ -187,6 +188,7 @@ public class RecommendationService : IRecommendationService
                 {
                     RecipeId = recipe.Id,
                     Title = recipe.Title,
+                    AverageRating = ranking?.AverageRating ?? 0,
                     MatchScore = matchScore,
                     PopularityScore = popularityScore,
                     FinalScore = finalScore

@@ -111,23 +111,34 @@ public class PreferenceService : IPreferenceService
 
             _context.UserPreferences.Add(preference);
         }
-
-        // Pola wymagane
+        
         preference.PreferredRoastLevel = dto.PreferredRoastLevel;
         preference.FavoriteNotes = "";
         preference.QuizCompleted = true;
         preference.AllowExploration = dto.AllowExploration;
-
-        // Pola opcjonalne
+        
         preference.ExperienceLevel = dto.ExperienceLevel;
         preference.PreferredAcidity = dto.PreferredAcidity;
         preference.PreferredBody = dto.PreferredBody;
         preference.RecommendationStyle = dto.RecommendationStyle;
-
-        // Najpierw zapis UserPreference aby mieć wygenerowane ID
+        
         await _context.SaveChangesAsync();
+        
+        var flavorIds = await _context.FlavorProfiles
+            .Where(x => dto.FlavorProfiles.Contains(x.Name))
+            .Select(x => x.Id)
+            .ToListAsync();
 
-        // Usunięcie starych powiązań
+        var brewingMethodIds = await _context.BrewingMethods
+            .Where(x => dto.BrewingMethods.Contains(x.Name))
+            .Select(x => x.Id)
+            .ToListAsync();
+
+        var regionIds = await _context.Regions
+            .Where(x => dto.Regions.Contains(x.Name))
+            .Select(x => x.Id)
+            .ToListAsync();
+        
         _context.UserPreferenceFlavorProfiles.RemoveRange(
             _context.UserPreferenceFlavorProfiles
                 .Where(x => x.UserPreferenceId == preference.Id));
@@ -141,9 +152,8 @@ public class PreferenceService : IPreferenceService
                 .Where(x => x.UserPreferenceId == preference.Id));
 
         await _context.SaveChangesAsync();
-
-        // Dodanie nowych profili smakowych
-        foreach (var flavorId in dto.FlavorProfileIds)
+        
+        foreach (var flavorId in flavorIds)
         {
             _context.UserPreferenceFlavorProfiles.Add(
                 new UserPreferenceFlavorProfile
@@ -152,9 +162,8 @@ public class PreferenceService : IPreferenceService
                     FlavorProfileId = flavorId
                 });
         }
-
-        // Dodanie metod parzenia
-        foreach (var brewingMethodId in dto.BrewingMethodIds)
+        
+        foreach (var brewingMethodId in brewingMethodIds)
         {
             _context.UserPreferenceBrewingMethods.Add(
                 new UserPreferenceBrewingMethod
@@ -163,9 +172,8 @@ public class PreferenceService : IPreferenceService
                     BrewingMethodId = brewingMethodId
                 });
         }
-
-        // Dodanie regionów
-        foreach (var regionId in dto.RegionIds)
+        
+        foreach (var regionId in regionIds)
         {
             _context.UserPreferenceRegions.Add(
                 new UserPreferenceRegion

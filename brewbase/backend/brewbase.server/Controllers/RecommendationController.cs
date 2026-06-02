@@ -11,8 +11,7 @@ public class RecommendationController : ControllerBase
 {
     private readonly IRecommendationService _recommendationService;
 
-    public RecommendationController(
-        IRecommendationService recommendationService)
+    public RecommendationController(IRecommendationService recommendationService)
     {
         _recommendationService = recommendationService;
     }
