@@ -39,6 +39,13 @@ public class FlavorProfilesController : ControllerBase
         return Ok(profiles);
     }
 
+    [HttpGet("onboarding")]
+    public async Task<IActionResult> GetOnboarding([FromQuery] int limit = 10)
+    {
+        var profiles = await _flavorProfileService.GetOnboardingAsync(limit);
+        return Ok(profiles);
+    }
+
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create(CreateFlavorProfileRequestDto dto)

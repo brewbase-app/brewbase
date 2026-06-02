@@ -179,6 +179,31 @@ public class FlavorProfileEndpointsTests : IDisposable
     }
 
     [Fact]
+    public async Task ShouldReturnFirstFlavorProfilesByIdForOnboarding()
+    {
+        var response = await _client.GetAsync("/api/flavor-profiles/onboarding?limit=2");
+        response.EnsureSuccessStatusCode();
+
+        var profiles = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(JsonValueKind.Array, profiles.ValueKind);
+        Assert.Equal(2, profiles.GetArrayLength());
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+        var expected = await context.FlavorProfiles
+            .OrderBy(profile => profile.Id)
+            .Take(2)
+            .Select(profile => profile.Name)
+            .ToListAsync();
+
+        var names = profiles.EnumerateArray()
+            .Select(profile => profile.GetProperty("name").GetString())
+            .ToList();
+
+        Assert.Equal(expected, names);
+    }
+
+    [Fact]
     public async Task ShouldReturnRandomFlavorProfilesLimitedToRequestedCount()
     {
         var response = await _client.GetAsync("/api/flavor-profiles/random?limit=2");

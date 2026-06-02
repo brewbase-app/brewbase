@@ -8,6 +8,8 @@ public interface IFlavorProfileService
 
     Task<List<FlavorProfileResponseDto>> GetRandomAsync(int limit);
 
+    Task<List<FlavorProfileResponseDto>> GetOnboardingAsync(int limit);
+
     Task<List<FlavorProfileSearchResultDto>> SearchAsync(string? query, int limit);
 
     Task<FlavorProfileResponseDto> CreateAsync(CreateFlavorProfileRequestDto dto);

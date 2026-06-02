@@ -9,7 +9,7 @@ import {
 import { getAuthToken } from "../utils/auth";
 
 import { savePreferences } from "../api/preferenceApi";
-import { getRandomFlavorProfiles } from "../api/flavorProfileApi";
+import { getOnboardingFlavorProfiles } from "../api/flavorProfileApi";
 
 import "../styles/PreferencesOnboardingPage.css";
 
@@ -34,6 +34,8 @@ export default function PreferencesOnboardingPage() {
 
     const [flavorProfiles, setFlavorProfiles] = useState([]);
     const [selectedFlavorProfileIds, setSelectedFlavorProfileIds] = useState([]);
+    const [flavorPreferencesUndecided, setFlavorPreferencesUndecided] =
+        useState(false);
     const [flavorProfilesLoading, setFlavorProfilesLoading] = useState(true);
     const [flavorProfilesError, setFlavorProfilesError] = useState("");
 
@@ -43,7 +45,7 @@ export default function PreferencesOnboardingPage() {
                 setFlavorProfilesLoading(true);
                 setFlavorProfilesError("");
 
-                const data = await getRandomFlavorProfiles(10);
+                const data = await getOnboardingFlavorProfiles(10);
                 setFlavorProfiles(Array.isArray(data) ? data : []);
             } catch {
                 setFlavorProfilesError(
@@ -68,11 +70,13 @@ export default function PreferencesOnboardingPage() {
             setStep(step + 1);
 
         } else {
-            const selectedFlavorProfileNames = flavorProfiles
-                .filter((profile) =>
-                    selectedFlavorProfileIds.includes(profile.id)
-                )
-                .map((profile) => profile.name);
+            const selectedFlavorProfileNames = flavorPreferencesUndecided
+                ? []
+                : flavorProfiles
+                      .filter((profile) =>
+                          selectedFlavorProfileIds.includes(profile.id)
+                      )
+                      .map((profile) => profile.name);
 
             saveUserPreferences({
                 ...preferences,
@@ -94,7 +98,9 @@ export default function PreferencesOnboardingPage() {
                 allowExploration:
                 preferences.allowExploration,
 
-                flavorProfileIds: selectedFlavorProfileIds,
+                flavorProfileIds: flavorPreferencesUndecided
+                    ? []
+                    : selectedFlavorProfileIds,
 
                 brewingMethods:
                 preferences.brewingMethods,
@@ -117,11 +123,17 @@ export default function PreferencesOnboardingPage() {
     };
 
     const toggleFlavorProfile = (profileId) => {
+        setFlavorPreferencesUndecided(false);
         setSelectedFlavorProfileIds((current) =>
             current.includes(profileId)
                 ? current.filter((id) => id !== profileId)
                 : [...current, profileId]
         );
+    };
+
+    const selectFlavorPreferencesUndecided = () => {
+        setFlavorPreferencesUndecided(true);
+        setSelectedFlavorProfileIds([]);
     };
 
     const toggleArrayValue = (field, value) => {
@@ -216,7 +228,8 @@ export default function PreferencesOnboardingPage() {
                         </h2>
 
                         <p className="field-description">
-                            Możesz wybrać kilka opcji
+                            Wybierz profile smakowe lub zaznacz, że
+                            jeszcze nie wiesz
                         </p>
 
                         {flavorProfilesLoading && (
@@ -232,23 +245,40 @@ export default function PreferencesOnboardingPage() {
                         )}
 
                         {!flavorProfilesLoading &&
-                            !flavorProfilesError &&
-                            flavorProfiles.map((profile) => (
-                            <button
-                                type="button"
-                                key={profile.id}
-                                className={
-                                    selectedFlavorProfileIds.includes(profile.id)
-                                        ? "selected"
-                                        : ""
-                                }
-                                onClick={() =>
-                                    toggleFlavorProfile(profile.id)
-                                }
-                            >
-                                {profile.name}
-                            </button>
-                        ))}
+                            !flavorProfilesError && (
+                            <>
+                                <button
+                                    type="button"
+                                    className={
+                                        flavorPreferencesUndecided
+                                            ? "selected"
+                                            : ""
+                                    }
+                                    onClick={selectFlavorPreferencesUndecided}
+                                >
+                                    Nie wiem jeszcze
+                                </button>
+
+                                {flavorProfiles.map((profile) => (
+                                    <button
+                                        type="button"
+                                        key={profile.id}
+                                        className={
+                                            selectedFlavorProfileIds.includes(
+                                                profile.id
+                                            )
+                                                ? "selected"
+                                                : ""
+                                        }
+                                        onClick={() =>
+                                            toggleFlavorProfile(profile.id)
+                                        }
+                                    >
+                                        {profile.name}
+                                    </button>
+                                ))}
+                            </>
+                        )}
                     </>
                 );
 

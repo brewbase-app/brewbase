@@ -9,6 +9,7 @@ namespace brewbase.server.Services;
 public class FlavorProfileService : IFlavorProfileService
 {
     private const int MaxRandomLimit = 50;
+    private const int MaxOnboardingLimit = 50;
     private const int MaxSearchLimit = 50;
 
     private readonly BrewDbContext _context;
@@ -55,6 +56,22 @@ public class FlavorProfileService : IFlavorProfileService
             .OrderBy(_ => Guid.NewGuid())
             .Take(normalizedLimit)
             .ToList();
+    }
+
+    public async Task<List<FlavorProfileResponseDto>> GetOnboardingAsync(int limit)
+    {
+        var normalizedLimit = Math.Clamp(limit, 1, MaxOnboardingLimit);
+
+        return await _context.FlavorProfiles
+            .AsNoTracking()
+            .OrderBy(profile => profile.Id)
+            .Take(normalizedLimit)
+            .Select(profile => new FlavorProfileResponseDto
+            {
+                Id = profile.Id,
+                Name = profile.Name
+            })
+            .ToListAsync();
     }
 
     public async Task<List<FlavorProfileSearchResultDto>> SearchAsync(

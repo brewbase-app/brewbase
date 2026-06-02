@@ -142,7 +142,6 @@ public class PreferenceService : IPreferenceService
 
         await _context.SaveChangesAsync();
 
-        // Dodanie nowych profili smakowych
         foreach (var flavorId in dto.FlavorProfileIds)
         {
             _context.UserPreferenceFlavorProfiles.Add(
