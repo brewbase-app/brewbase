@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DefaultNamespace;
 
 namespace brewbase.server.Models;
 
@@ -52,4 +53,7 @@ public partial class Coffee
     public virtual ICollection<UserCoffeeFavorite> UserCoffeeFavorites { get; set; } = new List<UserCoffeeFavorite>();
 
     public virtual ICollection<Article> Articles { get; set; } = new List<Article>();
+    
+    public virtual ICollection<CoffeeFlavorProfile> CoffeeFlavorProfiles { get; set; } = new List<CoffeeFlavorProfile>();
+    
 }

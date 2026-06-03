@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 
@@ -7,11 +7,11 @@ import "../../styles/wiki/Regions.css";
 import { Search } from "lucide-react";
 
 import { getArticles } from "../../api/articlesApi";
+import { getFlavorProfiles } from "../../api/flavorProfileApi";
 
 import MultiSelectInput from "../../components/MultiSelectInput";
 
 import { BEAN_ORIGIN_COUNTRIES } from "../../utils/beanOriginCountries";
-import { COFFEE_FLAVOR_PROFILES } from "../../utils/coffeeFlavorProfiles";
 import {
     buildFilterOptions,
     parseCountryArticleMetadata,
@@ -38,6 +38,7 @@ function Regions() {
     const [search, setSearch] = useState("");
     const [selectedCountry, setSelectedCountry] = useState("");
     const [selectedFlavorProfiles, setSelectedFlavorProfiles] = useState([]);
+    const [flavorProfileNames, setFlavorProfileNames] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -47,10 +48,21 @@ function Regions() {
                 setIsLoading(true);
                 setError("");
 
-                const data = await getArticles("country");
+                const [data, flavorProfilesData] = await Promise.all([
+                    getArticles("country"),
+                    getFlavorProfiles(),
+                ]);
 
-                setArticles(
-                    (Array.isArray(data) ? data : []).map(mapCountryArticle)
+                const mappedArticles = (Array.isArray(data) ? data : []).map(
+                    mapCountryArticle
+                );
+
+                setArticles(mappedArticles);
+                setFlavorProfileNames(
+                    (Array.isArray(flavorProfilesData)
+                        ? flavorProfilesData
+                        : []
+                    ).map((profile) => profile.name)
                 );
             } catch {
                 setError("Nie udało się pobrać artykułów o krajach.");
@@ -67,13 +79,17 @@ function Regions() {
         articles.map((article) => article.title)
     );
 
-    const flavorProfileOptions = buildFilterOptions(
-        COFFEE_FLAVOR_PROFILES,
-        articles.flatMap((article) =>
-            Array.isArray(article.flavorProfiles)
-                ? article.flavorProfiles
-                : []
-        )
+    const flavorProfileOptions = useMemo(
+        () =>
+            buildFilterOptions(
+                flavorProfileNames,
+                articles.flatMap((article) =>
+                    Array.isArray(article.flavorProfiles)
+                        ? article.flavorProfiles
+                        : []
+                )
+            ),
+        [flavorProfileNames, articles]
     );
 
     const filteredArticles = articles.filter((article) => {

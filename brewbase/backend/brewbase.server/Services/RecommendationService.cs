@@ -87,13 +87,20 @@ public class RecommendationService : IRecommendationService
             preference.UserPreferenceRegions
                 .Select(x => x.RegionId)
                 .ToHashSet();
+        
+        var preferredFlavorProfiles =
+            preference.UserPreferenceFlavorProfiles
+                .Select(x => x.FlavorProfileId)
+                .ToHashSet();
 
         var coffees = await _context.Coffees
             .Include(x => x.CoffeeRankings)
+            .Include(x => x.Body)
+            .Include(x => x.Acidity)
+            .Include(x => x.CoffeeFlavorProfiles)
             .ToListAsync();
 
-        var result =
-            new List<CoffeeRecommendationDto>();
+        var result = new List<CoffeeRecommendationDto>();
 
         foreach (var coffee in coffees)
         {
@@ -103,6 +110,28 @@ public class RecommendationService : IRecommendationService
             {
                 matchScore += 20;
             }
+            
+            if (!string.IsNullOrWhiteSpace(preference.PreferredBody)
+                && coffee.Body != null
+                && coffee.Body.Name == preference.PreferredBody)
+            {
+                matchScore += 15;
+            }
+            
+            if (!string.IsNullOrWhiteSpace(preference.PreferredAcidity)
+                && coffee.Acidity != null
+                && coffee.Acidity.Name == preference.PreferredAcidity)
+            {
+                matchScore += 15;
+            }
+            
+            var matchingFlavorProfiles =
+                coffee.CoffeeFlavorProfiles
+                    .Count(x =>
+                        preferredFlavorProfiles.Contains(
+                            x.FlavorProfileId));
+
+            matchScore += matchingFlavorProfiles * 5;
 
             var ranking = coffee.CoffeeRankings
                 .OrderByDescending(x => x.RefreshedAt)
@@ -111,9 +140,30 @@ public class RecommendationService : IRecommendationService
             var popularityScore =
                 ranking?.RankingScore ?? 0;
 
+            double matchWeight = 0.5;
+            double popularityWeight = 0.5;
+
+            switch (preference.RecommendationStyle)
+            {
+                case "Bezpieczne wybory":
+                    matchWeight = 0.8;
+                    popularityWeight = 0.2;
+                    break;
+
+                case "Zbalansowane":
+                    matchWeight = 0.5;
+                    popularityWeight = 0.5;
+                    break;
+
+                case "Zaskocz mnie":
+                    matchWeight = 0.2;
+                    popularityWeight = 0.8;
+                    break;
+            }
+
             var finalScore =
-                (matchScore * 0.7)
-                + (popularityScore * 0.3);
+                (matchScore * matchWeight)
+                + (popularityScore * popularityWeight);
 
             result.Add(
                 new CoffeeRecommendationDto
@@ -124,6 +174,13 @@ public class RecommendationService : IRecommendationService
                     PopularityScore = popularityScore,
                     FinalScore = finalScore
                 });
+        }
+        
+        if (!preference.AllowExploration)
+        {
+            result = result
+                .Where(x => x.MatchScore > 0)
+                .ToList();
         }
 
         return result
@@ -143,9 +200,15 @@ public class RecommendationService : IRecommendationService
             preference.UserPreferenceBrewingMethods
                 .Select(x => x.BrewingMethodId)
                 .ToHashSet();
+        
+        var preferredFlavorProfiles =
+            preference.UserPreferenceFlavorProfiles
+                .Select(x => x.FlavorProfileId)
+                .ToHashSet();
 
         var recipes = await _context.Recipes
             .Include(x => x.Coffee)
+            .ThenInclude(x => x.CoffeeFlavorProfiles)
             .Include(x => x.RecipeRankings)
             .Where(x => x.IsPublic)
             .ToListAsync();
@@ -171,6 +234,17 @@ public class RecommendationService : IRecommendationService
                 matchScore += 15;
             }
 
+            if (recipe.Coffee != null)
+            {
+                var matchingFlavorProfiles =
+                    recipe.Coffee.CoffeeFlavorProfiles
+                        .Count(x =>
+                            preferredFlavorProfiles.Contains(
+                                x.FlavorProfileId));
+
+                matchScore += matchingFlavorProfiles * 5;
+            }
+
             var ranking = recipe.RecipeRankings
                 .OrderByDescending(x => x.RefreshedAt)
                 .FirstOrDefault();
@@ -178,9 +252,30 @@ public class RecommendationService : IRecommendationService
             var popularityScore =
                 ranking?.RankingScore ?? 0;
 
+            double matchWeight = 0.5;
+            double popularityWeight = 0.5;
+
+            switch (preference.RecommendationStyle)
+            {
+                case "Bezpieczne wybory":
+                    matchWeight = 0.8;
+                    popularityWeight = 0.2;
+                    break;
+
+                case "Zbalansowane":
+                    matchWeight = 0.5;
+                    popularityWeight = 0.5;
+                    break;
+
+                case "Zaskocz mnie":
+                    matchWeight = 0.2;
+                    popularityWeight = 0.8;
+                    break;
+            }
+
             var finalScore =
-                (matchScore * 0.7)
-                + (popularityScore * 0.3);
+                (matchScore * matchWeight)
+                + (popularityScore * popularityWeight);
 
             result.Add(
                 new RecipeRecommendationDto
@@ -191,6 +286,13 @@ public class RecommendationService : IRecommendationService
                     PopularityScore = popularityScore,
                     FinalScore = finalScore
                 });
+        }
+        
+        if (!preference.AllowExploration)
+        {
+            result = result
+                .Where(x => x.MatchScore > 0)
+                .ToList();
         }
 
         return result

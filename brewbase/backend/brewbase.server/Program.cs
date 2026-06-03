@@ -188,6 +188,7 @@ builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
 
 builder.Services.AddScoped<IPreferenceService, PreferenceService>();
 builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+builder.Services.AddScoped<IFlavorProfileService, FlavorProfileService>();
 
 var app = builder.Build();
 
