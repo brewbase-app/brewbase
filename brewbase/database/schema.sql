@@ -739,6 +739,10 @@ CREATE INDEX idx_user_preference_user_id ON user_preference(user_id);
 CREATE UNIQUE INDEX uq_flavor_profile_name_normalized
     ON flavor_profile (LOWER(TRIM(name)));
 
+-- country
+CREATE UNIQUE INDEX uq_country_name_normalized
+    ON country (LOWER(TRIM(name)));
+
 -- user_ranking
 CREATE INDEX idx_user_ranking_user_id ON user_ranking(user_id);
 
