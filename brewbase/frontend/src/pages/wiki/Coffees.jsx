@@ -17,11 +17,10 @@ import {
 } from "../../api/coffeeApi";
 
 import { getArticles } from "../../api/articlesApi";
+import { getCountries } from "../../api/countryApi";
 import { getFlavorProfiles } from "../../api/flavorProfileApi";
 
 import MultiSelectInput from "../../components/MultiSelectInput";
-
-import { BEAN_ORIGIN_COUNTRIES } from "../../utils/beanOriginCountries";
 import { COFFEE_VARIETIES } from "../../utils/coffeeVarieties";
 import { COFFEE_PROCESSING_METHODS } from "../../utils/coffeeProcessingMethods";
 import {
@@ -67,6 +66,7 @@ function Coffees() {
     const [selectedVariety, setSelectedVariety] = useState("");
     const [selectedFlavorProfiles, setSelectedFlavorProfiles] = useState([]);
     const [flavorProfileNames, setFlavorProfileNames] = useState([]);
+    const [countryNames, setCountryNames] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -76,11 +76,12 @@ function Coffees() {
                 setIsLoading(true);
                 setError("");
 
-                const [coffeeData, articleData, flavorProfilesData] =
+                const [coffeeData, articleData, flavorProfilesData, countriesData] =
                     await Promise.all([
                     getCoffees(),
                     getArticles("coffee"),
                     getFlavorProfiles(),
+                    getCountries(),
                 ]);
 
                 setCoffees(Array.isArray(coffeeData) ? coffeeData : []);
@@ -90,6 +91,11 @@ function Coffees() {
                         ? flavorProfilesData
                         : []
                     ).map((profile) => profile.name)
+                );
+                setCountryNames(
+                    (Array.isArray(countriesData) ? countriesData : []).map(
+                        (country) => country.name
+                    )
                 );
             } catch {
                 setError("Nie udało się pobrać kaw.");
@@ -145,7 +151,7 @@ function Coffees() {
     const allItems = [...catalogItems, ...articleItems];
 
     const originCountries = buildFilterOptions(
-        BEAN_ORIGIN_COUNTRIES,
+        countryNames,
         catalogItems.map((item) => item.beanOriginCountry),
         articleItems.map((item) => item.beanOriginCountry)
     );

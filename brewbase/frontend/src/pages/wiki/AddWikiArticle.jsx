@@ -8,6 +8,7 @@ import { Send } from "lucide-react";
 
 import { createArticle } from "../../api/articlesApi";
 import { lookupCoffeesByName } from "../../api/coffeeApi";
+import { getCountries } from "../../api/countryApi";
 import {
     createFlavorProfile,
     getFlavorProfiles,
@@ -17,7 +18,6 @@ import ComboBoxInput from "../../components/ComboBoxInput";
 import FlavorProfilePicker from "../../components/FlavorProfilePicker";
 import MultiSelectInput from "../../components/MultiSelectInput";
 
-import { BEAN_ORIGIN_COUNTRIES } from "../../utils/beanOriginCountries";
 import { COFFEE_VARIETIES } from "../../utils/coffeeVarieties";
 import { COFFEE_PROCESSING_METHODS } from "../../utils/coffeeProcessingMethods";
 import { BREWING_METHOD_OPTIONS } from "../../utils/brewingMethodOptions";
@@ -86,6 +86,7 @@ function AddWikiArticle() {
     const [countryFlavorProfiles, setCountryFlavorProfiles] = useState([]);
 
     const [flavorProfileOptions, setFlavorProfileOptions] = useState([]);
+    const [countryOptions, setCountryOptions] = useState([]);
 
     const [files, setFiles] = useState([]);
 
@@ -102,24 +103,42 @@ function AddWikiArticle() {
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
     useEffect(() => {
-        const loadFlavorProfiles = async () => {
+        const loadCatalogOptions = async () => {
             try {
-                const data = await getFlavorProfiles();
-                const names = (Array.isArray(data) ? data : [])
+                const [flavorProfilesData, countriesData] = await Promise.all([
+                    getFlavorProfiles(),
+                    getCountries(),
+                ]);
+
+                const flavorNames = (Array.isArray(flavorProfilesData)
+                    ? flavorProfilesData
+                    : []
+                )
                     .map((profile) => profile.name)
                     .sort((left, right) =>
                         left.localeCompare(right, "pl")
                     );
 
-                setFlavorProfileOptions(names);
+                setFlavorProfileOptions(flavorNames);
+
+                const names = (Array.isArray(countriesData)
+                    ? countriesData
+                    : []
+                )
+                    .map((country) => country.name)
+                    .sort((left, right) =>
+                        left.localeCompare(right, "pl")
+                    );
+
+                setCountryOptions(names);
             } catch {
                 setSubmitError(
-                    "Nie udało się pobrać profili smakowych."
+                    "Nie udało się pobrać danych katalogowych."
                 );
             }
         };
 
-        loadFlavorProfiles();
+        loadCatalogOptions();
     }, []);
 
     useEffect(() => {
@@ -467,7 +486,7 @@ function AddWikiArticle() {
                                 <ComboBoxInput
                                     value={beanOriginCountry}
                                     onChange={setBeanOriginCountry}
-                                    options={BEAN_ORIGIN_COUNTRIES}
+                                    options={countryOptions}
                                     placeholder="Wybierz z listy lub wpisz kraj"
                                 />
 
@@ -568,7 +587,7 @@ function AddWikiArticle() {
                                 <ComboBoxInput
                                     value={title}
                                     onChange={setTitle}
-                                    options={BEAN_ORIGIN_COUNTRIES}
+                                    options={countryOptions}
                                     placeholder="Wybierz z listy lub wpisz kraj"
                                 />
 
