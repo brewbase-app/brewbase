@@ -190,6 +190,7 @@ builder.Services.AddScoped<IPreferenceService, PreferenceService>();
 builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 builder.Services.AddScoped<IFlavorProfileService, FlavorProfileService>();
 builder.Services.AddScoped<ICountryService, CountryService>();
+builder.Services.AddScoped<IRegionService, RegionService>();
 
 var app = builder.Build();
 

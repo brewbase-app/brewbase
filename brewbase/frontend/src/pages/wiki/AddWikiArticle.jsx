@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -9,6 +9,7 @@ import { Send } from "lucide-react";
 import { createArticle } from "../../api/articlesApi";
 import { lookupCoffeesByName } from "../../api/coffeeApi";
 import { getCountries } from "../../api/countryApi";
+import { getRegions } from "../../api/regionApi";
 import {
     createFlavorProfile,
     getFlavorProfiles,
@@ -22,7 +23,6 @@ import { COFFEE_VARIETIES } from "../../utils/coffeeVarieties";
 import { COFFEE_PROCESSING_METHODS } from "../../utils/coffeeProcessingMethods";
 import { BREWING_METHOD_OPTIONS } from "../../utils/brewingMethodOptions";
 import { ROASTING_STYLE_OPTIONS } from "../../utils/roastingStyleOptions";
-import { COFFEE_REGIONS } from "../../utils/coffeeRegions";
 import { COFFEE_ROASTERIES } from "../../utils/coffeeRoasteries";
 
 const CATEGORY_OPTIONS = [
@@ -86,7 +86,10 @@ function AddWikiArticle() {
     const [countryFlavorProfiles, setCountryFlavorProfiles] = useState([]);
 
     const [flavorProfileOptions, setFlavorProfileOptions] = useState([]);
+    const [countries, setCountries] = useState([]);
     const [countryOptions, setCountryOptions] = useState([]);
+    const [regionOptions, setRegionOptions] = useState([]);
+    const [regionsLoading, setRegionsLoading] = useState(false);
 
     const [files, setFiles] = useState([]);
 
@@ -121,16 +124,18 @@ function AddWikiArticle() {
 
                 setFlavorProfileOptions(flavorNames);
 
-                const names = (Array.isArray(countriesData)
+                const catalogCountries = Array.isArray(countriesData)
                     ? countriesData
-                    : []
-                )
-                    .map((country) => country.name)
-                    .sort((left, right) =>
-                        left.localeCompare(right, "pl")
-                    );
+                    : [];
 
-                setCountryOptions(names);
+                setCountries(catalogCountries);
+                setCountryOptions(
+                    catalogCountries
+                        .map((country) => country.name)
+                        .sort((left, right) =>
+                            left.localeCompare(right, "pl")
+                        )
+                );
             } catch {
                 setSubmitError(
                     "Nie udało się pobrać danych katalogowych."
@@ -140,6 +145,74 @@ function AddWikiArticle() {
 
         loadCatalogOptions();
     }, []);
+
+    const selectedCountryId = useMemo(() => {
+        if (getCategoryValue(category) !== "country") {
+            return null;
+        }
+
+        const selectedName = title.trim();
+
+        if (!selectedName) {
+            return null;
+        }
+
+        const match = countries.find(
+            (country) => country.name === selectedName
+        );
+
+        return match?.id ?? null;
+    }, [category, title, countries]);
+
+    useEffect(() => {
+        if (getCategoryValue(category) !== "country") {
+            setRegionOptions([]);
+            return undefined;
+        }
+
+        setCountryRegion("");
+
+        if (!selectedCountryId) {
+            setRegionOptions([]);
+            return undefined;
+        }
+
+        let cancelled = false;
+
+        const loadRegions = async () => {
+            try {
+                setRegionsLoading(true);
+
+                const data = await getRegions(selectedCountryId);
+
+                if (cancelled) {
+                    return;
+                }
+
+                setRegionOptions(
+                    (Array.isArray(data) ? data : [])
+                        .map((region) => region.name)
+                        .sort((left, right) =>
+                            left.localeCompare(right, "pl")
+                        )
+                );
+            } catch {
+                if (!cancelled) {
+                    setRegionOptions([]);
+                }
+            } finally {
+                if (!cancelled) {
+                    setRegionsLoading(false);
+                }
+            }
+        };
+
+        loadRegions();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedCountryId, category]);
 
     useEffect(() => {
         const moduleParam = searchParams.get("module");
@@ -602,8 +675,17 @@ function AddWikiArticle() {
                                 <ComboBoxInput
                                     value={countryRegion}
                                     onChange={setCountryRegion}
-                                    options={COFFEE_REGIONS}
-                                    placeholder="Wybierz z listy lub wpisz region"
+                                    options={regionOptions}
+                                    placeholder={
+                                        !selectedCountryId
+                                            ? "Najpierw wybierz kraj z katalogu"
+                                            : regionsLoading
+                                              ? "Ładowanie regionów..."
+                                              : "Wybierz z listy lub wpisz region"
+                                    }
+                                    disabled={
+                                        !selectedCountryId || regionsLoading
+                                    }
                                 />
 
                             </div>
