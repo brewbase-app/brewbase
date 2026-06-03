@@ -13,6 +13,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using DefaultNamespace;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -189,6 +190,8 @@ builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
 builder.Services.AddScoped<IPreferenceService, PreferenceService>();
 builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 builder.Services.AddScoped<IFlavorProfileService, FlavorProfileService>();
+builder.Services.AddScoped<IBodyReadService, BodyReadService>();
+builder.Services.AddScoped<IAcidityReadService, AcidityReadService>();
 
 var app = builder.Build();
 
