@@ -1093,8 +1093,7 @@ BEGIN
                 ua.published_article_count,
                 CURRENT_TIMESTAMP::timestamp without time zone AS refreshed_at
     FROM user_activity ua
-             JOIN app_user u ON u.id = ua.user_id
-    WHERE ua.activity_score > 0;
+             JOIN app_user u ON u.id = ua.user_id;
 
     UPDATE user_ranking target
     SET

@@ -83,7 +83,7 @@ SELECT
     ua.published_article_count,
     CURRENT_TIMESTAMP::timestamp without time zone AS refreshed_at
 FROM user_activity ua
-         JOIN app_user u ON u.id = ua.user_id;
+    JOIN app_user u ON u.id = ua.user_id;
 
 UPDATE user_ranking target
 SET
@@ -169,13 +169,3 @@ END;
 $$;
 
 SELECT refresh_user_ranking();
-
-SELECT
-    u.id,
-    u.login,
-    u.activity_points AS profile_points,
-    ur.activity_score AS ranking_points,
-    ur.position
-FROM app_user u
-         LEFT JOIN user_ranking ur ON ur.user_id = u.id
-ORDER BY ur.position NULLS LAST;

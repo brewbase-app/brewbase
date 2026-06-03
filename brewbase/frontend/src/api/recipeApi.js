@@ -16,12 +16,28 @@ export function getRecipes(params = {}) {
         searchParams.set("userId", String(params.userId));
     }
 
+    if (params.page != null) {
+        searchParams.set("page", String(params.page));
+    }
+
+    if (params.pageSize != null) {
+        searchParams.set("pageSize", String(params.pageSize));
+    }
+
+    if (params.sortBy) {
+        searchParams.set("sortBy", params.sortBy);
+    }
+
+    if (params.sortOrder) {
+        searchParams.set("sortOrder", params.sortOrder);
+    }
+
     const query = searchParams.toString();
 
     return apiRequest(query ? `/api/Recipe?${query}` : "/api/Recipe");
 }
 
-export async function getMyRecipes() {
+export async function getMyRecipes(params = {}) {
 
     const currentUser = await apiRequest("/api/CurrentUser");
 
@@ -29,7 +45,7 @@ export async function getMyRecipes() {
         throw new Error("Nie udało się pobrać danych użytkownika.");
     }
 
-    return getRecipes({ userId: currentUser.userId });
+    return getRecipes({ ...params,userId: currentUser.userId });
 }
 
 export function getFavoriteRecipes() {

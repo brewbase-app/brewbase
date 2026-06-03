@@ -42,17 +42,22 @@ const RecipesList = ({ title }) => {
     const navigate = useNavigate();
 
     const [recipes, setRecipes] = useState([]);
+    const [page, setPage] = useState(1);
+    const pageSize = 10;
+
+    useEffect(() => {
+        setPage(1);
+    }, [title]);
     useEffect(() => {
 
         const fetchRecipes = async () => {
 
             try {
-
                 const data = title === "Ulubione receptury"
                     ? await getFavoriteRecipes()
                     : title === "Twoje receptury"
-                        ? await getMyRecipes()
-                        : await getRecipes();
+                        ? await getMyRecipes({ page, pageSize })
+                        : await getRecipes({ page, pageSize, sortBy: "title", sortOrder: "asc" });
 
                 setRecipes(data);
 
@@ -64,7 +69,7 @@ const RecipesList = ({ title }) => {
 
         fetchRecipes();
 
-    }, [title]);
+    }, [title, page]);
 
     let data = [];
 
@@ -442,9 +447,56 @@ const RecipesList = ({ title }) => {
                 ))}
 
             </div>
+            {title !== "Ulubione receptury" && (
+                <div
+                    style={{
+                        display: "flex",
+                        gap: "12px",
+                        alignItems: "center",
+                        marginTop: "26px",
+                        maxWidth: "950px"
+                    }}
+                >
+                    <button
+                        style={paginationButtonStyle}
+                        onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+                        disabled={page === 1}
+                    >
+                        Poprzednia
+                    </button>
 
+                    <span
+                        style={{
+                            color: "#555",
+                            fontSize: "14px",
+                            fontWeight: "600"
+                        }}
+                    >
+            Strona {page}
+        </span>
+
+                    <button
+                        style={paginationButtonStyle}
+                        onClick={() => setPage((currentPage) => currentPage + 1)}
+                        disabled={recipes.length < pageSize}
+                    >
+                        Następna
+                    </button>
+                </div>
+            )}
         </div>
     );
+};
+
+const paginationButtonStyle = {
+    backgroundColor: "#efefef",
+    color: "#2f2f2f",
+    padding: "12px 18px",
+    borderRadius: "18px",
+    border: "1px solid #dddddd",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "600"
 };
 
 const detailsButtonStyle = {

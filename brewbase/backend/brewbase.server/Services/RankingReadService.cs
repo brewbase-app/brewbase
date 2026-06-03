@@ -16,7 +16,7 @@ public class RankingReadService : IRankingReadService
 
     public async Task<List<CoffeeRankingResponseDto>> GetCoffeeRankingAsync(int limit)
     {
-        var safeLimit = Math.Clamp(limit, 1, 50);
+        var safeLimit = Math.Clamp(limit, 1, 100);
 
         return await _context.CoffeeRankings
             .AsNoTracking()
@@ -49,7 +49,7 @@ public class RankingReadService : IRankingReadService
     
     public async Task<List<UserRankingResponseDto>> GetUserRankingAsync(int limit)
     {
-        var safeLimit = Math.Clamp(limit, 1, 50);
+        var safeLimit = Math.Clamp(limit, 1, 100);
 
         return await _context.UserRankings
             .AsNoTracking()
@@ -77,11 +77,11 @@ public class RankingReadService : IRankingReadService
     
     public async Task<List<RecipeRankingResponseDto>> GetRecipeRankingAsync(int limit)
     {
-        var safeLimit = Math.Clamp(limit, 1, 50);
+        var safeLimit = Math.Clamp(limit, 1, 100);
 
         return await _context.RecipeRankings
             .AsNoTracking()
-            .Where(ranking => ranking.Position > 0)
+            .Where(ranking => ranking.Position > 0 && ranking.Recipe.IsPublic)
             .OrderBy(ranking => ranking.Position)
             .Take(safeLimit)
             .Select(ranking => new RecipeRankingResponseDto
