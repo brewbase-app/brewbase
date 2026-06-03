@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -8,15 +8,15 @@ import { Send } from "lucide-react";
 
 import { createArticle } from "../../api/articlesApi";
 import { lookupCoffeesByName } from "../../api/coffeeApi";
-import { getCountries } from "../../api/countryApi";
-import { getRegions } from "../../api/regionApi";
 import {
     createFlavorProfile,
     getFlavorProfiles,
 } from "../../api/flavorProfileApi";
 
 import ComboBoxInput from "../../components/ComboBoxInput";
+import CountryPicker from "../../components/CountryPicker";
 import FlavorProfilePicker from "../../components/FlavorProfilePicker";
+import RegionPicker from "../../components/RegionPicker";
 import MultiSelectInput from "../../components/MultiSelectInput";
 
 import { COFFEE_VARIETIES } from "../../utils/coffeeVarieties";
@@ -86,10 +86,7 @@ function AddWikiArticle() {
     const [countryFlavorProfiles, setCountryFlavorProfiles] = useState([]);
 
     const [flavorProfileOptions, setFlavorProfileOptions] = useState([]);
-    const [countries, setCountries] = useState([]);
-    const [countryOptions, setCountryOptions] = useState([]);
-    const [regionOptions, setRegionOptions] = useState([]);
-    const [regionsLoading, setRegionsLoading] = useState(false);
+    const [selectedCountryId, setSelectedCountryId] = useState(null);
 
     const [files, setFiles] = useState([]);
 
@@ -108,10 +105,7 @@ function AddWikiArticle() {
     useEffect(() => {
         const loadCatalogOptions = async () => {
             try {
-                const [flavorProfilesData, countriesData] = await Promise.all([
-                    getFlavorProfiles(),
-                    getCountries(),
-                ]);
+                const flavorProfilesData = await getFlavorProfiles();
 
                 const flavorNames = (Array.isArray(flavorProfilesData)
                     ? flavorProfilesData
@@ -123,19 +117,6 @@ function AddWikiArticle() {
                     );
 
                 setFlavorProfileOptions(flavorNames);
-
-                const catalogCountries = Array.isArray(countriesData)
-                    ? countriesData
-                    : [];
-
-                setCountries(catalogCountries);
-                setCountryOptions(
-                    catalogCountries
-                        .map((country) => country.name)
-                        .sort((left, right) =>
-                            left.localeCompare(right, "pl")
-                        )
-                );
             } catch {
                 setSubmitError(
                     "Nie udało się pobrać danych katalogowych."
@@ -145,74 +126,6 @@ function AddWikiArticle() {
 
         loadCatalogOptions();
     }, []);
-
-    const selectedCountryId = useMemo(() => {
-        if (getCategoryValue(category) !== "country") {
-            return null;
-        }
-
-        const selectedName = title.trim();
-
-        if (!selectedName) {
-            return null;
-        }
-
-        const match = countries.find(
-            (country) => country.name === selectedName
-        );
-
-        return match?.id ?? null;
-    }, [category, title, countries]);
-
-    useEffect(() => {
-        if (getCategoryValue(category) !== "country") {
-            setRegionOptions([]);
-            return undefined;
-        }
-
-        setCountryRegion("");
-
-        if (!selectedCountryId) {
-            setRegionOptions([]);
-            return undefined;
-        }
-
-        let cancelled = false;
-
-        const loadRegions = async () => {
-            try {
-                setRegionsLoading(true);
-
-                const data = await getRegions(selectedCountryId);
-
-                if (cancelled) {
-                    return;
-                }
-
-                setRegionOptions(
-                    (Array.isArray(data) ? data : [])
-                        .map((region) => region.name)
-                        .sort((left, right) =>
-                            left.localeCompare(right, "pl")
-                        )
-                );
-            } catch {
-                if (!cancelled) {
-                    setRegionOptions([]);
-                }
-            } finally {
-                if (!cancelled) {
-                    setRegionsLoading(false);
-                }
-            }
-        };
-
-        loadRegions();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [selectedCountryId, category]);
 
     useEffect(() => {
         const moduleParam = searchParams.get("module");
@@ -556,11 +469,9 @@ function AddWikiArticle() {
                                     Kraj pochodzenia ziaren
                                 </label>
 
-                                <ComboBoxInput
+                                <CountryPicker
                                     value={beanOriginCountry}
                                     onChange={setBeanOriginCountry}
-                                    options={countryOptions}
-                                    placeholder="Wybierz z listy lub wpisz kraj"
                                 />
 
                             </div>
@@ -657,11 +568,13 @@ function AddWikiArticle() {
                                     Nazwa kraju
                                 </label>
 
-                                <ComboBoxInput
+                                <CountryPicker
                                     value={title}
                                     onChange={setTitle}
-                                    options={countryOptions}
-                                    placeholder="Wybierz z listy lub wpisz kraj"
+                                    onCountryChange={({ id }) => {
+                                        setSelectedCountryId(id ?? null);
+                                        setCountryRegion("");
+                                    }}
                                 />
 
                             </div>
@@ -672,20 +585,10 @@ function AddWikiArticle() {
                                     Region
                                 </label>
 
-                                <ComboBoxInput
+                                <RegionPicker
+                                    countryId={selectedCountryId}
                                     value={countryRegion}
                                     onChange={setCountryRegion}
-                                    options={regionOptions}
-                                    placeholder={
-                                        !selectedCountryId
-                                            ? "Najpierw wybierz kraj z katalogu"
-                                            : regionsLoading
-                                              ? "Ładowanie regionów..."
-                                              : "Wybierz z listy lub wpisz region"
-                                    }
-                                    disabled={
-                                        !selectedCountryId || regionsLoading
-                                    }
                                 />
 
                             </div>
