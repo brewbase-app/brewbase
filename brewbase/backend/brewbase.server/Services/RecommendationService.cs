@@ -58,6 +58,7 @@ public class RecommendationService : IRecommendationService
                 CoffeeId = x.CoffeeId,
                 Name = x.Coffee.Name,
                 MatchScore = 0,
+                AverageRating = x.AverageRating,
                 PopularityScore = x.RankingScore,
                 FinalScore = x.RankingScore
             })
