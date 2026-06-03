@@ -24,14 +24,12 @@ public class RecipeController : ControllerBase
         IRecipeReadService recipeReadService,
         IRecipeFavoriteService recipeFavoriteService,
         IRecipeValidationService recipeValidationService,
-        IRankingRefreshService rankingRefreshService,
         BrewDbContext context,
         ICurrentUserProvider currentUserProvider)
     {
         _recipeReadService = recipeReadService;
         _recipeFavoriteService = recipeFavoriteService;
         _recipeValidationService = recipeValidationService;
-        _rankingRefreshService = rankingRefreshService;
         _context = context;
         _currentUserProvider = currentUserProvider;
     }
@@ -185,6 +183,8 @@ public class RecipeController : ControllerBase
 
         var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
+        var isNewRating = rating is null;
+
         if (rating is null)
         {
             rating = new RecipeRating
@@ -202,6 +202,13 @@ public class RecipeController : ControllerBase
         {
             rating.Value = request.Value;
             rating.UpdatedAt = now;
+        }
+
+        var user = await _context.AppUsers.FindAsync(userId.Value);
+
+        if (user != null && isNewRating)
+        {
+            user.ActivityPoints += 10;
         }
 
         await _context.SaveChangesAsync();
@@ -249,8 +256,15 @@ public class RecipeController : ControllerBase
         };
 
         _context.Recipes.Add(entity);
+
+        var user = await _context.AppUsers.FindAsync(userId.Value);
+
+        if (user != null)
+        {
+            user.ActivityPoints += 10;
+        }
+
         await _context.SaveChangesAsync();
-        await _rankingRefreshService.RefreshAllRankingsAsync();
 
         var detail = await _recipeReadService.GetByIdAsync(entity.Id, userId.Value);
         if (detail is null)
@@ -314,7 +328,6 @@ public class RecipeController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
-        await _rankingRefreshService.RefreshAllRankingsAsync();
 
         var detail = await _recipeReadService.GetByIdAsync(id, userId.Value);
         if (detail is null)
@@ -370,7 +383,6 @@ public class RecipeController : ControllerBase
 
         _context.Recipes.Remove(recipe);
         await _context.SaveChangesAsync();
-        await _rankingRefreshService.RefreshAllRankingsAsync();
 
         return NoContent();
     }
