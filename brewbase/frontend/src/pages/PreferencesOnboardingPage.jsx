@@ -10,6 +10,9 @@ import { getAuthToken } from "../utils/auth";
 
 import { savePreferences } from "../api/preferenceApi";
 import { getOnboardingFlavorProfiles } from "../api/flavorProfileApi";
+import { getBrewingMethods } from "../api/brewingMethodApi"; //OC
+import { getBody } from "../api/bodyApi.js"; //OC
+import { getAcidity } from "../api/acidityApi.js"; //OC
 
 import "../styles/PreferencesOnboardingPage.css";
 
@@ -33,9 +36,12 @@ export default function PreferencesOnboardingPage() {
     });
 
     const [flavorProfiles, setFlavorProfiles] = useState([]);
+    const [brewingMethods, setBrewingMethods] = useState([]); //OC
+    const [brewingMethodsUndecided, setBrewingMethodsUndecided] = useState(false); //OC
+    const [body, setBody] = useState([]); //OC
+    const [acidity, setAcidity] = useState([]); //OC
     const [selectedFlavorProfileIds, setSelectedFlavorProfileIds] = useState([]);
-    const [flavorPreferencesUndecided, setFlavorPreferencesUndecided] =
-        useState(false);
+    const [flavorPreferencesUndecided, setFlavorPreferencesUndecided] = useState(false);
     const [flavorProfilesLoading, setFlavorProfilesLoading] = useState(true);
     const [flavorProfilesError, setFlavorProfilesError] = useState("");
 
@@ -47,6 +53,15 @@ export default function PreferencesOnboardingPage() {
 
                 const data = await getOnboardingFlavorProfiles(10);
                 setFlavorProfiles(Array.isArray(data) ? data : []);
+
+                const methods = await getBrewingMethods(); //OC
+                setBrewingMethods(Array.isArray(methods) ? methods : []); //OC
+
+                const bodyData = await getBody(); //OC
+                setBody(Array.isArray(bodyData) ? bodyData : []); //OC
+
+                const acidityData = await getAcidity(); //OC
+                setAcidity(Array.isArray(acidityData) ? acidityData : []); //OC
             } catch {
                 setFlavorProfilesError(
                     "Nie udało się pobrać profili smakowych."
@@ -130,12 +145,38 @@ export default function PreferencesOnboardingPage() {
                 : [...current, profileId]
         );
     };
-
+    
     const selectFlavorPreferencesUndecided = () => {
         setFlavorPreferencesUndecided(true);
         setSelectedFlavorProfileIds([]);
     };
 
+    const toggleBrewingMethod = (methodName) => {
+
+        setBrewingMethodsUndecided(false);
+
+        const current = preferences.brewingMethods;
+
+        const exists = current.includes(methodName);
+
+        setPreferences({
+            ...preferences,
+            brewingMethods: exists
+                ? current.filter((x) => x !== methodName)
+                : [...current, methodName],
+        });
+    };
+    
+    const selectBrewingMethodsUndecided = () => {
+        setBrewingMethodsUndecided(true);
+
+        setPreferences({
+            ...preferences,
+            brewingMethods: [],
+        });
+    };
+    
+    
     const toggleArrayValue = (field, value) => {
 
         const current = preferences[field];
@@ -198,25 +239,35 @@ export default function PreferencesOnboardingPage() {
                             Możesz wybrać kilka opcji
                         </p>
 
-                        {USER_PREFERENCE_OPTIONS.brewingMethods.map((method) => (
+                        {brewingMethods.slice(0, 10).map((method) => (
                             <button
                                 type="button"
-                                key={method}
+                                key={method.id}
                                 className={
-                                    preferences.brewingMethods.includes(method)
+                                    preferences.brewingMethods.includes(method.name)
                                         ? "selected"
                                         : ""
                                 }
                                 onClick={() =>
-                                    toggleArrayValue(
-                                        "brewingMethods",
-                                        method
-                                    )
+                                    toggleBrewingMethod(method.name)
                                 }
                             >
-                                {method}
+                                {method.name}
                             </button>
+                            
+                            
                         ))}
+                        <button
+                            type="button"
+                            className={
+                                brewingMethodsUndecided
+                                    ? "selected"
+                                    : ""
+                            }
+                            onClick={selectBrewingMethodsUndecided}
+                        >
+                            Jeszcze nie wiem
+                        </button>
                     </>
                 );
 
@@ -247,19 +298,7 @@ export default function PreferencesOnboardingPage() {
                         {!flavorProfilesLoading &&
                             !flavorProfilesError && (
                             <>
-                                <button
-                                    type="button"
-                                    className={
-                                        flavorPreferencesUndecided
-                                            ? "selected"
-                                            : ""
-                                    }
-                                    onClick={selectFlavorPreferencesUndecided}
-                                >
-                                    Nie wiem jeszcze
-                                </button>
-
-                                {flavorProfiles.map((profile) => (
+                                {flavorProfiles.slice(0, 10).map((profile) => (
                                     <button
                                         type="button"
                                         key={profile.id}
@@ -277,6 +316,18 @@ export default function PreferencesOnboardingPage() {
                                         {profile.name}
                                     </button>
                                 ))}
+                                
+                                <button
+                                    type="button"
+                                    className={
+                                        flavorPreferencesUndecided
+                                            ? "selected"
+                                            : ""
+                                    }
+                                    onClick={selectFlavorPreferencesUndecided}
+                                >
+                                    Nie wiem jeszcze
+                                </button>
                             </>
                         )}
                     </>
@@ -293,25 +344,45 @@ export default function PreferencesOnboardingPage() {
                             Wybierz jedną opcję
                         </p>
 
-                        {USER_PREFERENCE_OPTIONS.acidity.map((option) => (
+                        {acidity.slice(0, 10).map((acidityOption) => (
                             <button
                                 type="button"
-                                key={option}
+                                key={acidityOption.id}
                                 className={
-                                    preferences.acidity === option
+                                    preferences.acidity === acidityOption.name
                                         ? "selected"
                                         : ""
                                 }
                                 onClick={() =>
                                     setPreferences({
                                         ...preferences,
-                                        acidity: option,
+                                        acidity: acidityOption.name,
                                     })
                                 }
                             >
-                                {option}
+                                {acidityOption.name}
                             </button>
                         ))}
+
+                        <button
+                            type="button"
+                            className={
+                                preferences.acidity === "Nie mam zdania"
+                                    ? "selected"
+                                    : ""
+                            }
+                            onClick={() =>
+                                setPreferences({
+                                    ...preferences,
+                                    acidity:
+                                        preferences.acidity === "Nie mam zdania"
+                                            ? ""
+                                            : "Nie mam zdania",
+                                })
+                            }
+                        >
+                            Nie mam zdania
+                        </button>
 
                         <h2 className="secondary-title">
                             Preferowane body
@@ -321,25 +392,45 @@ export default function PreferencesOnboardingPage() {
                             Wybierz jedną opcję
                         </p>
 
-                        {USER_PREFERENCE_OPTIONS.body.map((option) => (
+                        {body.slice(0, 10).map((bodyOption) => (
                             <button
                                 type="button"
-                                key={option}
+                                key={bodyOption.id}
                                 className={
-                                    preferences.body === option
+                                    preferences.body === bodyOption.name
                                         ? "selected"
                                         : ""
                                 }
                                 onClick={() =>
                                     setPreferences({
                                         ...preferences,
-                                        body: option,
+                                        body: bodyOption.name,
                                     })
                                 }
                             >
-                                {option}
+                                {bodyOption.name}
                             </button>
                         ))}
+
+                        <button
+                            type="button"
+                            className={
+                                preferences.body === "Nie mam zdania"
+                                    ? "selected"
+                                    : ""
+                            }
+                            onClick={() =>
+                                setPreferences({
+                                    ...preferences,
+                                    body:
+                                        preferences.body === "Nie mam zdania"
+                                            ? ""
+                                            : "Nie mam zdania",
+                                })
+                            }
+                        >
+                            Nie mam zdania
+                        </button>
                     </>
                 );
 
