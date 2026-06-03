@@ -3,19 +3,16 @@ import "../styles/Dashboard.css";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import GlobalSearch from "../components/GlobalSearch";
-import { getProfile } from "../api/profileApi";
-import { getQuickNotes } from "../api/quickNotesApi";
-import { getMyRecipes, getFavoriteRecipes } from "../api/recipeApi";
-import { getFavoriteCoffees } from "../api/coffeeApi";
+import { markNotificationsAsRead } from "../api/notificationsApi";
 import {
-    getCuppingSessions,
-    getCuppingSessionDetails,
-} from "../api/cuppingSessionsApi";
-import { getCoffeeRanking, getRecipeRanking } from "../api/rankingApi";
-import { getCommunityFeed } from "../api/communityApi";
-import { getNotifications, markNotificationsAsRead } from "../api/notificationsApi";
-
-import { getRecommendations } from "../api/preferenceApi";
+    buildCoffeeSubtitle,
+    filterByPeriod,
+    getAverageCuppingScore,
+    getDashboardGreeting,
+    getMostUsedBrewingMethod,
+    isNotificationUnread,
+} from "./dashboard/dashboardUtils";
+import { loadDashboardData } from "./dashboard/loadDashboardData";
 
 import {
     Bell,
@@ -32,93 +29,6 @@ const PERIOD_OPTIONS = [
     { label: "Ostatnie 30 dni", value: 30 },
     { label: "Ostatnie 90 dni", value: 90 },
 ];
-
-function filterByPeriod(items, days) {
-    if (!Array.isArray(items) || !days) {
-        return items ?? [];
-    }
-
-    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-
-    return items.filter((item) => {
-        const dateValue = item.createdAt ?? item.sessionDate;
-
-        if (!dateValue) {
-            return true;
-        }
-
-        const parsed = new Date(dateValue);
-
-        if (Number.isNaN(parsed.getTime())) {
-            return true;
-        }
-
-        return parsed.getTime() >= cutoff;
-    });
-}
-
-function getMostUsedBrewingMethod(recipes) {
-    const counts = new Map();
-
-    recipes.forEach((recipe) => {
-        const method = recipe.brewingMethod?.trim();
-
-        if (!method) {
-            return;
-        }
-
-        counts.set(method, (counts.get(method) ?? 0) + 1);
-    });
-
-    let topMethod = null;
-    let topCount = 0;
-
-    counts.forEach((count, method) => {
-        if (count > topCount) {
-            topMethod = method;
-            topCount = count;
-        }
-    });
-
-    if (!topMethod) {
-        return { name: "—", share: 0 };
-    }
-
-    return {
-        name: topMethod,
-        share: Math.round((topCount / recipes.length) * 100),
-    };
-}
-
-function getAverageCuppingScore(sessionsDetails) {
-    const scores = sessionsDetails
-        .flatMap((session) => session.coffees ?? [])
-        .map((coffee) => coffee.overallScore)
-        .filter((score) => score != null && !Number.isNaN(Number(score)));
-
-    if (scores.length === 0) {
-        return null;
-    }
-
-    const sum = scores.reduce((total, score) => total + Number(score), 0);
-
-    return (sum / scores.length).toFixed(1);
-}
-
-function buildCoffeeSubtitle(coffee) {
-    return [
-        coffee.region,
-        coffee.processingMethod,
-        coffee.variety,
-        coffee.roastery,
-    ]
-        .filter(Boolean)
-        .join(", ");
-}
-
-function isNotificationUnread(notification) {
-    return notification.isRead !== true;
-}
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -141,69 +51,45 @@ function Dashboard() {
     const [followingFeed, setFollowingFeed] = useState([]);
 
     useEffect(() => {
-        const loadDashboard = async () => {
+        let cancelled = false;
+
+        const run = async () => {
             setIsLoading(true);
             setError("");
 
-            try {
-                const [
-                    profileData,
-                    notesData,
-                    recipesData,
-                    sessionsData,
-                    recommendationsData, //dodane teraz
-                    /*coffeesRanking,
-                    recipesRanking,*/
-                    favoritesCoffeesData,
-                    favoritesRecipesData,
-                    notificationsData,
-                    feedData,
-                ] = await Promise.all([
-                    getProfile(),
-                    getQuickNotes(),
-                    getMyRecipes(),
-                    getCuppingSessions(),
-                   /* getCoffeeRanking(4),
-                    getRecipeRanking(4),*/
-                    getRecommendations(), //Dodane teraz
-                    getFavoriteCoffees(),
-                    getFavoriteRecipes(),
-                    getNotifications().catch(() => []),
-                    getCommunityFeed().catch(() => []),
-                ]);
+            const result = await loadDashboardData();
 
-                setProfile(profileData);
-                setQuickNotes(Array.isArray(notesData) ? notesData : []);
-                setMyRecipes(Array.isArray(recipesData) ? recipesData : []);
-                setCuppingSessions(Array.isArray(sessionsData) ? sessionsData : []);
-                /*setRecommendedCoffees(Array.isArray(coffeesRanking) ? coffeesRanking : []);
-                setRecommendedRecipes(Array.isArray(recipesRanking) ? recipesRanking : []);*/
-                setRecommendedCoffees(recommendationsData?.coffees ?? []); //Dodane teraz
-                setRecommendedRecipes(recommendationsData?.recipes ?? []); //Dodane teraz
-                setFavoriteCoffees(Array.isArray(favoritesCoffeesData) ? favoritesCoffeesData : []);
-                setFavoriteRecipes(Array.isArray(favoritesRecipesData) ? favoritesRecipesData : []);
-                setNotifications(Array.isArray(notificationsData) ? notificationsData : []);
-                setFollowingFeed(Array.isArray(feedData) ? feedData : []);
-
-                if (Array.isArray(sessionsData) && sessionsData.length > 0) {
-                    const details = await Promise.all(
-                        sessionsData.map((session) =>
-                            getCuppingSessionDetails(session.id).catch(() => null)
-                        )
-                    );
-
-                    setCuppingDetails(details.filter(Boolean));
-                } else {
-                    setCuppingDetails([]);
-                }
-            } catch {
-                setError("Nie udało się załadować danych pulpitu.");
-            } finally {
-                setIsLoading(false);
+            if (cancelled) {
+                return;
             }
+
+            if (!result.ok) {
+                setError(result.error);
+                setIsLoading(false);
+                return;
+            }
+
+            const { data } = result;
+
+            setProfile(data.profile);
+            setQuickNotes(data.quickNotes);
+            setMyRecipes(data.myRecipes);
+            setCuppingSessions(data.cuppingSessions);
+            setCuppingDetails(data.cuppingDetails);
+            setRecommendedCoffees(data.recommendedCoffees);
+            setRecommendedRecipes(data.recommendedRecipes);
+            setFavoriteCoffees(data.favoriteCoffees);
+            setFavoriteRecipes(data.favoriteRecipes);
+            setNotifications(data.notifications);
+            setFollowingFeed(data.followingFeed);
+            setIsLoading(false);
         };
 
-        loadDashboard();
+        run();
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const filteredRecipes = useMemo(
@@ -236,7 +122,7 @@ function Dashboard() {
         [notifications]
     );
 
-    const greetingName = !isLoading ? profile?.login : null;
+    const greeting = getDashboardGreeting({ profile, isLoading });
 
     const handleNotificationToggle = async () => {
         const willOpen = !showNotifications;
@@ -277,7 +163,7 @@ function Dashboard() {
             <div className="dashboard-top">
                 <div className="dashboard-top-head">
                     <div className="dashboard-greeting">
-                        <h1>{greetingName ? `Dzień dobry, ${greetingName}!` : "Dzień dobry!"}</h1>
+                        <h1>{greeting}</h1>
                         <p>Oto co dzieje się w Twoim kawowym świecie.</p>
                     </div>
 
