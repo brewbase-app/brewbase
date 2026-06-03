@@ -171,6 +171,7 @@ public class RecommendationService : IRecommendationService
                     CoffeeId = coffee.Id,
                     Name = coffee.Name,
                     MatchScore = matchScore,
+                    AverageRating = ranking?.AverageRating ?? 0,
                     PopularityScore = popularityScore,
                     FinalScore = finalScore
                 });
@@ -283,6 +284,7 @@ public class RecommendationService : IRecommendationService
                     RecipeId = recipe.Id,
                     Title = recipe.Title,
                     MatchScore = matchScore,
+                    AverageRating = ranking?.AverageRating ?? 0,
                     PopularityScore = popularityScore,
                     FinalScore = finalScore
                 });
