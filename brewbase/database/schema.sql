@@ -768,6 +768,9 @@ CREATE INDEX idx_quick_note_user_id ON quick_note(user_id);
 -- region
 CREATE INDEX idx_region_country_id ON region(country_id);
 
+CREATE UNIQUE INDEX uq_region_country_name_normalized
+    ON region (country_id, LOWER(TRIM(name)));
+
 -- follow
 CREATE INDEX idx_follow_followed_id ON follow(followed_id);
 
