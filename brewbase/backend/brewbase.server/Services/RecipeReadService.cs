@@ -109,6 +109,10 @@ public class RecipeReadService : IRecipeReadService
                     .Average(rating => (double?)rating.Value),
                 RatingCount = _context.RecipeRatings
                     .Count(rating => rating.RecipeId == r.Id),
+                UserRating = _context.RecipeRatings
+                    .Where(rating => rating.RecipeId == r.Id && rating.UserId == currentUserId)
+                    .Select(rating => (int?)rating.Value)
+                    .FirstOrDefault(),
                 IsFavorite = _context.UserRecipeFavorites.Any(f =>
                     f.UserId == currentUserId && f.RecipeId == r.Id)
             })

@@ -42,6 +42,8 @@ const RecipeDetails = () => {
 
     const [userRating, setUserRating] = useState(0);
 
+    const [ratingMessage, setRatingMessage] = useState("");
+
     const [isFavorite, setIsFavorite] = useState(false);
 
     const [currentUserId, setCurrentUserId] = useState(null);
@@ -68,6 +70,16 @@ const RecipeDetails = () => {
                 setRecipe(parsedRecipe);
 
                 setIsFavorite(data.isFavorite || false);
+
+                const existingRating = Number(
+                    data.userRating ?? data.UserRating ?? 0
+                );
+                setUserRating(
+                    Number.isFinite(existingRating) && existingRating > 0
+                        ? existingRating
+                        : 0
+                );
+                setRatingMessage("");
 
                 const profileUserId = profile?.userId ?? profile?.UserId;
                 setCurrentUserId(
@@ -118,19 +130,27 @@ const RecipeDetails = () => {
     };
 
     const handleRating = async (value) => {
+        if (userRating > 0) {
+            return;
+        }
 
         try {
 
             await rateRecipe(recipe.id, value);
 
-            setUserRating(value);
-
             const updated = await getRecipeById(id);
+            const savedRating = Number(
+                updated.userRating ?? updated.UserRating ?? value
+            );
+
+            setUserRating(savedRating);
             setRecipe((previous) => ({
                 ...previous,
                 averageRating: updated.averageRating,
                 ratingCount: updated.ratingCount ?? 0,
+                userRating: savedRating,
             }));
+            setRatingMessage("Twoja ocena została zapisana.");
 
         } catch (error) {
 
@@ -282,6 +302,8 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
         currentUserId != null &&
         Number.isFinite(recipeOwnerId) &&
         currentUserId === recipeOwnerId;
+
+    const hasUserRated = userRating > 0;
 
     return (
 
@@ -467,7 +489,8 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                         style={{
                                             display: "flex",
                                             alignItems: "center",
-                                            gap: "10px"
+                                            gap: "10px",
+                                            flexWrap: "wrap"
                                         }}
                                     >
 
@@ -484,15 +507,22 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                                     key={star}
                                                     size={20}
                                                     style={{
-                                                        cursor: "pointer"
+                                                        cursor: hasUserRated
+                                                            ? "default"
+                                                            : "pointer",
                                                     }}
                                                     fill={
                                                         star <= userRating
                                                             ? "#1f1f1f"
                                                             : "none"
                                                     }
-                                                    onClick={() =>
-                                                        handleRating(star)
+                                                    onClick={
+                                                        hasUserRated
+                                                            ? undefined
+                                                            : () =>
+                                                                  handleRating(
+                                                                      star
+                                                                  )
                                                     }
                                                 />
 
@@ -516,6 +546,30 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                             {recipe.ratingCount || 0} ocen
 
                                         </span>
+
+                                        {hasUserRated && (
+                                            <span
+                                                style={{
+                                                    fontSize: "14px",
+                                                    color: "#1f6b3a",
+                                                    fontWeight: 500,
+                                                }}
+                                            >
+                                                Twoja ocena: {userRating}/5
+                                            </span>
+                                        )}
+
+                                        {ratingMessage && (
+                                            <span
+                                                role="status"
+                                                style={{
+                                                    fontSize: "14px",
+                                                    color: "#1f6b3a",
+                                                }}
+                                            >
+                                                {ratingMessage}
+                                            </span>
+                                        )}
 
                                     </div>
 

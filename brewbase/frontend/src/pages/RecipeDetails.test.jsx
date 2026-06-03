@@ -103,6 +103,7 @@ describe("RecipeDetails", () => {
                 ...sampleRecipe,
                 averageRating: 4,
                 ratingCount: 1,
+                userRating: 4,
             };
         });
         vi.mocked(getProfile).mockResolvedValue(sampleProfile);
@@ -120,7 +121,31 @@ describe("RecipeDetails", () => {
         await waitFor(() => {
             expect(screen.getByText(/4\.0/)).toBeInTheDocument();
             expect(screen.getByText(/1 ocen/)).toBeInTheDocument();
+            expect(
+                screen.getByText("Twoja ocena została zapisana.")
+            ).toBeInTheDocument();
+            expect(screen.getByText("Twoja ocena: 4/5")).toBeInTheDocument();
         });
+    });
+
+    it("shows saved rating and blocks rating again when user already rated", async () => {
+        vi.mocked(getRecipeById).mockResolvedValue({
+            ...sampleRecipe,
+            userRating: 3,
+            averageRating: 4.2,
+            ratingCount: 5,
+        });
+        vi.mocked(getProfile).mockResolvedValue(sampleProfile);
+
+        renderRecipeDetails();
+
+        expect(
+            await screen.findByText("Twoja ocena: 3/5")
+        ).toBeInTheDocument();
+
+        await clickRatingStar(4);
+
+        expect(rateRecipe).not.toHaveBeenCalled();
     });
 
     it("shows alert when rating fails with forbidden", async () => {
