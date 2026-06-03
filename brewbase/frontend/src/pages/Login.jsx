@@ -116,8 +116,8 @@ function Login() {
     );
 }
 
-const styles = {
-    page: {
+/*const styles = {
+    /!*page: {
         height: "100vh",
         backgroundColor: "#000",
         display: "flex",
@@ -181,6 +181,101 @@ const styles = {
     },
     link: {
         fontWeight: "bold",
+        cursor: "pointer",
+    },*!/
+    
+};*/
+
+const styles = {
+    page: {
+        minHeight: "100vh",
+        background: "#0f0f0f",
+
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "32px",
+        fontFamily: "Arial, sans-serif",
+    },
+    card: {
+        width: "100%",
+        maxWidth: "460px",
+        background: "#181818",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: "32px",
+        padding: "52px 42px",
+        boxShadow: "0 10px 40px rgba(0,0,0,0.35)",
+        display: "flex",
+        flexDirection: "column",
+        color: "white",
+    },
+    title: {
+        fontSize: "48px",
+        fontWeight: "700",
+        textAlign: "center",
+        marginBottom: "18px",
+        letterSpacing: "-1px",
+    },
+    subtitle: {
+        textAlign: "center",
+        color: "#9a9a9a",
+        fontSize: "0.96rem",
+        marginBottom: "38px",
+        lineHeight: 1.5,
+    },
+    input: {
+        width: "100%",
+        height: "56px",
+        border: "none",
+        background: "#232323",
+        borderRadius: "18px",
+        padding: "0 18px",
+        color: "white",
+        fontSize: "0.96rem",
+        boxSizing: "border-box",
+        marginBottom: "16px",
+    },
+    error: {
+        background: "rgba(255, 0, 0, 0.08)",
+        border: "1px solid rgba(255, 0, 0, 0.15)",
+        color: "#ff9d9d",
+        padding: "14px",
+        borderRadius: "16px",
+        fontSize: "0.9rem",
+        marginBottom: "12px",
+    },
+
+    hintBox: {
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        color: "#bdbdbd",
+        padding: "14px",
+        borderRadius: "16px",
+        fontSize: "0.9rem",
+        lineHeight: 1.5,
+        marginBottom: "15px",
+    },
+    button: {
+        width: "100%",
+        height: "56px",
+        border: "none",
+        borderRadius: "18px",
+        background: "white",
+        color: "black",
+        fontSize: "1rem",
+        fontWeight: "600",
+        cursor: "pointer",
+        marginTop: "12px",
+    },
+    footer: {
+        textAlign: "center",
+        marginTop: "28px",
+        color: "#8a8a8a",
+        fontSize: "0.92rem",
+    },
+    link: {
+        color: "white",
+        fontWeight: "600",
         cursor: "pointer",
     },
 };
