@@ -180,9 +180,10 @@ function ProfilePage() {
                 ...publicProfile,
                 userId: viewedUserId,
                 activityPoints:
-                    rankingEntry?.activityScore ??
                     publicProfile.activityPoints ??
                     publicProfile.ActivityPoints ??
+                    me.activityPoints ??
+                    me.ActivityPoints ??
                     0,
             });
             setFollowingList(myFollowing);
@@ -355,7 +356,7 @@ function ProfilePage() {
                     }));
                 }
 
-                if (viewedUserId === normalizedTargetId) {
+                if (viewedUserId === normalxizedTargetId) {
                     setIsFollowing(false);
                     setViewedProfile((previous) => ({
                         ...previous,

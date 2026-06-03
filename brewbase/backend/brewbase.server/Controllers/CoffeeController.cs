@@ -140,6 +140,11 @@ public class CoffeeController : ControllerBase
         {
             return Unauthorized();
         }
+        
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
 
         var coffee = await _context.Coffees.FirstOrDefaultAsync(c => c.Id == id);
 
@@ -160,6 +165,8 @@ public class CoffeeController : ControllerBase
 
         var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
+        var isNewRating = rating is null;
+
         if (rating is null)
         {
             rating = new CoffeeRating
@@ -177,6 +184,16 @@ public class CoffeeController : ControllerBase
         {
             rating.Value = request.Value;
             rating.UpdatedAt = now;
+        }
+
+        if (isNewRating)
+        {
+            var user = await _context.AppUsers.FindAsync(userId.Value);
+
+            if (user != null)
+            {
+                user.ActivityPoints += 10;
+            }
         }
 
         await _context.SaveChangesAsync();

@@ -173,7 +173,7 @@ builder.Services.AddOptions<RankingRefreshOptions>()
             options.Enabled = true;
         }
     });
-builder.Services.AddHostedService<RankingRefreshBackgroundService>();
+//builder.Services.AddHostedService<RankingRefreshBackgroundService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 
