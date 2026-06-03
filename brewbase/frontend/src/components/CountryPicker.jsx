@@ -87,12 +87,10 @@ function CountryPicker({ value, onChange, onCountryChange }) {
         };
     }, []);
 
-    const baseCountryNames = new Set(
-        baseCountries.map((country) => country.name)
-    );
-
-    const isCustomSelection =
-        value && !baseCountryNames.has(value);
+    const refreshCountries = async () => {
+        const data = await getCountries();
+        setBaseCountries(Array.isArray(data) ? data : []);
+    };
 
     const exactMatch = searchResults.find((result) => result.isExactMatch);
     const topFuzzyMatch = searchResults.find(
@@ -179,14 +177,7 @@ function CountryPicker({ value, onChange, onCountryChange }) {
             }
 
             applySelection(resolved);
-
-            if (!baseCountryNames.has(resolved.name)) {
-                setBaseCountries((previous) =>
-                    [...previous, resolved].sort((left, right) =>
-                        left.name.localeCompare(right.name, "pl")
-                    )
-                );
-            }
+            await refreshCountries();
 
             setSearchQuery("");
             setSearchResults([]);
@@ -242,16 +233,6 @@ function CountryPicker({ value, onChange, onCountryChange }) {
                         {country.name}
                     </button>
                 ))}
-
-                {isCustomSelection && (
-                    <button
-                        type="button"
-                        className="multi-select-option selected"
-                        onClick={() => toggleCountry({ id: null, name: value })}
-                    >
-                        {value}
-                    </button>
-                )}
 
                 <button
                     type="button"

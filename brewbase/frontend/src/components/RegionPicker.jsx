@@ -119,12 +119,10 @@ function RegionPicker({ countryId, value, onChange, disabled = false }) {
         );
     }
 
-    const baseRegionNames = new Set(
-        baseRegions.map((region) => region.name)
-    );
-
-    const isCustomSelection =
-        value && !baseRegionNames.has(value);
+    const refreshRegions = async () => {
+        const data = await getRegions(countryId);
+        setBaseRegions(Array.isArray(data) ? data : []);
+    };
 
     const exactMatch = searchResults.find((result) => result.isExactMatch);
     const topFuzzyMatch = searchResults.find(
@@ -197,14 +195,7 @@ function RegionPicker({ countryId, value, onChange, disabled = false }) {
             }
 
             onChange(resolved.name);
-
-            if (!baseRegionNames.has(resolved.name)) {
-                setBaseRegions((previous) =>
-                    [...previous, resolved].sort((left, right) =>
-                        left.name.localeCompare(right.name, "pl")
-                    )
-                );
-            }
+            await refreshRegions();
 
             setSearchQuery("");
             setSearchResults([]);
@@ -260,16 +251,6 @@ function RegionPicker({ countryId, value, onChange, disabled = false }) {
                         {region.name}
                     </button>
                 ))}
-
-                {isCustomSelection && (
-                    <button
-                        type="button"
-                        className="multi-select-option selected"
-                        onClick={() => toggleRegion({ id: null, name: value })}
-                    >
-                        {value}
-                    </button>
-                )}
 
                 <button
                     type="button"
