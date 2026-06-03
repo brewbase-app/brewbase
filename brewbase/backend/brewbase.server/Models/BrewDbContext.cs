@@ -67,6 +67,8 @@ public partial class BrewDbContext : DbContext
     public virtual DbSet<Variety> Varieties { get; set; }
 
 	public virtual DbSet<FlavorProfile> FlavorProfiles { get; set; }
+	
+	public virtual DbSet<CoffeeFlavorProfile> CoffeeFlavorProfiles { get; set; }
 
 	public virtual DbSet<UserPreferenceFlavorProfile> UserPreferenceFlavorProfiles { get; set; }
 
@@ -795,6 +797,33 @@ public partial class BrewDbContext : DbContext
     		entity.Property(e => e.Name).HasMaxLength(100).HasColumnName("name");
 		});
         
+        modelBuilder.Entity<CoffeeFlavorProfile>(entity =>
+        {
+            entity.HasKey(e => new
+            {
+                e.CoffeeId,
+                e.FlavorProfileId
+            });
+
+            entity.ToTable("coffee_flavor_profile");
+
+            entity.Property(e => e.CoffeeId)
+                .HasColumnName("coffee_id");
+
+            entity.Property(e => e.FlavorProfileId)
+                .HasColumnName("flavor_profile_id");
+
+            entity.HasOne(d => d.Coffee)
+                .WithMany(p => p.CoffeeFlavorProfiles)
+                .HasForeignKey(d => d.CoffeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.FlavorProfile)
+                .WithMany(p => p.CoffeeFlavorProfiles)
+                .HasForeignKey(d => d.FlavorProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<UserPreferenceFlavorProfile>(entity =>
         {
             entity.HasKey(e => new

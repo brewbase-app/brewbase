@@ -166,7 +166,7 @@ function ProfilePage() {
 
             try {
                 recipes = sortRecipesByNewest(
-                    (await getRecipes({ userId: viewedUserId })) ?? []
+                    (await getRecipes({ userId: viewedUserId, pageSize: 100 })) ?? []
                 );
             } catch (recipesError) {
                 console.error(recipesError);
@@ -180,9 +180,10 @@ function ProfilePage() {
                 ...publicProfile,
                 userId: viewedUserId,
                 activityPoints:
-                    rankingEntry?.activityScore ??
                     publicProfile.activityPoints ??
                     publicProfile.ActivityPoints ??
+                    me.activityPoints ??
+                    me.ActivityPoints ??
                     0,
             });
             setFollowingList(myFollowing);

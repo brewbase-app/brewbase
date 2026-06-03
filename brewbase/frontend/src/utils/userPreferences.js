@@ -27,14 +27,6 @@ export const USER_PREFERENCE_OPTIONS = {
         "Cold Brew",
         "Jeszcze nie wiem",
     ],
-    flavorProfiles: [
-        "Czekoladowe",
-        "Orzechowe",
-        "Owocowe",
-        "Kwiatowe",
-        "Słodkie",
-        "Jeszcze nie wiem",
-    ],
     acidity: ["Niska", "Średnia", "Wysoka", "Nie mam zdania"],
     body: ["Lekkie", "Zbalansowane", "Ciężkie", "Nie mam zdania"],
     regions: [
