@@ -1,13 +1,15 @@
+using brewbase.server.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
-namespace DefaultNamespace;
+namespace brewbase.server.Controllers;
 
+[ApiController]
+[Route("api/[controller]")]
 public class BodyController : ControllerBase
 {
     private readonly IBodyReadService _bodyReadService;
 
-    public BodyController(
-        IBodyReadService bodyReadService)
+    public BodyController(IBodyReadService bodyReadService)
     {
         _bodyReadService = bodyReadService;
     }
@@ -15,11 +17,9 @@ public class BodyController : ControllerBase
     [HttpGet("/api/Body")]
     public async Task<IActionResult> GetAll()
     {
-        return Ok(
-            await _bodyReadService.GetAllAsync()
-        );
+        return Ok(await _bodyReadService.GetAllAsync());
     }
-    
+
     [HttpGet("/api/Body/{id}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -32,5 +32,4 @@ public class BodyController : ControllerBase
 
         return Ok(body);
     }
-    
 }

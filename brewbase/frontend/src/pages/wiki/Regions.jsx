@@ -7,11 +7,10 @@ import "../../styles/wiki/Regions.css";
 import { Search } from "lucide-react";
 
 import { getArticles } from "../../api/articlesApi";
+import { getCountries } from "../../api/countryApi";
 import { getFlavorProfiles } from "../../api/flavorProfileApi";
 
 import MultiSelectInput from "../../components/MultiSelectInput";
-
-import { BEAN_ORIGIN_COUNTRIES } from "../../utils/beanOriginCountries";
 import {
     buildFilterOptions,
     parseCountryArticleMetadata,
@@ -39,6 +38,7 @@ function Regions() {
     const [selectedCountry, setSelectedCountry] = useState("");
     const [selectedFlavorProfiles, setSelectedFlavorProfiles] = useState([]);
     const [flavorProfileNames, setFlavorProfileNames] = useState([]);
+    const [countryNames, setCountryNames] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -48,9 +48,11 @@ function Regions() {
                 setIsLoading(true);
                 setError("");
 
-                const [data, flavorProfilesData] = await Promise.all([
+                const [data, flavorProfilesData, countriesData] =
+                    await Promise.all([
                     getArticles("country"),
                     getFlavorProfiles(),
+                    getCountries(),
                 ]);
 
                 const mappedArticles = (Array.isArray(data) ? data : []).map(
@@ -64,6 +66,11 @@ function Regions() {
                         : []
                     ).map((profile) => profile.name)
                 );
+                setCountryNames(
+                    (Array.isArray(countriesData) ? countriesData : []).map(
+                        (country) => country.name
+                    )
+                );
             } catch {
                 setError("Nie udało się pobrać artykułów o krajach.");
             } finally {
@@ -75,7 +82,7 @@ function Regions() {
     }, []);
 
     const countries = buildFilterOptions(
-        BEAN_ORIGIN_COUNTRIES,
+        countryNames,
         articles.map((article) => article.title)
     );
 

@@ -1,6 +1,6 @@
+using brewbase.server.Dtos;
 using brewbase.server.Models;
 using brewbase.server.Services.Interfaces;
-using DefaultNamespace;
 using Microsoft.EntityFrameworkCore;
 
 namespace brewbase.server.Services;

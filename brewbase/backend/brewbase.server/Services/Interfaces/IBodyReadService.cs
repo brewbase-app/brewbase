@@ -1,4 +1,6 @@
-namespace DefaultNamespace;
+using brewbase.server.Dtos;
+
+namespace brewbase.server.Services.Interfaces;
 
 public interface IBodyReadService
 {

@@ -8,21 +8,16 @@ import { Send } from "lucide-react";
 
 import { createArticle } from "../../api/articlesApi";
 import { lookupCoffeesByName } from "../../api/coffeeApi";
-import {
-    createFlavorProfile,
-    getFlavorProfiles,
-} from "../../api/flavorProfileApi";
-
 import ComboBoxInput from "../../components/ComboBoxInput";
+import CountryPicker from "../../components/CountryPicker";
 import FlavorProfilePicker from "../../components/FlavorProfilePicker";
+import RegionPicker from "../../components/RegionPicker";
 import MultiSelectInput from "../../components/MultiSelectInput";
 
-import { BEAN_ORIGIN_COUNTRIES } from "../../utils/beanOriginCountries";
 import { COFFEE_VARIETIES } from "../../utils/coffeeVarieties";
 import { COFFEE_PROCESSING_METHODS } from "../../utils/coffeeProcessingMethods";
 import { BREWING_METHOD_OPTIONS } from "../../utils/brewingMethodOptions";
 import { ROASTING_STYLE_OPTIONS } from "../../utils/roastingStyleOptions";
-import { COFFEE_REGIONS } from "../../utils/coffeeRegions";
 import { COFFEE_ROASTERIES } from "../../utils/coffeeRoasteries";
 
 const CATEGORY_OPTIONS = [
@@ -85,7 +80,7 @@ function AddWikiArticle() {
 
     const [countryFlavorProfiles, setCountryFlavorProfiles] = useState([]);
 
-    const [flavorProfileOptions, setFlavorProfileOptions] = useState([]);
+    const [selectedCountryId, setSelectedCountryId] = useState(null);
 
     const [files, setFiles] = useState([]);
 
@@ -100,27 +95,6 @@ function AddWikiArticle() {
     const [coffeeSuggestions, setCoffeeSuggestions] = useState([]);
 
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
-
-    useEffect(() => {
-        const loadFlavorProfiles = async () => {
-            try {
-                const data = await getFlavorProfiles();
-                const names = (Array.isArray(data) ? data : [])
-                    .map((profile) => profile.name)
-                    .sort((left, right) =>
-                        left.localeCompare(right, "pl")
-                    );
-
-                setFlavorProfileOptions(names);
-            } catch {
-                setSubmitError(
-                    "Nie udało się pobrać profili smakowych."
-                );
-            }
-        };
-
-        loadFlavorProfiles();
-    }, []);
 
     useEffect(() => {
         const moduleParam = searchParams.get("module");
@@ -168,18 +142,6 @@ function AddWikiArticle() {
 
         return () => clearTimeout(timeoutId);
     }, [category, title]);
-
-    const handleCreateFlavorProfile = async (name) => {
-        const created = await createFlavorProfile(name);
-
-        setFlavorProfileOptions((previous) =>
-            [...new Set([...previous, created.name])].sort((left, right) =>
-                left.localeCompare(right, "pl")
-            )
-        );
-
-        return created.name;
-    };
 
     const handleSelectLinkedCoffee = (coffee) => {
         setLinkedCoffeeId(coffee.id);
@@ -464,11 +426,9 @@ function AddWikiArticle() {
                                     Kraj pochodzenia ziaren
                                 </label>
 
-                                <ComboBoxInput
+                                <CountryPicker
                                     value={beanOriginCountry}
                                     onChange={setBeanOriginCountry}
-                                    options={BEAN_ORIGIN_COUNTRIES}
-                                    placeholder="Wybierz z listy lub wpisz kraj"
                                 />
 
                             </div>
@@ -565,11 +525,13 @@ function AddWikiArticle() {
                                     Nazwa kraju
                                 </label>
 
-                                <ComboBoxInput
+                                <CountryPicker
                                     value={title}
                                     onChange={setTitle}
-                                    options={BEAN_ORIGIN_COUNTRIES}
-                                    placeholder="Wybierz z listy lub wpisz kraj"
+                                    onCountryChange={({ id }) => {
+                                        setSelectedCountryId(id ?? null);
+                                        setCountryRegion("");
+                                    }}
                                 />
 
                             </div>
@@ -580,11 +542,10 @@ function AddWikiArticle() {
                                     Region
                                 </label>
 
-                                <ComboBoxInput
+                                <RegionPicker
+                                    countryId={selectedCountryId}
                                     value={countryRegion}
                                     onChange={setCountryRegion}
-                                    options={COFFEE_REGIONS}
-                                    placeholder="Wybierz z listy lub wpisz region"
                                 />
 
                             </div>
@@ -595,12 +556,9 @@ function AddWikiArticle() {
                                     Profil smakowy
                                 </label>
 
-                                <MultiSelectInput
-                                    options={flavorProfileOptions}
+                                <FlavorProfilePicker
                                     value={countryFlavorProfiles}
                                     onChange={setCountryFlavorProfiles}
-                                    allowCustom
-                                    onAddCustom={handleCreateFlavorProfile}
                                 />
 
                             </div>
