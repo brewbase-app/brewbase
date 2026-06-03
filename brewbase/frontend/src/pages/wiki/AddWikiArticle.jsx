@@ -8,11 +8,6 @@ import { Send } from "lucide-react";
 
 import { createArticle } from "../../api/articlesApi";
 import { lookupCoffeesByName } from "../../api/coffeeApi";
-import {
-    createFlavorProfile,
-    getFlavorProfiles,
-} from "../../api/flavorProfileApi";
-
 import ComboBoxInput from "../../components/ComboBoxInput";
 import CountryPicker from "../../components/CountryPicker";
 import FlavorProfilePicker from "../../components/FlavorProfilePicker";
@@ -85,7 +80,6 @@ function AddWikiArticle() {
 
     const [countryFlavorProfiles, setCountryFlavorProfiles] = useState([]);
 
-    const [flavorProfileOptions, setFlavorProfileOptions] = useState([]);
     const [selectedCountryId, setSelectedCountryId] = useState(null);
 
     const [files, setFiles] = useState([]);
@@ -101,31 +95,6 @@ function AddWikiArticle() {
     const [coffeeSuggestions, setCoffeeSuggestions] = useState([]);
 
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
-
-    useEffect(() => {
-        const loadCatalogOptions = async () => {
-            try {
-                const flavorProfilesData = await getFlavorProfiles();
-
-                const flavorNames = (Array.isArray(flavorProfilesData)
-                    ? flavorProfilesData
-                    : []
-                )
-                    .map((profile) => profile.name)
-                    .sort((left, right) =>
-                        left.localeCompare(right, "pl")
-                    );
-
-                setFlavorProfileOptions(flavorNames);
-            } catch {
-                setSubmitError(
-                    "Nie udało się pobrać danych katalogowych."
-                );
-            }
-        };
-
-        loadCatalogOptions();
-    }, []);
 
     useEffect(() => {
         const moduleParam = searchParams.get("module");
@@ -173,18 +142,6 @@ function AddWikiArticle() {
 
         return () => clearTimeout(timeoutId);
     }, [category, title]);
-
-    const handleCreateFlavorProfile = async (name) => {
-        const created = await createFlavorProfile(name);
-
-        setFlavorProfileOptions((previous) =>
-            [...new Set([...previous, created.name])].sort((left, right) =>
-                left.localeCompare(right, "pl")
-            )
-        );
-
-        return created.name;
-    };
 
     const handleSelectLinkedCoffee = (coffee) => {
         setLinkedCoffeeId(coffee.id);
@@ -599,12 +556,9 @@ function AddWikiArticle() {
                                     Profil smakowy
                                 </label>
 
-                                <MultiSelectInput
-                                    options={flavorProfileOptions}
+                                <FlavorProfilePicker
                                     value={countryFlavorProfiles}
                                     onChange={setCountryFlavorProfiles}
-                                    allowCustom
-                                    onAddCustom={handleCreateFlavorProfile}
                                 />
 
                             </div>
