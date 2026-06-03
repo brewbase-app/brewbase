@@ -166,7 +166,7 @@ function ProfilePage() {
 
             try {
                 recipes = sortRecipesByNewest(
-                    (await getRecipes({ userId: viewedUserId })) ?? []
+                    (await getRecipes({ userId: viewedUserId, pageSize: 100 })) ?? []
                 );
             } catch (recipesError) {
                 console.error(recipesError);
@@ -356,7 +356,7 @@ function ProfilePage() {
                     }));
                 }
 
-                if (viewedUserId === normalxizedTargetId) {
+                if (viewedUserId === normalizedTargetId) {
                     setIsFollowing(false);
                     setViewedProfile((previous) => ({
                         ...previous,
