@@ -133,17 +133,36 @@
     color:#1f1f1f;
 }
 
-.roastery-location{
-    display:flex;
-    align-items:center;
-
-    gap:8px;
-
-    margin-bottom:20px;
+.roastery-author{
+    margin:0 0 12px 0;
 
     color:#666;
 
     font-size:14px;
+}
+
+.roastery-preview{
+    margin:0 0 20px 0;
+
+    color:#444;
+
+    font-size:14px;
+    line-height:1.5;
+
+    display:-webkit-box;
+    -webkit-line-clamp:3;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+}
+
+.roasteries-empty-state{
+    grid-column:1 / -1;
+
+    margin:0;
+
+    color:#666;
+
+    font-size:15px;
 }
 
 .roastery-tags{
