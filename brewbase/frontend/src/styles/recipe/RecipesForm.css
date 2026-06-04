@@ -1,0 +1,162 @@
+.recipe-form__moderation-banner {
+    margin-bottom: 24px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    background-color: #fff4e5;
+    border: 1px solid #ffd8a8;
+    color: #5c4a1f;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.recipe-form__card {
+    background-color: #fafafa;
+    border-radius: 28px;
+    border: 1px solid #e6e6e6;
+    padding: 32px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.recipe-form__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.recipe-form__group {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.recipe-form__section {
+    margin-top: 14px;
+}
+
+.recipe-form__section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #4f4f4f;
+    margin: 0 0 14px;
+}
+
+.recipe-form__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.recipe-form__label {
+    margin: 4px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5a5a5a;
+}
+
+.recipe-form__input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid #dddddd;
+    background-color: #f5f5f5;
+    font-size: 15px;
+    color: #1f1f1f;
+    outline: none;
+}
+
+.recipe-form__input--textarea {
+    height: 110px;
+    resize: none;
+    padding-top: 14px;
+}
+
+.recipe-form__input--error {
+    border-color: #d14343;
+}
+
+.recipe-form__error {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #d14343;
+}
+
+.recipe-form__notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+}
+
+.recipe-form__notice--error {
+    background-color: #fff4f4;
+    border: 1px solid #f0cccc;
+}
+
+.recipe-form__notice--wiki {
+    background-color: #f0f4ff;
+    border: 1px solid #d9e3ff;
+}
+
+.recipe-form__notice-text {
+    margin: 0;
+    font-size: 13px;
+}
+
+.recipe-form__notice-text--error {
+    color: #9b2c2c;
+}
+
+.recipe-form__notice-text--wiki {
+    color: #4f5d78;
+}
+
+.recipe-form__notice-btn {
+    background-color: #ffffff;
+    color: #1f1f1f;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid #dddddd;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.recipe-form__notice-btn--wiki {
+    border-color: #c9d7ff;
+}
+
+.recipe-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 14px;
+    margin-top: 26px;
+}
+
+.recipe-form__btn {
+    padding: 14px 22px;
+    border-radius: 18px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.recipe-form__btn--draft {
+    background-color: #ededed;
+    color: #2f2f2f;
+    border: 1px solid #d9d9d9;
+}
+
+.recipe-form__btn--publish {
+    background-color: #1f1f1f;
+    color: white;
+    border: none;
+}
+
+.recipe-form__btn--disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}

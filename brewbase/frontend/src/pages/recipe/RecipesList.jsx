@@ -22,6 +22,9 @@ import {
 } from "../../api/recipeApi";
 import { getRecipeModerationComment } from "../../utils/recipeModeration";
 
+import "../../styles/recipe/recipeLayout.css";
+import "../../styles/recipe/RecipesList.css";
+
 const formatDate = (date) => {
 
     if (!date) {
@@ -151,174 +154,42 @@ const RecipesList = ({ title }) => {
     };
 
     return (
-
-        <div
-            style={{
-                width: "100%",
-                minHeight: "100vh",
-                backgroundColor: "#f3f3f3",
-                padding: "55px 60px",
-                boxSizing: "border-box"
-            }}
-        >
-
-            {/* HEADER */}
-
-            <div style={{ marginBottom: "38px" }}>
-
-                <h1
-                    style={{
-                        fontSize: "58px",
-                        fontWeight: "700",
-                        color: "#1f1f1f",
-                        marginBottom: "8px",
-                        lineHeight: "1"
-                    }}
-                >
-                    {title}
-                </h1>
-
-                <p
-                    style={{
-                        fontSize: "16px",
-                        color: "#6f6f6f"
-                    }}
-                >
-
+        <div className="recipe-page">
+            <div className="recipe-page__header">
+                <h1 className="recipe-page__title">{title}</h1>
+                <p className="recipe-page__subtitle">
                     {title === "Ulubione receptury"
                         ? "Twoje zapisane i ulubione przepisy."
-
                         : title === "Wszystkie receptury"
                             ? "Przeglądaj wszystkie publiczne receptury."
-
                             : "Wszystkie stworzone przez Ciebie receptury."}
-
                 </p>
-
             </div>
 
-            {/* EMPTY STATE */}
-
             {data.length === 0 && (
-
-                <div
-                    style={{
-                        backgroundColor: "#fafafa",
-                        borderRadius: "28px",
-                        border: "1px solid #e6e6e6",
-                        padding: "50px",
-                        maxWidth: "950px",
-                        color: "#707070",
-                        fontSize: "16px"
-                    }}
-                >
-                    Brak receptur.
-                </div>
-
+                <div className="recipe-empty">Brak receptur.</div>
             )}
 
-            {/* LIST */}
-
-            <div
-                style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "18px",
-                    maxWidth: "950px"
-                }}
-            >
-
+            <div className="recipe-list__items">
                 {data.map((r) => (
-
-                    <div
-                        key={r.id}
-                        style={{
-                            backgroundColor: "#fafafa",
-                            borderRadius: "26px",
-                            padding: "24px 28px",
-                            border: "1px solid #e6e6e6",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            boxShadow:
-                                "0 2px 10px rgba(0,0,0,0.03)"
-                        }}
-                    >
-
-                        {/* LEFT */}
-
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "22px"
-                            }}
-                        >
-
-                            <div
-                                style={{
-                                    width: "58px",
-                                    height: "58px",
-                                    borderRadius: "18px",
-                                    backgroundColor: "#efefef",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    color: "#2a2a2a",
-                                    flexShrink: 0
-                                }}
-                            >
-
+                    <div key={r.id} className="recipe-card recipe-list__item">
+                        <div className="recipe-card__row">
+                            <div className="recipe-card__icon">
                                 {title === "Ulubione receptury" ? (
-
                                     <Heart size={22} />
-
                                 ) : (
-
                                     <FileText size={22} />
-
                                 )}
-
                             </div>
 
                             <div>
-
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "10px",
-                                        marginBottom: "8px",
-                                        flexWrap: "wrap"
-                                    }}
-                                >
-
-                                    <h2
-                                        style={{
-                                            fontSize: "22px",
-                                            fontWeight: "700",
-                                            color: "#1f1f1f",
-                                            margin: 0
-                                        }}
-                                    >
+                                <div className="recipe-list__title-row">
+                                    <h2 className="recipe-card__title recipe-card__title--inline">
                                         {r.title}
                                     </h2>
 
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "6px",
-                                            backgroundColor:
-                                                "#ebebeb",
-                                            padding: "6px 10px",
-                                            borderRadius: "12px",
-                                            fontSize: "12px",
-                                            color: "#555"
-                                        }}
-                                    >
-
-                                        {r.isPublic ?  (
+                                    <div className="recipe-badge">
+                                        {r.isPublic ? (
                                             <>
                                                 <Globe size={12} />
                                                 Publiczna
@@ -329,62 +200,29 @@ const RecipesList = ({ title }) => {
                                                 Robocza
                                             </>
                                         )}
-
                                     </div>
-
                                 </div>
 
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "8px",
-                                        color: "#707070",
-                                        fontSize: "14px"
-                                    }}
-                                >
-
+                                <div className="recipe-card__meta">
                                     <Clock3 size={14} />
-
-                                    <span>
-
-                                        {formatDate(r.createdAt)}
-
-                                    </span>
-
+                                    <span>{formatDate(r.createdAt)}</span>
                                 </div>
 
                                 {title === "Twoje receptury" &&
                                     !r.isPublic &&
                                     getRecipeModerationComment(r) && (
-                                        <p
-                                            style={{
-                                                marginTop: "10px",
-                                                fontSize: "14px",
-                                                color: "#555555",
-                                            }}
-                                        >
+                                        <p className="recipe-moderation-note">
                                             Komentarz moderatora:{" "}
                                             {getRecipeModerationComment(r)}
                                         </p>
                                     )}
-
                             </div>
-
                         </div>
 
-                        {/* RIGHT */}
-
-                        <div
-                            style={{
-                                display: "flex",
-                                gap: "10px",
-                                alignItems: "center"
-                            }}
-                        >
-
+                        <div className="recipe-list__actions">
                             <button
-                                style={favoriteButtonStyle}
+                                type="button"
+                                className="recipe-list__btn recipe-list__btn--icon"
                                 onClick={(event) =>
                                     handleFavorite(r.id, event)
                                 }
@@ -394,7 +232,6 @@ const RecipesList = ({ title }) => {
                                         : "Dodaj do ulubionych"
                                 }
                             >
-
                                 <Heart
                                     size={18}
                                     fill={
@@ -403,81 +240,62 @@ const RecipesList = ({ title }) => {
                                             : "none"
                                     }
                                 />
-
                             </button>
 
                             <button
-                                style={detailsButtonStyle}
+                                type="button"
+                                className="recipe-list__btn recipe-list__btn--primary"
                                 onClick={() =>
                                     navigate(`/recipes/${r.id}`)
                                 }
                             >
-
                                 Szczegóły
-
                                 <ChevronRight size={18} />
-
                             </button>
 
-                            {title !==
-                                "Ulubione receptury" &&
-
-                                title !==
-                                "Wszystkie receptury" && (
-
+                            {title !== "Ulubione receptury" &&
+                                title !== "Wszystkie receptury" && (
                                     <button
-                                        style={deleteButtonStyle}
+                                        type="button"
+                                        className="recipe-list__btn recipe-list__btn--danger"
                                         onClick={() =>
                                             handleDelete(r.id)
                                         }
                                     >
-
                                         <Trash2 size={16} />
-
                                         Usuń
-
                                     </button>
-
                                 )}
-
                         </div>
-
                     </div>
-
                 ))}
-
             </div>
+
             {title !== "Ulubione receptury" && (
-                <div
-                    style={{
-                        display: "flex",
-                        gap: "12px",
-                        alignItems: "center",
-                        marginTop: "26px",
-                        maxWidth: "950px"
-                    }}
-                >
+                <div className="recipe-list__pagination">
                     <button
-                        style={paginationButtonStyle}
-                        onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+                        type="button"
+                        className="recipe-list__btn"
+                        onClick={() =>
+                            setPage((currentPage) =>
+                                Math.max(1, currentPage - 1)
+                            )
+                        }
                         disabled={page === 1}
                     >
                         Poprzednia
                     </button>
 
-                    <span
-                        style={{
-                            color: "#555",
-                            fontSize: "14px",
-                            fontWeight: "600"
-                        }}
-                    >
-            Strona {page}
-        </span>
+                    <span className="recipe-list__page-label">
+                        Strona {page}
+                    </span>
 
                     <button
-                        style={paginationButtonStyle}
-                        onClick={() => setPage((currentPage) => currentPage + 1)}
+                        type="button"
+                        className="recipe-list__btn"
+                        onClick={() =>
+                            setPage((currentPage) => currentPage + 1)
+                        }
                         disabled={recipes.length < pageSize}
                     >
                         Następna
@@ -486,57 +304,6 @@ const RecipesList = ({ title }) => {
             )}
         </div>
     );
-};
-
-const paginationButtonStyle = {
-    backgroundColor: "#efefef",
-    color: "#2f2f2f",
-    padding: "12px 18px",
-    borderRadius: "18px",
-    border: "1px solid #dddddd",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: "600"
-};
-
-const detailsButtonStyle = {
-    backgroundColor: "#1f1f1f",
-    color: "white",
-    padding: "12px 18px",
-    borderRadius: "18px",
-    border: "none",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    fontSize: "14px",
-    fontWeight: "600"
-};
-
-const favoriteButtonStyle = {
-    backgroundColor: "#efefef",
-    color: "#2f2f2f",
-    padding: "12px 14px",
-    borderRadius: "18px",
-    border: "1px solid #dddddd",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center"
-};
-
-const deleteButtonStyle = {
-    backgroundColor: "#efefef",
-    color: "#555",
-    padding: "12px 16px",
-    borderRadius: "18px",
-    border: "1px solid #dddddd",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    fontSize: "14px",
-    fontWeight: "600"
 };
 
 export default RecipesList;

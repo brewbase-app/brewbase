@@ -24,7 +24,7 @@ import {
     saveUserPreferences,
 } from "../../utils/userPreferences";
 
-import "../../styles/editProfile.css";
+import "../../styles/profile/editProfile.css";
 
 function PreferenceTagGroup({
     label,

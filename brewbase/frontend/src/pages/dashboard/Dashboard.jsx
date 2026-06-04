@@ -1,4 +1,4 @@
-import "../../styles/Dashboard.css";
+import "../../styles/dashboard/Dashboard.css";
 
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";

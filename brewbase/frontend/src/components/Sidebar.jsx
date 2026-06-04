@@ -3,7 +3,7 @@ import {
     useNavigate
 } from "react-router-dom";
 
-import "../styles/sidebar.css";
+import "../styles/components/sidebar.css";
 
 import {
     Home,

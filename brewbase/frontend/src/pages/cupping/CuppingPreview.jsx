@@ -5,7 +5,7 @@ import {
     deleteCuppingSession,
     getCuppingSessionDetails
 } from "../../api/cuppingSessionsApi";
-import "../../styles/CuppingPreview.css";
+import "../../styles/cupping/CuppingPreview.css";
 
 const CuppingPreview = () => {
     const { id } = useParams();

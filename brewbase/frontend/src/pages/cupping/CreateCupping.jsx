@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createCuppingSession } from "../../api/cuppingSessionsApi";
-import "../../styles/CreateCupping.css";
+import "../../styles/cupping/CreateCupping.css";
 
 const CreateCupping = () => {
     const navigate = useNavigate();

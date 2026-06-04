@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import "../styles/ConfirmDialog.css";
+import "../styles/components/ConfirmDialog.css";
 
 function ConfirmDialog({
     isOpen,

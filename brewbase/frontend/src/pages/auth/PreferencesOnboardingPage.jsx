@@ -14,7 +14,7 @@ import { getBrewingMethods } from "../../api/brewingMethodApi"; //OC
 import { getBody } from "../../api/bodyApi.js"; //OC
 import { getAcidity } from "../../api/acidityApi.js"; //OC
 
-import "../../styles/PreferencesOnboardingPage.css";
+import "../../styles/auth/PreferencesOnboardingPage.css";
 
 const steps = [
     "Poziom",

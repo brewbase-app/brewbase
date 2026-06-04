@@ -19,7 +19,7 @@ import {
     getRecipeRanking
 } from "../../api/rankingApi";
 
-import "../../styles/Ranking.css";
+import "../../styles/ranking/Ranking.css";
 
 function Ranking() {
     const [activeTab, setActiveTab] = useState("coffees");
