@@ -10,29 +10,6 @@
     box-sizing:border-box;
 }
 
-.wiki-my-articles-header{
-    margin-bottom:36px;
-}
-
-.wiki-my-articles-header h1{
-    margin:0 0 12px 0;
-
-    font-size:52px;
-    font-weight:600;
-
-    letter-spacing:-1.5px;
-
-    color:#1f1f1f;
-}
-
-.wiki-my-articles-header p{
-    margin:0;
-
-    font-size:17px;
-
-    color:#666;
-}
-
 .wiki-my-articles-list{
     display:flex;
     flex-direction:column;

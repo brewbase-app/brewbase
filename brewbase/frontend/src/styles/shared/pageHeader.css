@@ -1,0 +1,83 @@
+/**
+ * Shared list-page headers (same scale as Ranking).
+ */
+
+.ranking-header,
+.wiki-header,
+.coffees-header,
+.regions-header,
+.methods-header,
+.roasteries-header,
+.wiki-my-articles-header,
+.add-article-header,
+.favorite-coffees-header,
+.recipe-page__header,
+.cupping-header,
+.preview-header,
+.details-header {
+    margin-bottom: 36px;
+}
+
+.ranking-header h1,
+.wiki-header h1,
+.coffees-header h1,
+.regions-header h1,
+.methods-header h1,
+.roasteries-header h1,
+.wiki-my-articles-header h1,
+.add-article-header h1,
+.favorite-coffees-header h1,
+.recipe-page__title,
+.cupping-title,
+.preview-title,
+.details-header .title,
+.cupping-header h1,
+.profile-username {
+    margin: 0 0 12px 0;
+    font-size: 64px;
+    font-weight: 700;
+    letter-spacing: -2px;
+    color: #1f1f1f;
+    line-height: 1;
+}
+
+.ranking-header p,
+.wiki-header p,
+.coffees-header p,
+.regions-header p,
+.methods-header p,
+.roasteries-header p,
+.wiki-my-articles-header p,
+.add-article-header p,
+.favorite-coffees-header p,
+.recipe-page__subtitle,
+.cupping-subtitle,
+.preview-subtitle,
+.details-subtitle,
+.cupping-header p {
+    margin: 0;
+    font-size: 18px;
+    color: #666;
+    line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+    .ranking-header h1,
+    .wiki-header h1,
+    .coffees-header h1,
+    .regions-header h1,
+    .methods-header h1,
+    .roasteries-header h1,
+    .wiki-my-articles-header h1,
+    .add-article-header h1,
+    .favorite-coffees-header h1,
+    .recipe-page__title,
+    .cupping-title,
+    .preview-title,
+    .details-header .title,
+    .cupping-header h1,
+    .profile-username {
+        font-size: 48px;
+        letter-spacing: -1.5px;
+    }
+}

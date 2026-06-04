@@ -1,50 +1,48 @@
+@import "./styles/shared/pageHeader.css";
+
 body {
     margin: 0;
 }
 
-.global-back-button{
-    position: fixed;
-
-    top: 20px;
-    left: 115px;
-
-    height: 35px;
-
-    padding: 0 22px;
-
-    border: none;
-
-    border-radius: 18px;
-
-    background: #111;
-    color: white;
-
+.app-main {
+    flex: 1;
     display: flex;
-    align-items: center;
-    gap: 10px;
-
-    font-size: 15px;
-    font-weight: 700;
-
-    cursor: pointer;
-
-    z-index: 1000;
-
-    transition: 0.2s ease;
+    flex-direction: column;
+    position: relative;
+    min-height: 100vh;
+    background: #f8f6f3;
+    transition: margin-left 0.25s ease;
 }
 
-    .back-button:hover {
-        background: #000;
+.app-main-content {
+    flex: 1;
+    min-width: 0;
+}
 
-        transform: translateY(-1px);
-    }
-    
+.global-back-bar {
+    display: flex;
+    align-items: center;
+    padding: 16px 24px 8px;
+    flex-shrink: 0;
+}
 
-    
+.global-back-button {
+    height: 36px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 18px;
+    background: #111;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
 
-
-    .global-back-button:hover{
-    transform:translateY(-2px);
-
-    background:#2a2a2a;
+.global-back-button:hover {
+    transform: translateY(-1px);
+    background: #2a2a2a;
 }

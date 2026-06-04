@@ -8,17 +8,6 @@
     margin-bottom: 28px;
 }
 
-.favorite-coffees-header h1 {
-    font-size: 40px;
-    font-weight: 700;
-    color: #111111;
-    margin-bottom: 8px;
-}
-
-.favorite-coffees-header p {
-    font-size: 15px;
-    color: #6f6f6f;
-}
 
 .favorite-coffees-list {
     display: flex;
@@ -120,7 +109,4 @@
         width: 100%;
     }
 
-    .favorite-coffees-header h1 {
-        font-size: 32px;
-    }
 }

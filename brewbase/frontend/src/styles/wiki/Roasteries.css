@@ -16,27 +16,8 @@
 
 /* HEADER */
 
-.roasteries-header{
-    margin-bottom:42px;
-}
-
-.roasteries-header h1{
-    margin:0 0 12px 0;
-
-    font-size:64px;
-    font-weight:700;
-
-    letter-spacing:-2px;
-
-    color:#1f1f1f;
-}
-
 .roasteries-header p{
-    margin:0 0 30px 0;
-
-    font-size:18px;
-
-    color:#666;
+    margin-bottom:30px;
 }
 
 /* SEARCH */

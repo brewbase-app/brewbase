@@ -23,26 +23,8 @@
     max-width: 950px;
 }
 
-.recipe-page__header {
-    margin-bottom: 38px;
-}
-
-.recipe-page__title {
-    font-size: 58px;
-    font-weight: 700;
-    color: #1f1f1f;
-    margin-bottom: 8px;
-    line-height: 1;
-}
-
 .recipe-page__title--spaced {
     margin-bottom: 14px;
-}
-
-.recipe-page__subtitle {
-    font-size: 16px;
-    color: #6f6f6f;
-    margin: 0;
 }
 
 .recipe-panel {

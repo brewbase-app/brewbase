@@ -177,9 +177,8 @@ const isAuthPage =
             )}
 
             <div
+                className="app-main"
                 style={{
-                    flex: 1,
-
                     marginLeft:
                         !isAuthPage
                             ? (
@@ -188,33 +187,23 @@ const isAuthPage =
                                     : "100px"
                             )
                             : "0px",
-
-                    transition:
-                        "margin-left 0.25s ease",
-
-                    position: "relative",
-
-                    minHeight: "100vh",
-
-                    background: "#f8f6f3"
                 }}
             >
 
                 {showBackButton && (
-
-                    <button
-                        className="global-back-button"
-                        onClick={handleBackClick}
-                    >
-
-                        <ArrowLeft size={18} />
-
-                        Wróć
-
-                    </button>
-
+                    <div className="global-back-bar">
+                        <button
+                            type="button"
+                            className="global-back-button"
+                            onClick={handleBackClick}
+                        >
+                            <ArrowLeft size={18} />
+                            Wróć
+                        </button>
+                    </div>
                 )}
 
+                <div className="app-main-content">
                 <Routes>
 
                     {/* START */}
@@ -433,6 +422,7 @@ const isAuthPage =
                     </Route>
 
                 </Routes>
+                </div>
 
             </div>
 

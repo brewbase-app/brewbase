@@ -11,25 +11,6 @@
     max-width: 950px;
 }
 
-.details-header {
-    margin-bottom: 38px;
-}
-
-.title {
-    margin: 0 0 8px 0;
-    font-size: 58px;
-    font-weight: 700;
-    color: #1f1f1f;
-    line-height: 1;
-    text-align: left;
-}
-
-.details-subtitle {
-    margin: 0;
-    font-size: 16px;
-    color: #6f6f6f;
-}
-
 .error-text {
     color: #b42318;
     font-size: 14px;
@@ -291,10 +272,6 @@
 @media (max-width: 900px) {
     .details-container {
         padding: 40px 24px;
-    }
-
-    .title {
-        font-size: 42px;
     }
 
     .coffee-inputs,
