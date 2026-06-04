@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 
 import "../../styles/wiki/BrewingMethods.css";
 
+import { Search } from "lucide-react";
+
 import { getArticles } from "../../api/articlesApi";
 import { getBrewingMethods } from "../../api/brewingMethodApi";
 
@@ -37,6 +39,7 @@ function BrewingMethods() {
 
     const [articles, setArticles] = useState([]);
     const [catalogMethodNames, setCatalogMethodNames] = useState([]);
+    const [search, setSearch] = useState("");
     const [selectedMethod, setSelectedMethod] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
@@ -78,11 +81,21 @@ function BrewingMethods() {
     }, []);
 
     const filteredArticles = articles.filter((article) => {
+        const query = search.toLowerCase();
+
+        const matchesSearch =
+            (article.title ?? "")
+                .toLowerCase()
+                .includes(query) ||
+            (article.excerpt ?? "")
+                .toLowerCase()
+                .includes(query);
+
         const matchesMethod =
             selectedMethod === "" ||
             article.title === selectedMethod;
 
-        return matchesMethod;
+        return matchesSearch && matchesMethod;
     });
 
     if (isLoading) {
@@ -110,6 +123,20 @@ function BrewingMethods() {
                     Poznaj najpopularniejsze metody
                     parzenia kaw specialty.
                 </p>
+
+                <div className="methods-search-container">
+                    <Search size={18} />
+
+                    <input
+                        type="text"
+                        placeholder="Szukaj metod..."
+                        className="methods-search"
+                        value={search}
+                        onChange={(event) =>
+                            setSearch(event.target.value)
+                        }
+                    />
+                </div>
             </div>
 
             <div className="methods-content">

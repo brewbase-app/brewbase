@@ -5,6 +5,7 @@ import "../../styles/wiki/Coffees.css";
 import { useNavigate } from "react-router-dom";
 
 import {
+    Search,
     Heart,
     Star
 } from "lucide-react";
@@ -59,6 +60,7 @@ function Coffees() {
 
     const [coffees, setCoffees] = useState([]);
     const [articles, setArticles] = useState([]);
+    const [search, setSearch] = useState("");
     const [selectedOriginCountry, setSelectedOriginCountry] = useState("");
     const [selectedProcessing, setSelectedProcessing] = useState("");
     const [selectedVariety, setSelectedVariety] = useState("");
@@ -212,6 +214,13 @@ function Coffees() {
     };
 
     const filteredItems = allItems.filter((item) => {
+        const query = search.toLowerCase();
+
+        const matchesSearch =
+            (item.name ?? "")
+                .toLowerCase()
+                .includes(query);
+
         const matchesOriginCountry =
             selectedOriginCountry === "" ||
             item.beanOriginCountry === selectedOriginCountry;
@@ -231,6 +240,7 @@ function Coffees() {
             );
 
         return (
+            matchesSearch &&
             matchesOriginCountry &&
             matchesProcessing &&
             matchesVariety &&
@@ -262,6 +272,20 @@ function Coffees() {
                 <p>
                     Poznaj odmiany kaw specialty i ich pochodzenie.
                 </p>
+
+                <div className="coffees-search-container">
+                    <Search size={18} />
+
+                    <input
+                        type="text"
+                        placeholder="Szukaj kaw..."
+                        className="coffees-search"
+                        value={search}
+                        onChange={(event) =>
+                            setSearch(event.target.value)
+                        }
+                    />
+                </div>
             </div>
 
             <div className="coffees-content">
