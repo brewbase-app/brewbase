@@ -43,7 +43,6 @@ const sampleSession = {
             overallScore: 8,
             flavorProfileNotes: "Owocowe",
             notes: "Bardzo dobra",
-            cleanCup: true,
         },
     ],
 };

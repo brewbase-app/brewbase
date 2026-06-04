@@ -206,7 +206,6 @@ public sealed class CuppingSessionWriteService : ICuppingSessionWriteService
             AcidityScore = sessionCoffee.AcidityScore,
             BodyScore = sessionCoffee.BodyScore,
             FlavorProfileNotes = sessionCoffee.FlavorProfileNotes,
-            CleanCup = sessionCoffee.CleanCup,
             OverallScore = sessionCoffee.OverallScore
         };
 
@@ -260,7 +259,6 @@ public sealed class CuppingSessionWriteService : ICuppingSessionWriteService
         sessionCoffee.FlavorProfileNotes = string.IsNullOrWhiteSpace(request.FlavorProfileNotes)
             ? null
             : request.FlavorProfileNotes.Trim();
-        sessionCoffee.CleanCup = request.CleanCup;
         sessionCoffee.OverallScore = request.OverallScore;
 
         await _context.SaveChangesAsync();
@@ -276,7 +274,6 @@ public sealed class CuppingSessionWriteService : ICuppingSessionWriteService
             AcidityScore = sessionCoffee.AcidityScore,
             BodyScore = sessionCoffee.BodyScore,
             FlavorProfileNotes = sessionCoffee.FlavorProfileNotes,
-            CleanCup = sessionCoffee.CleanCup,
             OverallScore = sessionCoffee.OverallScore
         };
 
@@ -336,7 +333,6 @@ public sealed class CuppingSessionWriteService : ICuppingSessionWriteService
         AcidityScore = sessionCoffee.AcidityScore,
         BodyScore = sessionCoffee.BodyScore,
         FlavorProfileNotes = sessionCoffee.FlavorProfileNotes,
-        CleanCup = sessionCoffee.CleanCup,
         OverallScore = sessionCoffee.OverallScore
     };
 

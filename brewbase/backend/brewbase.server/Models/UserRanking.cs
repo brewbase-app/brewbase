@@ -10,11 +10,7 @@ public partial class UserRanking
     public DateTime RefreshedAt { get; set; }
 
     public int ActivityScore { get; set; }
-
-    public int RecipeCount { get; set; }
-
-    public int LikeCount { get; set; }
-
+    
     public int UserId { get; set; }
 
     public virtual AppUser User { get; set; } = null!;
@@ -26,13 +22,9 @@ public partial class UserRanking
     public int CoffeeRatingCount { get; set; }
 
     public int RecipeRatingCount { get; set; }
-
-    public int QuickNoteCount { get; set; }
-
+    
     public int CuppingSessionCount { get; set; }
-
-    public int CuppingSessionCoffeeCount { get; set; }
-
+    
     public int FollowersCount { get; set; }
 
     public int ReceivedRecipeFavoriteCount { get; set; }
