@@ -15,14 +15,69 @@ vi.mock("../../../api/flavorProfileApi", () => ({
     getFlavorProfiles: vi.fn(),
 }));
 
+vi.mock("../../../api/preferenceApi", () => ({
+    getPreferences: vi.fn(),
+    savePreferences: vi.fn(),
+}));
+
+vi.mock("../../../api/brewingMethodApi", () => ({
+    getBrewingMethods: vi.fn(),
+}));
+
+vi.mock("../../../api/regionApi", () => ({
+    getRegions: vi.fn(),
+}));
+
+vi.mock("../../../api/acidityApi", () => ({
+    getAcidity: vi.fn(),
+}));
+
+vi.mock("../../../api/bodyApi", () => ({
+    getBody: vi.fn(),
+}));
+
 import { getProfile, updateProfile } from "../../../api/profileApi";
 import { getFlavorProfiles } from "../../../api/flavorProfileApi";
+import {
+    getPreferences,
+    savePreferences,
+} from "../../../api/preferenceApi";
+
+import { getBrewingMethods } from "../../../api/brewingMethodApi";
+import { getRegions } from "../../../api/regionApi";
+import { getAcidity } from "../../../api/acidityApi";
+import { getBody } from "../../../api/bodyApi";
+
 
 describe("EditProfilePage", () => {
     beforeEach(() => {
         vi.mocked(getProfile).mockReset();
         vi.mocked(updateProfile).mockReset();
         vi.mocked(getFlavorProfiles).mockReset();
+        vi.mocked(getPreferences).mockReset();
+        vi.mocked(savePreferences).mockReset();
+        vi.mocked(getBrewingMethods).mockReset();
+        vi.mocked(getRegions).mockReset();
+        vi.mocked(getAcidity).mockReset();
+        vi.mocked(getBody).mockReset();
+
+        vi.mocked(getPreferences).mockResolvedValue({
+            experienceLevel: "",
+            brewingMethods: [],
+            flavorProfiles: [],
+            acidity: "",
+            body: "",
+            regions: [],
+            recommendationStyle: "",
+            allowExploration: false,
+        });
+
+        vi.mocked(getBrewingMethods).mockResolvedValue([]);
+        vi.mocked(getRegions).mockResolvedValue([]);
+        vi.mocked(getAcidity).mockResolvedValue([]);
+        vi.mocked(getBody).mockResolvedValue([]);
+        vi.mocked(savePreferences).mockResolvedValue(null);
+        
         vi.spyOn(window, "alert").mockImplementation(() => {});
         localStorage.clear();
     });
