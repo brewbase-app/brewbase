@@ -15,13 +15,9 @@ public class UserRankingResponseDto
     public int CoffeeRatingCount { get; set; }
 
     public int RecipeRatingCount { get; set; }
-
-    public int QuickNoteCount { get; set; }
-
+    
     public int CuppingSessionCount { get; set; }
-
-    public int CuppingSessionCoffeeCount { get; set; }
-
+    
     public int FollowersCount { get; set; }
 
     public int ReceivedRecipeFavoriteCount { get; set; }

@@ -65,9 +65,7 @@ public class RankingReadService : IRankingReadService
                 PublicRecipeCount = ranking.PublicRecipeCount,
                 CoffeeRatingCount = ranking.CoffeeRatingCount,
                 RecipeRatingCount = ranking.RecipeRatingCount,
-                QuickNoteCount = ranking.QuickNoteCount,
                 CuppingSessionCount = ranking.CuppingSessionCount,
-                CuppingSessionCoffeeCount = ranking.CuppingSessionCoffeeCount,
                 FollowersCount = ranking.FollowersCount,
                 ReceivedRecipeFavoriteCount = ranking.ReceivedRecipeFavoriteCount,
                 PublishedArticleCount = ranking.PublishedArticleCount

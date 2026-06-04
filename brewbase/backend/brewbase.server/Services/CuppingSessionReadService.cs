@@ -56,7 +56,6 @@ public class CuppingSessionReadService : ICuppingSessionReadService
 						AcidityScore = sessionCoffee.AcidityScore,
 						BodyScore = sessionCoffee.BodyScore,
 						FlavorProfileNotes = sessionCoffee.FlavorProfileNotes,
-						CleanCup = sessionCoffee.CleanCup,
 						OverallScore = sessionCoffee.OverallScore
                     })
                     .ToList()

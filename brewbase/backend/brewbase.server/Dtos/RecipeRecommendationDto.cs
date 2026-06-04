@@ -6,9 +6,13 @@ public class RecipeRecommendationDto
 
     public string Title { get; set; } = string.Empty;
 
-    public double MatchScore { get; set; }
-    
+    public string? UserLogin { get; set; }
+
     public double AverageRating { get; set; }
+
+    public int RatingCount { get; set; }
+
+    public double MatchScore { get; set; }
 
     public double PopularityScore { get; set; }
 

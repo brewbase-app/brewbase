@@ -10,9 +10,7 @@ public partial class RecipeRanking
     public DateTime RefreshedAt { get; set; }
 
     public int RatingCount { get; set; }
-
-    public int LikeCount { get; set; }
-
+    
     public int SaveCount { get; set; }
 
     public int RecipeId { get; set; }

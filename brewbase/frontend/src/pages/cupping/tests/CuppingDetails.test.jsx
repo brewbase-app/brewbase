@@ -55,7 +55,6 @@ const sampleSession = {
             overallScore: 8,
             flavorProfileNotes: "Owocowe",
             notes: "Dobra kawa",
-            cleanCup: true,
         },
     ],
 };

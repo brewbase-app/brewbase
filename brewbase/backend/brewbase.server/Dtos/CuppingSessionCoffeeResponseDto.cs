@@ -11,6 +11,5 @@ public class CuppingSessionCoffeeResponseDto
     public int? AcidityScore { get; set; }
     public int? BodyScore { get; set; }
     public string? FlavorProfileNotes { get; set; }
-    public bool? CleanCup { get; set; }
     public int? OverallScore { get; set; }
 }

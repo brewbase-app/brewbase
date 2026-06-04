@@ -418,7 +418,6 @@ public partial class BrewDbContext : DbContext
             entity.Property(e => e.AcidityScore).HasColumnName("acidity_score");
             entity.Property(e => e.BodyScore).HasColumnName("body_score");
             entity.Property(e => e.FlavorProfileNotes).HasColumnName("flavor_profile_notes");
-            entity.Property(e => e.CleanCup).HasColumnName("clean_cup");
             entity.Property(e => e.OverallScore).HasColumnName("overall_score");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
@@ -586,7 +585,6 @@ public partial class BrewDbContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("refreshed_at");
             entity.Property(e => e.RatingCount).HasColumnName("rating_count");
-            entity.Property(e => e.LikeCount).HasColumnName("like_count");
             entity.Property(e => e.SaveCount).HasColumnName("save_count");
             entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
 
@@ -918,17 +916,13 @@ public partial class BrewDbContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("refreshed_at");
             entity.Property(e => e.ActivityScore).HasColumnName("activity_score");
-            entity.Property(e => e.RecipeCount).HasColumnName("recipe_count");
-            entity.Property(e => e.LikeCount).HasColumnName("like_count");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.Property(e => e.Position).HasColumnName("position");
             entity.Property(e => e.PublicRecipeCount).HasColumnName("public_recipe_count");
             entity.Property(e => e.CoffeeRatingCount).HasColumnName("coffee_rating_count");
             entity.Property(e => e.RecipeRatingCount).HasColumnName("recipe_rating_count");
-            entity.Property(e => e.QuickNoteCount).HasColumnName("quick_note_count");
             entity.Property(e => e.CuppingSessionCount).HasColumnName("cupping_session_count");
-            entity.Property(e => e.CuppingSessionCoffeeCount).HasColumnName("cupping_session_coffee_count");
             entity.Property(e => e.FollowersCount).HasColumnName("followers_count");
             entity.Property(e => e.ReceivedRecipeFavoriteCount).HasColumnName("received_recipe_favorite_count");
             entity.Property(e => e.PublishedArticleCount).HasColumnName("published_article_count");

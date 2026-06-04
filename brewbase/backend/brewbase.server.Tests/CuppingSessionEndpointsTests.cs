@@ -503,7 +503,6 @@ public class CuppingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
             acidityScore = 6,
             bodyScore = 7,
             flavorProfileNotes = "Citrus, jasmine, honey",
-            cleanCup = true,
             overallScore = 8
         };
 
@@ -525,7 +524,6 @@ public class CuppingSessionEndpointsTests : IClassFixture<CoffeeApiFactory>
         Assert.Equal(6, root.GetProperty("acidityScore").GetInt32());
         Assert.Equal(7, root.GetProperty("bodyScore").GetInt32());
         Assert.Equal("Citrus, jasmine, honey", root.GetProperty("flavorProfileNotes").GetString());
-        Assert.True(root.GetProperty("cleanCup").GetBoolean());
         Assert.Equal(8, root.GetProperty("overallScore").GetInt32());
     }
 

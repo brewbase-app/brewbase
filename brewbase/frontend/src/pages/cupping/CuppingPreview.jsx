@@ -39,18 +39,6 @@ const CuppingPreview = () => {
         return new Date(date).toLocaleDateString("pl-PL");
     };
 
-    const formatCleanCup = (value) => {
-        if (value === true) {
-            return "Tak";
-        }
-
-        if (value === false) {
-            return "Nie";
-        }
-
-        return "Brak";
-    };
-
     const handleDeleteSession = async () => {
         const confirmed = window.confirm("Czy na pewno chcesz usunąć całą sesję cupping?");
 
@@ -180,11 +168,6 @@ const CuppingPreview = () => {
                                     <p>
                                         <strong>Komentarz:</strong>{" "}
                                         {coffee.notes || "Brak"}
-                                    </p>
-
-                                    <p>
-                                        <strong>Czysta filiżanka:</strong>{" "}
-                                        {formatCleanCup(coffee.cleanCup)}
                                     </p>
                                 </div>
                             </div>
