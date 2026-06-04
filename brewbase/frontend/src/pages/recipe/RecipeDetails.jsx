@@ -26,9 +26,9 @@ import {
     addFavorite,
     removeFavorite,
     rateRecipe
-} from "../api/recipeApi";
-import { getProfile } from "../api/profileApi";
-import { getRecipeModerationComment } from "../utils/recipeModeration";
+} from "../../api/recipeApi";
+import { getProfile } from "../../api/profileApi";
+import { getRecipeModerationComment } from "../../utils/recipeModeration";
 
 const RecipeDetails = () => {
     

@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2, Flag } from "lucide-react";
 
-import { submitReport } from "../api/reportApi";
-import "../styles/ReportPage.css";
+import { submitReport } from "../../api/reportApi";
+import "../../styles/ReportPage.css";
 
 const REPORT_CATEGORIES = [
     "Dezinformacja",

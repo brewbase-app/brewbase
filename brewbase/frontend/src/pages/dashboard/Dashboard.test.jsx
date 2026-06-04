@@ -3,20 +3,20 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import Dashboard from "./Dashboard";
-import { sampleProfile } from "../test/fixtures";
-import { DASHBOARD_LOAD_ERROR_MESSAGE } from "./dashboard/loadDashboardData";
+import { sampleProfile } from "../../test/fixtures";
+import { DASHBOARD_LOAD_ERROR_MESSAGE } from "./loadDashboardData";
 
-vi.mock("./dashboard/loadDashboardData", () => ({
+vi.mock("./loadDashboardData", () => ({
     loadDashboardData: vi.fn(),
     DASHBOARD_LOAD_ERROR_MESSAGE:
         "Nie udało się załadować danych pulpitu.",
 }));
 
-vi.mock("../components/GlobalSearch", () => ({
+vi.mock("../../components/GlobalSearch", () => ({
     default: () => <div>Global search</div>,
 }));
 
-import { loadDashboardData } from "./dashboard/loadDashboardData";
+import { loadDashboardData } from "./loadDashboardData";
 
 const emptyDashboardData = {
     profile: null,

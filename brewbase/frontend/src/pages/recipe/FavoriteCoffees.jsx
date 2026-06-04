@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import "../styles/FavoriteCoffees.css";
+import "../../styles/FavoriteCoffees.css";
 
 import { useNavigate } from "react-router-dom";
 
@@ -12,7 +12,7 @@ import {
 import {
     getFavoriteCoffees,
     removeCoffeeFavorite,
-} from "../api/coffeeApi";
+} from "../../api/coffeeApi";
 
 function FavoriteCoffees() {
     const navigate = useNavigate();

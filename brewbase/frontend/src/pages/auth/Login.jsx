@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { apiRequest, ApiError } from "../api/apiClient";
-import { establishAuthSession } from "../api/authSession";
+import { apiRequest, ApiError } from "../../api/apiClient";
+import { establishAuthSession } from "../../api/authSession";
 
 function Login() {
     const [login, setLogin] = useState("");

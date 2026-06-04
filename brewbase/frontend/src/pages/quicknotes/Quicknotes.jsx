@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import "../styles/Quicknotes.css";
+import "../../styles/Quicknotes.css";
 import {
     Pencil,
     Trash2,
@@ -12,8 +12,8 @@ import {
     createQuickNote,
     updateQuickNote,
     deleteQuickNote
-} from "../api/quickNotesApi";
-import ConfirmDialog from "../components/ConfirmDialog";
+} from "../../api/quickNotesApi";
+import ConfirmDialog from "../../components/ConfirmDialog";
 
 function Quicknotes() {
     const [searchParams, setSearchParams] = useSearchParams();

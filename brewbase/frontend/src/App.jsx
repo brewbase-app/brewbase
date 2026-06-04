@@ -22,21 +22,21 @@ import { getProfile } from "./api/profileApi";
 
 /* HOME */
 
-import Dashboard from "./pages/Dashboard";
-import FavoriteCoffees from "./pages/FavoriteCoffees";
+import Dashboard from "./pages/dashboard/Dashboard";
+import FavoriteCoffees from "./pages/recipe/FavoriteCoffees";
 
 /* RECIPES */
 
-import Recipes from "./pages/Recipes";
-import RecipesForm from "./pages/RecipesForm";
-import RecipesList from "./pages/RecipesList";
-import RecipeDetails from "./pages/RecipeDetails";
+import Recipes from "./pages/recipe/Recipes";
+import RecipesForm from "./pages/recipe/RecipesForm";
+import RecipesList from "./pages/recipe/RecipesList";
+import RecipeDetails from "./pages/recipe/RecipeDetails";
 
 /* AUTH */
 
-import Login from "./pages/Login";
-import RegisterPage from "./pages/RegisterPage";
-import PreferencesOnboardingPage from "./pages/PreferencesOnboardingPage";
+import Login from "./pages/auth/Login";
+import RegisterPage from "./pages/auth/RegisterPage";
+import PreferencesOnboardingPage from "./pages/auth/PreferencesOnboardingPage";
 
 /* CUPPING */
 
@@ -47,16 +47,16 @@ import CuppingPreview from "./pages/cupping/CuppingPreview";
 
 /* QUICK NOTES */
 
-import Quicknotes from "./pages/Quicknotes";
+import Quicknotes from "./pages/quicknotes/Quicknotes";
 
 /* RANKING */
 
-import Ranking from "./pages/Ranking";
+import Ranking from "./pages/ranking/Ranking";
 
 /* PROFILE */
 
-import ProfilePage from "./pages/ProfilePage";
-import EditProfilePage from "./pages/EditProfilePage";
+import ProfilePage from "./pages/profile/ProfilePage";
+import EditProfilePage from "./pages/profile/EditProfilePage";
 
 /* WIKI */
 
@@ -78,11 +78,11 @@ import MyWikiArticleDetails from "./pages/wiki/MyWikiArticleDetails";
 
 /* REPORT */
 
-import ReportPage from "./pages/ReportPage";
+import ReportPage from "./pages/report/ReportPage";
 
 /* ADMIN */
 
-import AdminModeration from "./pages/AdminModeration";
+import AdminModeration from "./pages/admin/AdminModeration";
 
 function Layout() {
 

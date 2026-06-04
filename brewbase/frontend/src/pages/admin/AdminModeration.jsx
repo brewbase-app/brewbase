@@ -15,11 +15,11 @@ import {
     rejectArticle,
     dismissReport,
     upholdReport,
-} from "../api/adminApi";
+} from "../../api/adminApi";
 
-import ConfirmDialog from "../components/ConfirmDialog";
+import ConfirmDialog from "../../components/ConfirmDialog";
 
-import "../styles/AdminModeration.css";
+import "../../styles/AdminModeration.css";
 
 const REPORT_CONTENT_TYPE_LABELS = {
     recipe: "Receptura",

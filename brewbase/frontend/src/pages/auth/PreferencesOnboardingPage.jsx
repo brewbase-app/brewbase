@@ -5,16 +5,16 @@ import {
     DEFAULT_USER_PREFERENCES,
     USER_PREFERENCE_OPTIONS,
     saveUserPreferences,
-} from "../utils/userPreferences";
-import { getAuthToken } from "../utils/auth";
+} from "../../utils/userPreferences";
+import { getAuthToken } from "../../utils/auth";
 
-import { savePreferences } from "../api/preferenceApi";
-import { getOnboardingFlavorProfiles } from "../api/flavorProfileApi";
-import { getBrewingMethods } from "../api/brewingMethodApi"; //OC
-import { getBody } from "../api/bodyApi.js"; //OC
-import { getAcidity } from "../api/acidityApi.js"; //OC
+import { savePreferences } from "../../api/preferenceApi";
+import { getOnboardingFlavorProfiles } from "../../api/flavorProfileApi";
+import { getBrewingMethods } from "../../api/brewingMethodApi"; //OC
+import { getBody } from "../../api/bodyApi.js"; //OC
+import { getAcidity } from "../../api/acidityApi.js"; //OC
 
-import "../styles/PreferencesOnboardingPage.css";
+import "../../styles/PreferencesOnboardingPage.css";
 
 const steps = [
     "Poziom",

@@ -1,9 +1,9 @@
-import "../styles/Dashboard.css";
+import "../../styles/Dashboard.css";
 
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import GlobalSearch from "../components/GlobalSearch";
-import { markNotificationsAsRead } from "../api/notificationsApi";
+import GlobalSearch from "../../components/GlobalSearch";
+import { markNotificationsAsRead } from "../../api/notificationsApi";
 import {
     buildCoffeeSubtitle,
     filterByPeriod,
@@ -11,8 +11,8 @@ import {
     getDashboardGreeting,
     getMostUsedBrewingMethod,
     isNotificationUnread,
-} from "./dashboard/dashboardUtils";
-import { loadDashboardData } from "./dashboard/loadDashboardData";
+} from "./dashboardUtils";
+import { loadDashboardData } from "./loadDashboardData";
 
 import {
     Bell,
