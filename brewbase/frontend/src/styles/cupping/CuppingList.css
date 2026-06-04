@@ -11,25 +11,6 @@
     max-width: 950px;
 }
 
-.cupping-header {
-    margin-bottom: 38px;
-}
-
-.cupping-title {
-    margin: 0 0 8px 0;
-    font-size: 58px;
-    font-weight: 700;
-    color: #1f1f1f;
-    line-height: 1;
-    text-align: left;
-}
-
-.cupping-subtitle {
-    margin: 0;
-    font-size: 16px;
-    color: #6f6f6f;
-}
-
 .cupping-actions {
     margin-bottom: 32px;
 }
@@ -178,10 +159,6 @@
 @media (max-width: 900px) {
     .cupping-container {
         padding: 40px 24px;
-    }
-
-    .cupping-title {
-        font-size: 42px;
     }
 
     .cupping-card {

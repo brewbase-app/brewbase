@@ -16,26 +16,7 @@
 
 /* HEADER */
 
-.methods-header{
-    margin-bottom:40px;
-}
-
-.methods-header h1{
-    font-size:48px;
-    font-weight:600;
-
-    letter-spacing:-1px;
-
-    color:#1f1f1f;
-
-    margin:0 0 12px 0;
-}
-
 .methods-header p{
-    font-size:16px;
-
-    color:#666;
-
     margin-bottom:28px;
 }
 
