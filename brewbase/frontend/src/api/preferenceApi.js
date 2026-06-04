@@ -1,5 +1,9 @@
 import { apiRequest } from "./apiClient";
 
+export async function getPreferences() {
+    return apiRequest("/api/Preferences");
+}
+
 export async function savePreferences(data) {
     return apiRequest("/api/preferences", {
         method: "POST",

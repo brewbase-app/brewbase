@@ -18,7 +18,7 @@ export const USER_PREFERENCE_OPTIONS = {
         "Średniozaawansowany",
         "Zaawansowany",
         "Jeszcze nie wiem",
-    ],
+    ],/*
     brewingMethods: [
         "Espresso",
         "V60",
@@ -26,8 +26,8 @@ export const USER_PREFERENCE_OPTIONS = {
         "French Press",
         "Cold Brew",
         "Jeszcze nie wiem",
-    ],
-    acidity: ["Niska", "Średnia", "Wysoka", "Nie mam zdania"],
+    ],*/
+    /*acidity: ["Niska", "Średnia", "Wysoka", "Nie mam zdania"],
     body: ["Lekkie", "Zbalansowane", "Ciężkie", "Nie mam zdania"],
     regions: [
         "Etiopia",
@@ -36,7 +36,7 @@ export const USER_PREFERENCE_OPTIONS = {
         "Kenia",
         "Gwatemala",
         "Nie mam preferencji",
-    ],
+    ],*/
     recommendationStyle: [
         "Bezpieczne wybory",
         "Zbalansowane",

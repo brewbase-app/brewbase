@@ -19,10 +19,20 @@ import { getFlavorProfiles } from "../../api/flavorProfileApi";
 import {
     DEFAULT_USER_PREFERENCES,
     USER_PREFERENCE_OPTIONS,
-    hasAnyPreferences,
+    hasAnyPreferences/*,
     loadUserPreferences,
-    saveUserPreferences,
+    saveUserPreferences,*/
 } from "../../utils/userPreferences";
+
+import { getBrewingMethods } from "../../api/brewingMethodApi"; //OC
+import { getBody } from "../../api/bodyApi.js"; //OC
+import { getAcidity } from "../../api/acidityApi.js"; //OC
+import { getRegions } from "../../api/regionApi.js"; //OC
+
+import {
+    getPreferences,
+    savePreferences
+} from "../../api/preferenceApi";
 
 import "../../styles/profile/editProfile.css";
 
@@ -77,8 +87,15 @@ function EditProfilePage() {
     const [preferences, setPreferences] = useState({
         ...DEFAULT_USER_PREFERENCES,
     });
+
+    const [brewingMethods, setBrewingMethods] = useState([]);
+    const [regions, setRegions] = useState([]);
+    const [bodyOptions, setBodyOptions] = useState([]);
+    const [acidityOptions, setAcidityOptions] = useState([]);
+    
     const [preferencesLoaded, setPreferencesLoaded] = useState(false);
-    const [flavorProfileOptions, setFlavorProfileOptions] = useState([]);
+    /*const [flavorProfileOptions, setFlavorProfileOptions] = useState([]);*/
+    const [flavorProfiles, setFlavorProfiles] = useState([]);
     const [flavorProfilesError, setFlavorProfilesError] = useState("");
 
     const [usernameError, setUsernameError] = useState("");
@@ -86,7 +103,7 @@ function EditProfilePage() {
     const [passwordError, setPasswordError] = useState("");
 
     useEffect(() => {
-        const fetchProfile = async () => {
+        /*const fetchProfile = async () => {
             try {
                 const data = await getProfile();
 
@@ -98,13 +115,63 @@ function EditProfilePage() {
             } finally {
                 setLoading(false);
             }
+        };*/
+
+        const fetchProfile = async () => {
+            try {
+                const data = await getProfile();
+
+                setUsername(data.login || "");
+                setEmail(data.email || "");
+
+                const preferencesData =
+                    await getPreferences();
+
+                if (preferencesData) {
+                    setPreferences({
+                        ...DEFAULT_USER_PREFERENCES,
+
+                        experienceLevel:
+                            preferencesData.experienceLevel ?? "",
+
+                        acidity:
+                            preferencesData.preferredAcidity ?? "",
+
+                        body:
+                            preferencesData.preferredBody ?? "",
+
+                        recommendationStyle:
+                            preferencesData.recommendationStyle ?? "",
+
+                        allowExploration:
+                            preferencesData.allowExploration ?? false,
+
+                        flavorProfiles:
+                            preferencesData.flavorProfiles ?? [],
+
+                        brewingMethods:
+                            preferencesData.brewingMethods ?? [],
+
+                        regions:
+                            preferencesData.regions ?? [],
+                    });
+                }
+
+                setPreferencesLoaded(true);
+
+            } catch (error) {
+                console.error(error);
+                alert("Nie udało się pobrać profilu.");
+            } finally {
+                setLoading(false);
+            }
         };
 
         fetchProfile();
-        setPreferences(loadUserPreferences());
-        setPreferencesLoaded(true);
+        /*setPreferences(loadUserPreferences());
+        setPreferencesLoaded(true);*/
 
-        const loadFlavorProfiles = async () => {
+       /* const loadFlavorProfiles = async () => {
             try {
                 const data = await getFlavorProfiles();
                 setFlavorProfileOptions(
@@ -117,10 +184,70 @@ function EditProfilePage() {
                     "Nie udało się pobrać profili smakowych."
                 );
             }
-        };
-
+        };*/
+        
         loadFlavorProfiles();
+        loadPreferenceOptions();
     }, []);
+
+    const loadFlavorProfiles = async () => {
+        try {
+            const data = await getFlavorProfiles();
+
+            setFlavorProfiles(
+                Array.isArray(data)
+                    ? data
+                    : []
+            );
+        } catch {
+            setFlavorProfilesError(
+                "Nie udało się pobrać profili smakowych."
+            );
+        }
+    };
+    
+    const loadPreferenceOptions = async () => {
+        try {
+            const brewingMethodsData =
+                await getBrewingMethods();
+
+            setBrewingMethods(
+                Array.isArray(brewingMethodsData)
+                    ? brewingMethodsData
+                    : []
+            );
+
+            const regionsData =
+                await getRegions();
+
+            setRegions(
+                Array.isArray(regionsData)
+                    ? regionsData
+                    : []
+            );
+
+            const bodyData =
+                await getBody();
+
+            setBodyOptions(
+                Array.isArray(bodyData)
+                    ? bodyData
+                    : []
+            );
+
+            const acidityData =
+                await getAcidity();
+
+            setAcidityOptions(
+                Array.isArray(acidityData)
+                    ? acidityData
+                    : []
+            );
+        }
+        catch (error) {
+            console.error(error);
+        }
+    };
 
     const setSinglePreference = (field, value) => {
         setPreferences((previous) => ({
@@ -170,7 +297,41 @@ function EditProfilePage() {
                 newPassword,
             });
 
-            saveUserPreferences(preferences);
+            const dto = {
+                experienceLevel: preferences.experienceLevel,
+
+                preferredRoastLevel: "Średnie",
+
+                preferredAcidity: preferences.acidity,
+
+                preferredBody: preferences.body,
+
+                recommendationStyle:
+                preferences.recommendationStyle,
+
+                allowExploration:
+                preferences.allowExploration,
+
+                flavorProfileIds: flavorProfiles
+                    .filter(x =>
+                        preferences.flavorProfiles.includes(x.name)
+                    )
+                    .map(x => x.id),
+
+                brewingMethodIds: brewingMethods
+                    .filter(x =>
+                        preferences.brewingMethods.includes(x.name)
+                    )
+                    .map(x => x.id),
+
+                regionIds: regions
+                    .filter(x =>
+                        preferences.regions.includes(x.name)
+                    )
+                    .map(x => x.id),
+            };
+
+            await savePreferences(dto);
 
             alert("Zmiany zostały zapisane.");
 
@@ -345,7 +506,7 @@ function EditProfilePage() {
                         <PreferenceTagGroup
                             label="Ulubione metody parzenia"
                             hint="Możesz wybrać kilka opcji"
-                            options={USER_PREFERENCE_OPTIONS.brewingMethods}
+                            options={brewingMethods.map(x => x.name)}
                             selectedValues={preferences.brewingMethods}
                             multiple
                             onSelect={(option) =>
@@ -359,7 +520,7 @@ function EditProfilePage() {
                         <PreferenceTagGroup
                             label="Preferowane profile smakowe"
                             hint="Możesz wybrać kilka opcji"
-                            options={flavorProfileOptions}
+                            options={flavorProfiles.map(x => x.name)}
                             selectedValues={preferences.flavorProfiles}
                             multiple
                             onSelect={(option) =>
@@ -379,7 +540,7 @@ function EditProfilePage() {
                         <PreferenceTagGroup
                             label="Preferowana kwasowość"
                             hint="Wybierz jedną opcję"
-                            options={USER_PREFERENCE_OPTIONS.acidity}
+                            options={acidityOptions.map(x => x.name)}
                             selectedValues={preferences.acidity}
                             onSelect={(option) =>
                                 setSinglePreference("acidity", option)
@@ -389,7 +550,7 @@ function EditProfilePage() {
                         <PreferenceTagGroup
                             label="Preferowane body"
                             hint="Wybierz jedną opcję"
-                            options={USER_PREFERENCE_OPTIONS.body}
+                            options={bodyOptions.map(x => x.name)}
                             selectedValues={preferences.body}
                             onSelect={(option) =>
                                 setSinglePreference("body", option)
@@ -399,7 +560,7 @@ function EditProfilePage() {
                         <PreferenceTagGroup
                             label="Interesujące regiony"
                             hint="Możesz wybrać kilka opcji"
-                            options={USER_PREFERENCE_OPTIONS.regions}
+                            options={regions.map(x => x.name)}
                             selectedValues={preferences.regions}
                             multiple
                             onSelect={(option) =>

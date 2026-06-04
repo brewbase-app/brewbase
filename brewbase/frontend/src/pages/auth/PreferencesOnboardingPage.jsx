@@ -3,8 +3,8 @@ import { Navigate, useNavigate } from "react-router-dom";
 
 import {
     DEFAULT_USER_PREFERENCES,
-    USER_PREFERENCE_OPTIONS,
-    saveUserPreferences,
+    USER_PREFERENCE_OPTIONS/*,
+    saveUserPreferences,*/
 } from "../../utils/userPreferences";
 import { getAuthToken } from "../../utils/auth";
 
@@ -13,6 +13,7 @@ import { getOnboardingFlavorProfiles } from "../../api/flavorProfileApi";
 import { getBrewingMethods } from "../../api/brewingMethodApi"; //OC
 import { getBody } from "../../api/bodyApi.js"; //OC
 import { getAcidity } from "../../api/acidityApi.js"; //OC
+import { getRegions } from "../../api/regionApi.js"; //OC
 
 import "../../styles/auth/PreferencesOnboardingPage.css";
 
@@ -40,6 +41,8 @@ export default function PreferencesOnboardingPage() {
     const [brewingMethodsUndecided, setBrewingMethodsUndecided] = useState(false); //OC
     const [body, setBody] = useState([]); //OC
     const [acidity, setAcidity] = useState([]); //OC
+    const [region, setRegion] = useState([]); //OC
+    const [regionsUndecided, setRegionsUndecided] = useState(false);//OC
     const [selectedFlavorProfileIds, setSelectedFlavorProfileIds] = useState([]);
     const [flavorPreferencesUndecided, setFlavorPreferencesUndecided] = useState(false);
     const [flavorProfilesLoading, setFlavorProfilesLoading] = useState(true);
@@ -62,6 +65,9 @@ export default function PreferencesOnboardingPage() {
 
                 const acidityData = await getAcidity(); //OC
                 setAcidity(Array.isArray(acidityData) ? acidityData : []); //OC
+                
+                const regionData = await getRegions(); //OC
+                setRegion(Array.isArray(regionData) ? regionData : []); //OC
             } catch {
                 setFlavorProfilesError(
                     "Nie udało się pobrać profili smakowych."
@@ -93,10 +99,10 @@ export default function PreferencesOnboardingPage() {
                       )
                       .map((profile) => profile.name);
 
-            saveUserPreferences({
+          /*  saveUserPreferences({
                 ...preferences,
                 flavorProfiles: selectedFlavorProfileNames,
-            });
+            });*/
 
             const dto = {
                 experienceLevel: preferences.experienceLevel,
@@ -117,11 +123,17 @@ export default function PreferencesOnboardingPage() {
                     ? []
                     : selectedFlavorProfileIds,
 
-                brewingMethods:
-                preferences.brewingMethods,
+                brewingMethodIds: brewingMethods
+                    .filter(x =>
+                        preferences.brewingMethods.includes(x.name)
+                    )
+                    .map(x => x.id),
 
-                regions:
-                preferences.regions
+                regionIds: region
+                    .filter(x =>
+                        preferences.regions.includes(x.name)
+                    )
+                    .map(x => x.id),
             };
 
             await savePreferences(dto);
@@ -151,6 +163,32 @@ export default function PreferencesOnboardingPage() {
         setSelectedFlavorProfileIds([]);
     };
 
+
+    const toggleRegion = (regionName) => {
+        setRegionsUndecided(false);
+
+        const current = preferences.regions;
+
+        const exists = current.includes(regionName);
+
+        setPreferences({
+            ...preferences,
+            regions: exists
+                ? current.filter((x) => x !== regionName)
+                : [...current, regionName],
+        });
+    };
+
+    const selectRegionsUndecided = () => {
+        setRegionsUndecided(true);
+
+        setPreferences({
+            ...preferences,
+            regions: [],
+        });
+    };
+
+    
     const toggleBrewingMethod = (methodName) => {
 
         setBrewingMethodsUndecided(false);
@@ -445,25 +483,34 @@ export default function PreferencesOnboardingPage() {
                             Możesz wybrać kilka opcji
                         </p>
 
-                        {USER_PREFERENCE_OPTIONS.regions.map((region) => (
+                        {region.slice(0, 10).map((regionOption) => (
                             <button
                                 type="button"
-                                key={region}
+                                key={regionOption.id}
                                 className={
-                                    preferences.regions.includes(region)
+                                    preferences.regions.includes(regionOption.name)
                                         ? "selected"
                                         : ""
                                 }
                                 onClick={() =>
-                                    toggleArrayValue(
-                                        "regions",
-                                        region
-                                    )
+                                    toggleRegion(regionOption.name)
                                 }
                             >
-                                {region}
+                                {regionOption.name}
                             </button>
                         ))}
+
+                        <button
+                            type="button"
+                            className={
+                                regionsUndecided
+                                    ? "selected"
+                                    : ""
+                            }
+                            onClick={selectRegionsUndecided}
+                        >
+                            Jeszcze nie wiem
+                        </button>
                     </>
                 );
 

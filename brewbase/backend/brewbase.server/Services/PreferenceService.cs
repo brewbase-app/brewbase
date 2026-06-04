@@ -18,6 +18,50 @@ public class PreferenceService : IPreferenceService
         _context = context;
         _currentUserProvider = currentUserProvider;
     }
+    
+    public async Task<UserPreferencesDto?> GetPreferencesAsync()
+    {
+        var userId = _currentUserProvider.GetUserId();
+
+        if (userId == null)
+            throw new Exception("User not found");
+
+        var preference = await _context.UserPreferences
+            .Include(x => x.UserPreferenceFlavorProfiles)
+            .ThenInclude(x => x.FlavorProfile)
+            .Include(x => x.UserPreferenceBrewingMethods)
+            .ThenInclude(x => x.BrewingMethod)
+            .Include(x => x.UserPreferenceRegions)
+            .ThenInclude(x => x.Region)
+            .FirstOrDefaultAsync(x => x.UserId == userId);
+
+        if (preference == null)
+            return null;
+
+        return new UserPreferencesDto
+        {
+            ExperienceLevel = preference.ExperienceLevel,
+            PreferredAcidity = preference.PreferredAcidity,
+            PreferredBody = preference.PreferredBody,
+            RecommendationStyle = preference.RecommendationStyle,
+            AllowExploration = preference.AllowExploration,
+
+            FlavorProfiles = preference
+                .UserPreferenceFlavorProfiles
+                .Select(x => x.FlavorProfile.Name)
+                .ToList(),
+
+            BrewingMethods = preference
+                .UserPreferenceBrewingMethods
+                .Select(x => x.BrewingMethod.Name)
+                .ToList(),
+
+            Regions = preference
+                .UserPreferenceRegions
+                .Select(x => x.Region.Name)
+                .ToList()
+        };
+    }
 
     /*public async Task SavePreferencesAsync(
         SaveUserPreferencesRequestDto dto)
@@ -91,8 +135,7 @@ public class PreferenceService : IPreferenceService
 
         await _context.SaveChangesAsync();
     }*/
-        public async Task SavePreferencesAsync(
-        SaveUserPreferencesRequestDto dto)
+        public async Task SavePreferencesAsync(SaveUserPreferencesRequestDto dto)
     {
         var userId = _currentUserProvider.GetUserId();
 
