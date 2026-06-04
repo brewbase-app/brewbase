@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
     DASHBOARD_LOAD_ERROR_MESSAGE,
     loadDashboardData,
-} from "./loadDashboardData";
-import { sampleProfile } from "../../test/fixtures";
+} from "../loadDashboardData";
+import { sampleProfile } from "../../../test/fixtures";
 
 function createSuccessfulApi(overrides = {}) {
     return {

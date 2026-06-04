@@ -2,21 +2,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
-import Dashboard from "./Dashboard";
-import { sampleProfile } from "../../test/fixtures";
-import { DASHBOARD_LOAD_ERROR_MESSAGE } from "./loadDashboardData";
+import Dashboard from "../Dashboard";
+import { sampleProfile } from "../../../test/fixtures";
+import { DASHBOARD_LOAD_ERROR_MESSAGE } from "../loadDashboardData";
 
-vi.mock("./loadDashboardData", () => ({
+vi.mock("../loadDashboardData", () => ({
     loadDashboardData: vi.fn(),
     DASHBOARD_LOAD_ERROR_MESSAGE:
         "Nie udało się załadować danych pulpitu.",
 }));
 
-vi.mock("../../components/GlobalSearch", () => ({
+vi.mock("../../../components/GlobalSearch", () => ({
     default: () => <div>Global search</div>,
 }));
 
-import { loadDashboardData } from "./loadDashboardData";
+import { loadDashboardData } from "../loadDashboardData";
 
 const emptyDashboardData = {
     profile: null,
