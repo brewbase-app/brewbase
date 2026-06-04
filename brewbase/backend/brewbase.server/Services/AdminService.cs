@@ -10,15 +10,18 @@ public class AdminService : IAdminService
     private readonly BrewDbContext _context;
     private readonly ICurrentUserProvider _currentUserProvider;
     private readonly IRankingRefreshService _rankingRefreshService;
+    private readonly IRoasteryService _roasteryService;
 
     public AdminService(
         BrewDbContext context,
         ICurrentUserProvider currentUserProvider,
-        IRankingRefreshService rankingRefreshService)
+        IRankingRefreshService rankingRefreshService,
+        IRoasteryService roasteryService)
     {
         _context = context;
         _currentUserProvider = currentUserProvider;
         _rankingRefreshService = rankingRefreshService;
+        _roasteryService = roasteryService;
     }
 
     public async Task<List<AdminUserListResponseDto>> GetUsersAsync()
@@ -548,24 +551,11 @@ public class AdminService : IAdminService
                 .FirstAsync()).Id;
         }
 
-        var trimmedName = roasteryName.Trim();
-        var existingId = await _context.Roasteries
-            .Where(roastery => roastery.Name == trimmedName)
-            .Select(roastery => (int?)roastery.Id)
-            .FirstOrDefaultAsync();
-
-        if (existingId.HasValue)
-        {
-            return existingId.Value;
-        }
-
-        var roastery = new Roastery
-        {
-            Name = trimmedName
-        };
-
-        _context.Roasteries.Add(roastery);
-        await _context.SaveChangesAsync();
+        var roastery = await _roasteryService.CreateAsync(
+            new CreateRoasteryRequestDto
+            {
+                Name = roasteryName.Trim()
+            });
 
         return roastery.Id;
     }

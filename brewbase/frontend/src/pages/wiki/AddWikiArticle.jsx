@@ -12,13 +12,13 @@ import ComboBoxInput from "../../components/ComboBoxInput";
 import CountryPicker from "../../components/CountryPicker";
 import FlavorProfilePicker from "../../components/FlavorProfilePicker";
 import RegionPicker from "../../components/RegionPicker";
+import RoasteryPicker from "../../components/RoasteryPicker";
 import MultiSelectInput from "../../components/MultiSelectInput";
 
 import { COFFEE_VARIETIES } from "../../utils/coffeeVarieties";
 import { COFFEE_PROCESSING_METHODS } from "../../utils/coffeeProcessingMethods";
 import { BREWING_METHOD_OPTIONS } from "../../utils/brewingMethodOptions";
 import { ROASTING_STYLE_OPTIONS } from "../../utils/roastingStyleOptions";
-import { COFFEE_ROASTERIES } from "../../utils/coffeeRoasteries";
 
 const CATEGORY_OPTIONS = [
     { value: "coffee", label: "Kawy" },
@@ -470,11 +470,9 @@ function AddWikiArticle() {
                                         Palarnia
                                     </label>
 
-                                    <ComboBoxInput
+                                    <RoasteryPicker
                                         value={coffeeRoastery}
                                         onChange={setCoffeeRoastery}
-                                        options={COFFEE_ROASTERIES}
-                                        placeholder="Wybierz z listy lub wpisz palarnię"
                                     />
 
                                 </div>
