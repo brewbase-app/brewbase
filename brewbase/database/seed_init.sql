@@ -1,6 +1,6 @@
 -- Seed początkowy BrewBase (katalog, użytkownicy, przepisy)
 -- Hasło testowe dla wszystkich kont: Test123!
--- Po tym pliku uruchom seed_wiki.sql, aby zobaczyć działającą wiki.
+-- Po tym pliku uruchom seed_wiki.sql (idempotentny), aby uzupełnić brakujące artykuły wiki.
 
 -- COUNTRY
 INSERT INTO country (id, name) VALUES

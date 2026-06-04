@@ -169,7 +169,9 @@ function AddWikiArticle() {
 
         if (!module || !articleTitle || !content.trim()) {
             setSubmitError(
-                "Uzupełnij wymagane pola: tytuł, opis i kategorię."
+                categoryValue === "roastery"
+                    ? "Uzupełnij wymagane pola: palarnię, opis i kategorię."
+                    : "Uzupełnij wymagane pola: tytuł, opis i kategorię."
             );
             return;
         }
@@ -675,11 +677,6 @@ function AddWikiArticle() {
                                     onChange={setWikiRoastery}
                                 />
 
-                                <p className="form-hint">
-                                    Nazwa artykułu zostanie ustawiona na
-                                    wybraną palarnię z katalogu.
-                                </p>
-
                             </div>
 
                             <div className="form-group">
@@ -712,13 +709,37 @@ function AddWikiArticle() {
 
                             </div>
 
+                            <div className="article-actions">
+
+                                {submitError && (
+                                    <p className="submit-error">
+                                        {submitError}
+                                    </p>
+                                )}
+
+                                <button
+                                    className="submit-article-button"
+                                    type="button"
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting}
+                                >
+                                    <Send size={16} />
+
+                                    {isSubmitting
+                                        ? "Wysyłanie..."
+                                        : "Wyślij do moderacji"}
+                                </button>
+
+                            </div>
+
                         </>
 
                     )}
 
                     {/* IMAGES + ACTIONS */}
 
-                    {getCategoryValue(category) && (
+                    {getCategoryValue(category) &&
+                        getCategoryValue(category) !== "roastery" && (
 
                         <>
 
