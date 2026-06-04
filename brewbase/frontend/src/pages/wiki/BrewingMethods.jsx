@@ -7,9 +7,7 @@ import "../../styles/wiki/BrewingMethods.css";
 import { Search } from "lucide-react";
 
 import { getArticles } from "../../api/articlesApi";
-
-import { BREWING_METHOD_OPTIONS } from "../../utils/brewingMethodOptions";
-import { buildFilterOptions } from "../../utils/parseCoffeeArticleMetadata";
+import { getBrewingMethods } from "../../api/brewingMethodApi";
 
 function getArticleExcerpt(content, maxLength = 140) {
     if (!content) {
@@ -40,21 +38,37 @@ function BrewingMethods() {
     const navigate = useNavigate();
 
     const [articles, setArticles] = useState([]);
+    const [catalogMethodNames, setCatalogMethodNames] = useState([]);
     const [search, setSearch] = useState("");
     const [selectedMethod, setSelectedMethod] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
 
     useEffect(() => {
-        const loadArticles = async () => {
+        const loadData = async () => {
             try {
                 setIsLoading(true);
                 setError("");
 
-                const data = await getArticles("brewing_method");
+                const [articlesData, methodsData] = await Promise.all([
+                    getArticles("brewing_method"),
+                    getBrewingMethods(),
+                ]);
 
                 setArticles(
-                    (Array.isArray(data) ? data : []).map(mapBrewingArticle)
+                    (Array.isArray(articlesData) ? articlesData : []).map(
+                        mapBrewingArticle
+                    )
+                );
+
+                const names = (Array.isArray(methodsData) ? methodsData : [])
+                    .map((method) => method.name)
+                    .filter(Boolean);
+
+                setCatalogMethodNames(
+                    [...new Set(names)].sort((left, right) =>
+                        left.localeCompare(right, "pl")
+                    )
                 );
             } catch {
                 setError("Nie udało się pobrać metod parzenia.");
@@ -63,13 +77,8 @@ function BrewingMethods() {
             }
         };
 
-        loadArticles();
+        loadData();
     }, []);
-
-    const methodNames = buildFilterOptions(
-        BREWING_METHOD_OPTIONS,
-        articles.map((article) => article.title)
-    );
 
     const filteredArticles = articles.filter((article) => {
         const query = search.toLowerCase();
@@ -147,7 +156,7 @@ function BrewingMethods() {
                                 Wszystkie
                             </option>
 
-                            {methodNames.map((method) => (
+                            {catalogMethodNames.map((method) => (
                                 <option
                                     key={method}
                                     value={method}

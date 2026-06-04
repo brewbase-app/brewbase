@@ -304,6 +304,24 @@ WHERE NOT EXISTS (
       AND LOWER(TRIM(existing.title)) = LOWER(TRIM('Chemex'))
 );
 
+INSERT INTO article (
+    title, content, status, module,
+    created_at, updated_at, published_at,
+    moderated_by_user_id, moderated_at, moderation_comment,
+    user_id, coffee_id
+)
+SELECT
+    'French Press',
+    $$French Press to metoda immersion dająca pełne body i intensywny profil smaku. Prosta w obsłudze, dobrze sprawdza się w domowym parzeniu kawy.$$,
+    'Approved', 'brewing_method',
+    '2026-04-18 10:00:00', '2026-04-19 11:00:00', '2026-04-19 11:00:00',
+    2, '2026-04-19 11:00:00', NULL, 1, NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM article existing
+    WHERE existing.module = 'brewing_method'
+      AND LOWER(TRIM(existing.title)) = LOWER(TRIM('French Press'))
+);
+
 -- 11–15. Palarnie (tytuł = nazwa z katalogu roastery w seed_init)
 INSERT INTO article (
     title, content, status, module,

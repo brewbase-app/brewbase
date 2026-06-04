@@ -7,6 +7,7 @@ import "../../styles/wiki/AddWikiArticle.css";
 import { Send } from "lucide-react";
 
 import { createArticle, getArticles } from "../../api/articlesApi";
+import { getBrewingMethods } from "../../api/brewingMethodApi";
 import { lookupCoffeesByName } from "../../api/coffeeApi";
 import ComboBoxInput from "../../components/ComboBoxInput";
 import CountryPicker from "../../components/CountryPicker";
@@ -17,7 +18,6 @@ import MultiSelectInput from "../../components/MultiSelectInput";
 
 import { COFFEE_VARIETIES } from "../../utils/coffeeVarieties";
 import { COFFEE_PROCESSING_METHODS } from "../../utils/coffeeProcessingMethods";
-import { BREWING_METHOD_OPTIONS } from "../../utils/brewingMethodOptions";
 import { ROASTING_STYLE_OPTIONS } from "../../utils/roastingStyleOptions";
 
 const CATEGORY_OPTIONS = [
@@ -98,6 +98,12 @@ function AddWikiArticle() {
 
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
+    const [catalogBrewingMethods, setCatalogBrewingMethods] = useState([]);
+
+    const [brewingMethodsLoading, setBrewingMethodsLoading] = useState(false);
+
+    const [brewingMethodsLoadError, setBrewingMethodsLoadError] = useState("");
+
     useEffect(() => {
         const moduleParam = searchParams.get("module");
         const initialCategory = moduleParam
@@ -145,6 +151,33 @@ function AddWikiArticle() {
         return () => clearTimeout(timeoutId);
     }, [category, title]);
 
+    useEffect(() => {
+        if (getCategoryValue(category) !== "brewing") {
+            return undefined;
+        }
+
+        const loadBrewingMethods = async () => {
+            try {
+                setBrewingMethodsLoading(true);
+                setBrewingMethodsLoadError("");
+
+                const methods = await getBrewingMethods();
+                setCatalogBrewingMethods(
+                    Array.isArray(methods) ? methods : []
+                );
+            } catch {
+                setCatalogBrewingMethods([]);
+                setBrewingMethodsLoadError(
+                    "Nie udało się pobrać metod parzenia z katalogu."
+                );
+            } finally {
+                setBrewingMethodsLoading(false);
+            }
+        };
+
+        loadBrewingMethods();
+    }, [category]);
+
     const handleSelectLinkedCoffee = (coffee) => {
         setLinkedCoffeeId(coffee.id);
         setLinkedCoffeeName(coffee.name);
@@ -171,7 +204,28 @@ function AddWikiArticle() {
             setSubmitError(
                 categoryValue === "roastery"
                     ? "Uzupełnij wymagane pola: palarnię, opis i kategorię."
-                    : "Uzupełnij wymagane pola: tytuł, opis i kategorię."
+                    : categoryValue === "brewing"
+                      ? "Uzupełnij wymagane pola: metodę parzenia, opis i kategorię."
+                      : "Uzupełnij wymagane pola: tytuł, opis i kategorię."
+            );
+            return;
+        }
+
+        if (categoryValue === "brewing" && !brewingMethod.trim()) {
+            setSubmitError(
+                "Wybierz metodę parzenia z katalogu."
+            );
+            return;
+        }
+
+        if (
+            categoryValue === "brewing" &&
+            !catalogBrewingMethods.some(
+                (method) => method.name === brewingMethod.trim()
+            )
+        ) {
+            setSubmitError(
+                "Wybrana metoda musi pochodzić z katalogu."
             );
             return;
         }
@@ -255,6 +309,32 @@ function AddWikiArticle() {
                 if (hasDuplicateArticle) {
                     setSubmitError(
                         "Artykuł wiki o tej palarni już istnieje. Wybierz inną palarnię lub edytuj istniejący wpis."
+                    );
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+
+            if (categoryValue === "brewing") {
+                const existingBrewingArticles =
+                    await getArticles("brewing_method");
+                const normalizedMethodName = brewingMethod
+                    .trim()
+                    .toLowerCase();
+
+                const hasDuplicateArticle = (
+                    Array.isArray(existingBrewingArticles)
+                        ? existingBrewingArticles
+                        : []
+                ).some(
+                    (article) =>
+                        (article.title ?? "").trim().toLowerCase() ===
+                        normalizedMethodName
+                );
+
+                if (hasDuplicateArticle) {
+                    setSubmitError(
+                        "Artykuł wiki o tej metodzie parzenia już istnieje. Wybierz inną metodę lub edytuj istniejący wpis."
                     );
                     setIsSubmitting(false);
                     return;
@@ -631,12 +711,42 @@ function AddWikiArticle() {
                                     Metoda parzenia
                                 </label>
 
-                                <ComboBoxInput
-                                    value={brewingMethod}
-                                    onChange={setBrewingMethod}
-                                    options={BREWING_METHOD_OPTIONS}
-                                    placeholder="Wybierz z listy lub wpisz metodę"
-                                />
+                                {brewingMethodsLoading && (
+                                    <p>Ładowanie metod parzenia...</p>
+                                )}
+
+                                {brewingMethodsLoadError && (
+                                    <p className="submit-error">
+                                        {brewingMethodsLoadError}
+                                    </p>
+                                )}
+
+                                {!brewingMethodsLoading &&
+                                    !brewingMethodsLoadError && (
+                                    <select
+                                        value={brewingMethod}
+                                        onChange={(event) =>
+                                            setBrewingMethod(
+                                                event.target.value
+                                            )
+                                        }
+                                    >
+                                        <option value="">
+                                            Wybierz metodę z katalogu
+                                        </option>
+
+                                        {catalogBrewingMethods.map(
+                                            (method) => (
+                                                <option
+                                                    key={method.id}
+                                                    value={method.name}
+                                                >
+                                                    {method.name}
+                                                </option>
+                                            )
+                                        )}
+                                    </select>
+                                )}
 
                             </div>
 

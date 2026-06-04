@@ -9,7 +9,6 @@ import {
     Coffee,
     Globe,
     FlaskConical,
-    Search,
     Plus,
     Flame,
     FileText,
@@ -140,18 +139,6 @@ function WikiHome() {
                     </div>
 
                 )}
-
-                <div className="wiki-search-container">
-
-                    <Search size={18} />
-
-                    <input
-                        type="text"
-                        placeholder="Szukaj w encyklopedii..."
-                        className="wiki-search"
-                    />
-
-                </div>
 
             </div>
 
