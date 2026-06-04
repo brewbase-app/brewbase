@@ -71,7 +71,7 @@ import BrewingMethods from "./pages/wiki/BrewingMethods";
 
 import AddWikiArticle from "./pages/wiki/AddWikiArticle";
 import Roasteries from "./pages/wiki/Roasteries";
-import RoasteryDetails from "./pages/wiki/RoasteryDetails";
+import RoasteryArticleRedirect from "./pages/wiki/RoasteryArticleRedirect";
 import WikiArticleDetails from "./pages/wiki/WikiArticleDetails";
 import MyWikiArticles from "./pages/wiki/MyWikiArticles";
 import MyWikiArticleDetails from "./pages/wiki/MyWikiArticleDetails";
@@ -403,7 +403,7 @@ const isAuthPage =
 
                         <Route
                             path="/wiki/roasteries/:id"
-                            element={<RoasteryDetails />}
+                            element={<RoasteryArticleRedirect />}
                         />
                         <Route
                             path="/report"

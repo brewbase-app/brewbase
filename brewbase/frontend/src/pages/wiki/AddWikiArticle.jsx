@@ -6,7 +6,7 @@ import "../../styles/wiki/AddWikiArticle.css";
 
 import { Send } from "lucide-react";
 
-import { createArticle } from "../../api/articlesApi";
+import { createArticle, getArticles } from "../../api/articlesApi";
 import { lookupCoffeesByName } from "../../api/coffeeApi";
 import ComboBoxInput from "../../components/ComboBoxInput";
 import CountryPicker from "../../components/CountryPicker";
@@ -69,6 +69,8 @@ function AddWikiArticle() {
     const [coffeeProcessing, setCoffeeProcessing] = useState("");
 
     const [coffeeRoastery, setCoffeeRoastery] = useState("");
+
+    const [wikiRoastery, setWikiRoastery] = useState("");
 
     const [flavorProfiles, setFlavorProfiles] = useState([]);
 
@@ -161,11 +163,15 @@ function AddWikiArticle() {
         const articleTitle =
             categoryValue === "brewing"
                 ? brewingMethod.trim()
-                : title.trim();
+                : categoryValue === "roastery"
+                  ? wikiRoastery.trim()
+                  : title.trim();
 
         if (!module || !articleTitle || !content.trim()) {
             setSubmitError(
-                "Uzupełnij wymagane pola: tytuł, opis i kategorię."
+                categoryValue === "roastery"
+                    ? "Uzupełnij wymagane pola: palarnię, opis i kategorię."
+                    : "Uzupełnij wymagane pola: tytuł, opis i kategorię."
             );
             return;
         }
@@ -198,6 +204,13 @@ function AddWikiArticle() {
             return;
         }
 
+        if (categoryValue === "roastery" && !wikiRoastery.trim()) {
+            setSubmitError(
+                "Wybierz palarnię z katalogu."
+            );
+            return;
+        }
+
         if (categoryValue === "roastery" && roastingStyles.length === 0) {
             setSubmitError(
                 "Wybierz co najmniej jeden styl palenia."
@@ -222,6 +235,31 @@ function AddWikiArticle() {
         try {
             setIsSubmitting(true);
             setSubmitError("");
+
+            if (categoryValue === "roastery") {
+                const existingRoasteryArticles = await getArticles("roastery");
+                const normalizedRoasteryName = wikiRoastery
+                    .trim()
+                    .toLowerCase();
+
+                const hasDuplicateArticle = (
+                    Array.isArray(existingRoasteryArticles)
+                        ? existingRoasteryArticles
+                        : []
+                ).some(
+                    (article) =>
+                        (article.title ?? "").trim().toLowerCase() ===
+                        normalizedRoasteryName
+                );
+
+                if (hasDuplicateArticle) {
+                    setSubmitError(
+                        "Artykuł wiki o tej palarni już istnieje. Wybierz inną palarnię lub edytuj istniejący wpis."
+                    );
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
 
             let articleContent = content.trim();
 
@@ -631,55 +669,12 @@ function AddWikiArticle() {
                             <div className="form-group">
 
                                 <label>
-                                    Nazwa palarni
+                                    Palarnia
                                 </label>
 
-                                <input
-                                    type="text"
-                                    placeholder="Np. Coffee Collective"
-                                    value={title}
-                                    onChange={(e) =>
-                                        setTitle(e.target.value)
-                                    }
-                                />
-
-                            </div>
-
-                            <div className="form-group">
-
-                                <label>
-                                    Miasto
-                                </label>
-
-                                <input
-                                    type="text"
-                                    placeholder="Np. Kopenhaga"
-                                />
-
-                            </div>
-
-                            <div className="form-group">
-
-                                <label>
-                                    Kraj
-                                </label>
-
-                                <input
-                                    type="text"
-                                    placeholder="Np. Dania"
-                                />
-
-                            </div>
-
-                            <div className="form-group">
-
-                                <label>
-                                    Rok założenia
-                                </label>
-
-                                <input
-                                    type="text"
-                                    placeholder="Np. 2007"
+                                <RoasteryPicker
+                                    value={wikiRoastery}
+                                    onChange={setWikiRoastery}
                                 />
 
                             </div>
@@ -714,13 +709,37 @@ function AddWikiArticle() {
 
                             </div>
 
+                            <div className="article-actions">
+
+                                {submitError && (
+                                    <p className="submit-error">
+                                        {submitError}
+                                    </p>
+                                )}
+
+                                <button
+                                    className="submit-article-button"
+                                    type="button"
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting}
+                                >
+                                    <Send size={16} />
+
+                                    {isSubmitting
+                                        ? "Wysyłanie..."
+                                        : "Wyślij do moderacji"}
+                                </button>
+
+                            </div>
+
                         </>
 
                     )}
 
                     {/* IMAGES + ACTIONS */}
 
-                    {getCategoryValue(category) && (
+                    {getCategoryValue(category) &&
+                        getCategoryValue(category) !== "roastery" && (
 
                         <>
 

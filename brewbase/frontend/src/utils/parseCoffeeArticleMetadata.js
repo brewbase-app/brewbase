@@ -42,6 +42,50 @@ export function parseCoffeeArticleMetadata(content) {
     };
 }
 
+function parseCommaSeparatedList(rawValue) {
+    if (!rawValue) {
+        return [];
+    }
+
+    return rawValue
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean);
+}
+
+export function parseRoasteryArticleMetadata(content) {
+    if (!content) {
+        return {
+            roastingStyles: [],
+            description: "",
+        };
+    }
+
+    const roastingStyles = parseCommaSeparatedList(
+        readLineValue(content, "Styl palenia: ")
+    );
+
+    const metadataPrefix = "Styl palenia: ";
+    const metadataLine = content
+        .split("\n")
+        .find((entry) => entry.startsWith(metadataPrefix));
+
+    let description = content.trim();
+
+    if (metadataLine) {
+        const metadataIndex = content.indexOf(metadataLine);
+        const afterMetadata = content.slice(
+            metadataIndex + metadataLine.length
+        );
+        description = afterMetadata.replace(/^\s*\n+/, "").trim();
+    }
+
+    return {
+        roastingStyles,
+        description,
+    };
+}
+
 export function parseCountryArticleMetadata(content) {
     if (!content) {
         return {
