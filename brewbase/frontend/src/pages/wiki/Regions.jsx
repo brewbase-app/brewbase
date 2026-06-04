@@ -4,8 +4,6 @@ import { useNavigate } from "react-router-dom";
 
 import "../../styles/wiki/Regions.css";
 
-import { Search } from "lucide-react";
-
 import { getArticles } from "../../api/articlesApi";
 import { getCountries } from "../../api/countryApi";
 import { getFlavorProfiles } from "../../api/flavorProfileApi";
@@ -34,7 +32,6 @@ function Regions() {
     const navigate = useNavigate();
 
     const [articles, setArticles] = useState([]);
-    const [search, setSearch] = useState("");
     const [selectedCountry, setSelectedCountry] = useState("");
     const [selectedFlavorProfiles, setSelectedFlavorProfiles] = useState([]);
     const [flavorProfileNames, setFlavorProfileNames] = useState([]);
@@ -100,21 +97,9 @@ function Regions() {
     );
 
     const filteredArticles = articles.filter((article) => {
-        const query = search.toLowerCase();
         const flavorProfiles = Array.isArray(article.flavorProfiles)
             ? article.flavorProfiles
             : [];
-
-        const matchesSearch =
-            (article.title ?? "")
-                .toLowerCase()
-                .includes(query) ||
-            (article.region ?? "")
-                .toLowerCase()
-                .includes(query) ||
-            flavorProfiles.some((profile) =>
-                profile.toLowerCase().includes(query)
-            );
 
         const matchesCountry =
             selectedCountry === "" ||
@@ -126,7 +111,7 @@ function Regions() {
                 flavorProfiles.includes(profile)
             );
 
-        return matchesSearch && matchesCountry && matchesFlavorProfiles;
+        return matchesCountry && matchesFlavorProfiles;
     });
 
     if (isLoading) {
@@ -153,20 +138,6 @@ function Regions() {
                 <p>
                     Poznaj kraje pochodzenia kaw specialty.
                 </p>
-
-                <div className="regions-search-container">
-                    <Search size={18} />
-
-                    <input
-                        type="text"
-                        placeholder="Szukaj krajów..."
-                        className="regions-search"
-                        value={search}
-                        onChange={(event) =>
-                            setSearch(event.target.value)
-                        }
-                    />
-                </div>
             </div>
 
             <div className="regions-content">

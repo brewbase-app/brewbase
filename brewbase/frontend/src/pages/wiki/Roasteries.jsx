@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 
-import { Search, Flame } from "lucide-react";
+import { Flame } from "lucide-react";
 
 import "../../styles/wiki/Roasteries.css";
 
@@ -25,7 +25,6 @@ function mapRoasteryArticle(article) {
 function Roasteries() {
     const navigate = useNavigate();
 
-    const [search, setSearch] = useState("");
     const [articles, setArticles] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
@@ -52,28 +51,6 @@ function Roasteries() {
         loadArticles();
     }, []);
 
-    const filteredArticles = useMemo(() => {
-        const query = search.trim().toLowerCase();
-
-        if (!query) {
-            return articles;
-        }
-
-        return articles.filter((article) => {
-            const searchableText = [
-                article.title,
-                article.authorLogin,
-                article.descriptionPreview,
-                ...article.roastingStyles,
-            ]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase();
-
-            return searchableText.includes(query);
-        });
-    }, [articles, search]);
-
     if (isLoading) {
         return (
             <div className="roasteries-page">
@@ -99,31 +76,15 @@ function Roasteries() {
                     Odkrywaj palarnie specialty coffee
                     z całego świata.
                 </p>
-
-                <div className="roasteries-search-container">
-                    <Search size={18} />
-
-                    <input
-                        type="text"
-                        placeholder="Szukaj palarni..."
-                        className="roasteries-search"
-                        value={search}
-                        onChange={(event) =>
-                            setSearch(event.target.value)
-                        }
-                    />
-                </div>
             </div>
 
             <div className="roasteries-grid">
-                {filteredArticles.length === 0 ? (
+                {articles.length === 0 ? (
                     <p className="roasteries-empty-state">
-                        {articles.length === 0
-                            ? "Brak zatwierdzonych artykułów o palarniach."
-                            : "Brak wyników dla wybranego wyszukiwania."}
+                        Brak zatwierdzonych artykułów o palarniach.
                     </p>
                 ) : (
-                    filteredArticles.map((article) => (
+                    articles.map((article) => (
                         <div
                             key={article.id}
                             className="roastery-card"
