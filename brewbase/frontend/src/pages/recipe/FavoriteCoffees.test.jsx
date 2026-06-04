@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 
 import FavoriteCoffees from "./FavoriteCoffees";
 
-vi.mock("../api/coffeeApi", () => ({
+vi.mock("../../api/coffeeApi", () => ({
     getFavoriteCoffees: vi.fn(),
     removeCoffeeFavorite: vi.fn(),
 }));
@@ -21,7 +21,7 @@ vi.mock("react-router-dom", async () => {
 import {
     getFavoriteCoffees,
     removeCoffeeFavorite,
-} from "../api/coffeeApi";
+} from "../../api/coffeeApi";
 
 describe("FavoriteCoffees", () => {
     beforeEach(() => {

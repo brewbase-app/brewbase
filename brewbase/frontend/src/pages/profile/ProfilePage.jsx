@@ -17,9 +17,9 @@ import {
     MoreVertical
 } from "lucide-react";
 
-import { getProfile } from "../api/profileApi";
-import { ApiError } from "../api/apiClient";
-import { getRecipes } from "../api/recipeApi";
+import { getProfile } from "../../api/profileApi";
+import { ApiError } from "../../api/apiClient";
+import { getRecipes } from "../../api/recipeApi";
 import {
     followUser,
     getFollowers,
@@ -27,10 +27,10 @@ import {
     getUserProfile,
     getUserProfileByLogin,
     unfollowUser,
-} from "../api/communityApi";
-import { getUserRanking } from "../api/rankingApi";
+} from "../../api/communityApi";
+import { getUserRanking } from "../../api/rankingApi";
 
-import "../styles/profile.css";
+import "../../styles/profile.css";
 
 function resolveUserId(entity) {
     if (!entity) {

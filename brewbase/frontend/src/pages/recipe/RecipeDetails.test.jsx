@@ -4,17 +4,17 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 import RecipeDetails from "./RecipeDetails";
-import { sampleProfile, sampleRecipe } from "../test/fixtures";
-import { ApiError } from "../api/apiClient";
+import { sampleProfile, sampleRecipe } from "../../test/fixtures";
+import { ApiError } from "../../api/apiClient";
 
-vi.mock("../api/recipeApi", () => ({
+vi.mock("../../api/recipeApi", () => ({
     getRecipeById: vi.fn(),
     rateRecipe: vi.fn(),
     addFavorite: vi.fn(),
     removeFavorite: vi.fn(),
 }));
 
-vi.mock("../api/profileApi", () => ({
+vi.mock("../../api/profileApi", () => ({
     getProfile: vi.fn(),
 }));
 
@@ -31,8 +31,8 @@ vi.mock("react-router-dom", async () => {
 import {
     getRecipeById,
     rateRecipe,
-} from "../api/recipeApi";
-import { getProfile } from "../api/profileApi";
+} from "../../api/recipeApi";
+import { getProfile } from "../../api/profileApi";
 
 function renderRecipeDetails() {
     return render(

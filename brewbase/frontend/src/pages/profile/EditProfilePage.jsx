@@ -12,9 +12,9 @@ import {
 import {
     getProfile,
     updateProfile
-} from "../api/profileApi";
+} from "../../api/profileApi";
 
-import { getFlavorProfiles } from "../api/flavorProfileApi";
+import { getFlavorProfiles } from "../../api/flavorProfileApi";
 
 import {
     DEFAULT_USER_PREFERENCES,
@@ -22,9 +22,9 @@ import {
     hasAnyPreferences,
     loadUserPreferences,
     saveUserPreferences,
-} from "../utils/userPreferences";
+} from "../../utils/userPreferences";
 
-import "../styles/editProfile.css";
+import "../../styles/editProfile.css";
 
 function PreferenceTagGroup({
     label,

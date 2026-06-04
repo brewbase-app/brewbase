@@ -9,24 +9,24 @@ import {
     createRecipe,
     getRecipeById,
     updateRecipe
-} from "../api/recipeApi";
-import { getCoffees } from "../api/coffeeApi";
-import { getBrewingMethods } from "../api/brewingMethodApi";
-import { ApiError } from "../api/apiClient";
+} from "../../api/recipeApi";
+import { getCoffees } from "../../api/coffeeApi";
+import { getBrewingMethods } from "../../api/brewingMethodApi";
+import { ApiError } from "../../api/apiClient";
 import {
     buildRecipeParameters,
     hasValidationErrors,
     mapBackendErrors,
     validateRecipeDraft,
     validateRecipePublish
-} from "../utils/recipeValidation";
+} from "../../utils/recipeValidation";
 import {
     formatBrewingMethodSelectLabel,
     formatCoffeeSelectLabel,
     getBrewingMethodSelectPlaceholder,
     getCoffeeSelectPlaceholder
-} from "../utils/recipeCatalog";
-import { getRecipeModerationComment } from "../utils/recipeModeration";
+} from "../../utils/recipeCatalog";
+import { getRecipeModerationComment } from "../../utils/recipeModeration";
 
 const RecipesForm = () => {
 

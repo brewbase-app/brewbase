@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { apiRequest } from "../api/apiClient";
-import { establishAuthSession } from "../api/authSession";
+import { apiRequest } from "../../api/apiClient";
+import { establishAuthSession } from "../../api/authSession";
 
-import "../styles/RegisterPage.css";
+import "../../styles/RegisterPage.css";
 
 export default function RegisterPage() {
 

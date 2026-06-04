@@ -19,8 +19,8 @@ import {
     deleteRecipe,
     addFavorite,
     removeFavorite
-} from "../api/recipeApi";
-import { getRecipeModerationComment } from "../utils/recipeModeration";
+} from "../../api/recipeApi";
+import { getRecipeModerationComment } from "../../utils/recipeModeration";
 
 const formatDate = (date) => {
 
