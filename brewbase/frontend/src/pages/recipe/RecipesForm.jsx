@@ -28,6 +28,9 @@ import {
 } from "../../utils/recipeCatalog";
 import { getRecipeModerationComment } from "../../utils/recipeModeration";
 
+import "../../styles/recipe/recipeLayout.css";
+import "../../styles/recipe/RecipesForm.css";
+
 const RecipesForm = () => {
 
     const navigate = useNavigate();
@@ -147,11 +150,16 @@ const RecipesForm = () => {
         }
 
         return (
-            <p style={errorTextStyle}>
+            <p className="recipe-form__error">
                 {fieldErrors[fieldName]}
             </p>
         );
     };
+
+    const inputClassName = (fieldName) =>
+        fieldErrors[fieldName]
+            ? "recipe-form__input recipe-form__input--error"
+            : "recipe-form__input";
 
     const loadCatalog = async () => {
         setCatalogLoading(true);
@@ -247,123 +255,57 @@ const RecipesForm = () => {
 
     }, [id, isEditing]);
 
+    const submitButtonClass = (variant) =>
+        [
+            "recipe-form__btn",
+            variant === "draft"
+                ? "recipe-form__btn--draft"
+                : "recipe-form__btn--publish",
+            isSubmitting ? "recipe-form__btn--disabled" : ""
+        ]
+            .filter(Boolean)
+            .join(" ");
+
     return (
-
-        <div
-            style={{
-                width: "100%",
-                minHeight: "100vh",
-                backgroundColor: "#f3f3f3",
-                padding: "55px 60px",
-                boxSizing: "border-box",
-                display: "flex",
-                justifyContent: "center"
-            }}
-        >
-
-            <div style={{ width: "100%", maxWidth: "900px" }}>
-
-                {/* HEADER */}
-
-                <div style={{ marginBottom: "38px" }}>
-
-                    <h1
-                        style={{
-                            fontSize: "58px",
-                            fontWeight: "700",
-                            color: "#1f1f1f",
-                            marginBottom: "8px",
-                            lineHeight: "1"
-                        }}
-                    >
-
+        <div className="recipe-page recipe-page--centered">
+            <div className="recipe-page__container recipe-page__container--md">
+                <div className="recipe-page__header">
+                    <h1 className="recipe-page__title">
                         {isEditing
                             ? "Edytuj recepturę"
                             : "Nowa receptura"}
-
                     </h1>
-
-                    <p
-                        style={{
-                            fontSize: "16px",
-                            color: "#6f6f6f"
-                        }}
-                    >
-
+                    <p className="recipe-page__subtitle">
                         {isEditing
                             ? "Zaktualizuj swoją recepturę."
                             : "Dodaj nowy przepis parzenia kawy."}
-
                     </p>
-
                 </div>
 
                 {isEditing && !isPublicRecipe && moderationComment && (
-                    <div
-                        style={{
-                            marginBottom: "24px",
-                            padding: "16px 18px",
-                            borderRadius: "16px",
-                            backgroundColor: "#fff4e5",
-                            border: "1px solid #ffd8a8",
-                            color: "#5c4a1f",
-                            fontSize: "15px",
-                            lineHeight: 1.5,
-                        }}
-                    >
+                    <div className="recipe-form__moderation-banner">
                         <strong>Komentarz moderatora:</strong> {moderationComment}
                     </div>
                 )}
 
-                {/* FORM */}
-
-                <div
-                    style={{
-                        backgroundColor: "#fafafa",
-                        borderRadius: "28px",
-                        border: "1px solid #e6e6e6",
-                        padding: "32px",
-                        boxShadow: "0 2px 10px rgba(0,0,0,0.03)"
-                    }}
-                >
-
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "18px"
-                        }}
-                    >
-
-                        {/* BASIC INFO */}
-
+                <div className="recipe-form__card">
+                    <div className="recipe-form__fields">
                         <div>
-
-                            <p style={sectionTitle}>
+                            <p className="recipe-form__section-title">
                                 Podstawowe informacje
                             </p>
 
                             {fieldErrors.form && (
-                                <p style={errorTextStyle}>
+                                <p className="recipe-form__error">
                                     {fieldErrors.form}
                                 </p>
                             )}
 
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "14px"
-                                }}
-                            >
-
+                            <div className="recipe-form__group">
                                 <input
                                     name="title"
                                     placeholder="Nazwa receptury"
-                                    style={{
-                                        ...inputStyle,
-                                        borderColor: fieldErrors.title ? "#d14343" : inputStyle.border
-                                    }}
+                                    className={inputClassName("title")}
                                     value={formData.title}
                                     onChange={handleChange}
                                 />
@@ -374,28 +316,22 @@ const RecipesForm = () => {
                                     placeholder="Opis przygotowania"
                                     value={formData.description}
                                     onChange={handleChange}
-                                    style={{
-                                        ...inputStyle,
-                                        height: "110px",
-                                        resize: "none",
-                                        paddingTop: "14px",
-                                        borderColor: fieldErrors.description ? "#d14343" : inputStyle.border
-                                    }}
+                                    className={`${inputClassName("description")} recipe-form__input--textarea`}
                                 />
                                 {renderFieldError("description")}
 
-                                <p style={fieldLabelStyle}>
+                                <p className="recipe-form__label">
                                     Kawa z katalogu
                                 </p>
 
                                 {catalogError && (
-                                    <div style={catalogNoticeStyle}>
-                                        <p style={catalogNoticeTextStyle}>
+                                    <div className="recipe-form__notice recipe-form__notice--error">
+                                        <p className="recipe-form__notice-text recipe-form__notice-text--error">
                                             {catalogError}
                                         </p>
                                         <button
                                             type="button"
-                                            style={retryButtonStyle}
+                                            className="recipe-form__notice-btn"
                                             onClick={loadCatalog}
                                         >
                                             Spróbuj ponownie
@@ -408,10 +344,7 @@ const RecipesForm = () => {
                                     value={formData.coffeeId}
                                     onChange={handleChange}
                                     disabled={catalogLoading}
-                                    style={{
-                                        ...inputStyle,
-                                        borderColor: fieldErrors.coffeeId ? "#d14343" : inputStyle.border
-                                    }}
+                                    className={inputClassName("coffeeId")}
                                 >
                                     <option value="">
                                         {getCoffeeSelectPlaceholder({
@@ -437,20 +370,20 @@ const RecipesForm = () => {
                                 </select>
                                 {renderFieldError("coffeeId")}
 
-                                <div style={wikiHintStyle}>
-                                    <p style={wikiHintTextStyle}>
+                                <div className="recipe-form__notice recipe-form__notice--wiki">
+                                    <p className="recipe-form__notice-text recipe-form__notice-text--wiki">
                                         Nie ma Twojej kawy na liście?
                                     </p>
                                     <button
                                         type="button"
-                                        style={wikiLinkButtonStyle}
+                                        className="recipe-form__notice-btn recipe-form__notice-btn--wiki"
                                         onClick={() => navigate("/wiki/add?module=coffee")}
                                     >
                                         Dodaj artykuł wiki
                                     </button>
                                 </div>
 
-                                <p style={fieldLabelStyle}>
+                                <p className="recipe-form__label">
                                     Metoda parzenia z katalogu
                                 </p>
 
@@ -459,10 +392,7 @@ const RecipesForm = () => {
                                     value={formData.brewingMethodId}
                                     onChange={handleChange}
                                     disabled={catalogLoading}
-                                    style={{
-                                        ...inputStyle,
-                                        borderColor: fieldErrors.brewingMethodId ? "#d14343" : inputStyle.border
-                                    }}
+                                    className={inputClassName("brewingMethodId")}
                                 >
                                     <option value="">
                                         {getBrewingMethodSelectPlaceholder({
@@ -489,48 +419,34 @@ const RecipesForm = () => {
                                 </select>
                                 {renderFieldError("brewingMethodId")}
 
-                                <div style={wikiHintStyle}>
-                                    <p style={wikiHintTextStyle}>
+                                <div className="recipe-form__notice recipe-form__notice--wiki">
+                                    <p className="recipe-form__notice-text recipe-form__notice-text--wiki">
                                         Nie ma Twojej metody parzenia na liście?
                                     </p>
                                     <button
                                         type="button"
-                                        style={wikiLinkButtonStyle}
+                                        className="recipe-form__notice-btn recipe-form__notice-btn--wiki"
                                         onClick={() => navigate("/wiki/add?module=brewing_method")}
                                     >
                                         Dodaj artykuł wiki
                                     </button>
                                 </div>
-
                             </div>
-
                         </div>
 
-                        {/* PARAMETERS */}
-
-                        <div style={{ marginTop: "14px" }}>
-
-                            <p style={sectionTitle}>
+                        <div className="recipe-form__section">
+                            <p className="recipe-form__section-title">
                                 Parametry parzenia
                             </p>
 
-                            <div
-                                style={{
-                                    display: "grid",
-                                    gridTemplateColumns: "1fr 1fr",
-                                    gap: "14px"
-                                }}
-                            >
+                            <div className="recipe-form__grid">
                                 <div>
                                     <input
                                         name="coffee"
                                         placeholder="Ilość kawy (g)"
                                         value={formData.coffee}
                                         onChange={handleChange}
-                                        style={{
-                                            ...inputStyle,
-                                            borderColor: fieldErrors.coffee ? "#d14343" : inputStyle.border
-                                        }}
+                                        className={inputClassName("coffee")}
                                     />
                                     {renderFieldError("coffee")}
                                 </div>
@@ -541,10 +457,7 @@ const RecipesForm = () => {
                                         placeholder="Ilość wody (ml)"
                                         value={formData.water}
                                         onChange={handleChange}
-                                        style={{
-                                            ...inputStyle,
-                                            borderColor: fieldErrors.water ? "#d14343" : inputStyle.border
-                                        }}
+                                        className={inputClassName("water")}
                                     />
                                     {renderFieldError("water")}
                                 </div>
@@ -555,10 +468,7 @@ const RecipesForm = () => {
                                         placeholder="Temperatura wody (°C)"
                                         value={formData.temperature}
                                         onChange={handleChange}
-                                        style={{
-                                            ...inputStyle,
-                                            borderColor: fieldErrors.temperature ? "#d14343" : inputStyle.border
-                                        }}
+                                        className={inputClassName("temperature")}
                                     />
                                     {renderFieldError("temperature")}
                                 </div>
@@ -569,41 +479,29 @@ const RecipesForm = () => {
                                         placeholder="Stopień mielenia"
                                         value={formData.grindSize}
                                         onChange={handleChange}
-                                        style={inputStyle}
+                                        className="recipe-form__input"
                                     />
                                 </div>
-
                             </div>
-
                         </div>
 
-                        {/* TIME */}
-
-                        <div style={{ marginTop: "14px" }}>
-
-                            <p style={sectionTitle}>
+                        <div className="recipe-form__section">
+                            <p className="recipe-form__section-title">
                                 Czas parzenia
                             </p>
 
-                            <div
-                                style={{
-                                    display: "grid",
-                                    gridTemplateColumns: "1fr 1fr",
-                                    gap: "14px"
-                                }}
-                            >
+                            <div className="recipe-form__grid">
                                 <div>
                                     <input
                                         name="minutes"
                                         placeholder="Minuty"
                                         value={formData.minutes}
                                         onChange={handleChange}
-                                        style={{
-                                            ...inputStyle,
-                                            borderColor: (fieldErrors.minutes || fieldErrors.brewTime)
-                                                ? "#d14343"
-                                                : inputStyle.border
-                                        }}
+                                        className={
+                                            fieldErrors.minutes || fieldErrors.brewTime
+                                                ? "recipe-form__input recipe-form__input--error"
+                                                : "recipe-form__input"
+                                        }
                                     />
                                     {renderFieldError("minutes")}
                                 </div>
@@ -614,186 +512,49 @@ const RecipesForm = () => {
                                         placeholder="Sekundy"
                                         value={formData.seconds}
                                         onChange={handleChange}
-                                        style={{
-                                            ...inputStyle,
-                                            borderColor: (fieldErrors.seconds || fieldErrors.brewTime)
-                                                ? "#d14343"
-                                                : inputStyle.border
-                                        }}
+                                        className={
+                                            fieldErrors.seconds || fieldErrors.brewTime
+                                                ? "recipe-form__input recipe-form__input--error"
+                                                : "recipe-form__input"
+                                        }
                                     />
                                     {renderFieldError("seconds")}
                                 </div>
                             </div>
 
                             {renderFieldError("brewTime")}
-
                         </div>
 
-                        {/* BUTTONS */}
-
-                        <div style={{ marginTop: "26px" }}>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "flex-end",
-                                    gap: "14px"
-                                }}
+                        <div className="recipe-form__actions">
+                            <button
+                                type="button"
+                                className={submitButtonClass("draft")}
+                                disabled={isSubmitting}
+                                onClick={() => saveRecipe("DRAFT")}
                             >
-                                <button
-                                    type="button"
-                                    style={{
-                                        ...draftButtonStyle,
-                                        opacity: isSubmitting ? 0.7 : 1,
-                                        cursor: isSubmitting ? "not-allowed" : "pointer"
-                                    }}
-                                    disabled={isSubmitting}
-                                    onClick={() => saveRecipe("DRAFT")}
-                                >
-                                    {isSubmitting
-                                        ? "Zapisywanie..."
-                                        : "Zapisz wersję roboczą"}
-                                </button>
+                                {isSubmitting
+                                    ? "Zapisywanie..."
+                                    : "Zapisz wersję roboczą"}
+                            </button>
 
-                                <button
-                                    type="button"
-                                    style={{
-                                        ...publishButtonStyle,
-                                        opacity: isSubmitting ? 0.7 : 1,
-                                        cursor: isSubmitting ? "not-allowed" : "pointer"
-                                    }}
-                                    disabled={isSubmitting}
-                                    onClick={() => saveRecipe("PUBLISHED")}
-                                >
-                                    {isSubmitting
-                                        ? "Zapisywanie..."
-                                        : isEditing
-                                            ? "Zapisz zmiany"
-                                            : "Opublikuj recepturę"}
-                                </button>
-                            </div>
+                            <button
+                                type="button"
+                                className={submitButtonClass("publish")}
+                                disabled={isSubmitting}
+                                onClick={() => saveRecipe("PUBLISHED")}
+                            >
+                                {isSubmitting
+                                    ? "Zapisywanie..."
+                                    : isEditing
+                                        ? "Zapisz zmiany"
+                                        : "Opublikuj recepturę"}
+                            </button>
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
     );
 };
 
-const sectionTitle = {
-    fontSize: "15px",
-    fontWeight: "600",
-    color: "#4f4f4f",
-    marginBottom: "14px"
-};
-
-const inputStyle = {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "16px 18px",
-    borderRadius: "18px",
-    border: "1px solid #dddddd",
-    backgroundColor: "#f5f5f5",
-    fontSize: "15px",
-    color: "#1f1f1f",
-    outline: "none"
-};
-
-const draftButtonStyle = {
-    backgroundColor: "#ededed",
-    color: "#2f2f2f",
-    padding: "14px 22px",
-    borderRadius: "18px",
-    border: "1px solid #d9d9d9",
-    fontSize: "15px",
-    fontWeight: "600",
-    cursor: "pointer"
-};
-
-const publishButtonStyle = {
-    backgroundColor: "#1f1f1f",
-    color: "white",
-    padding: "14px 22px",
-    borderRadius: "18px",
-    border: "none",
-    fontSize: "15px",
-    fontWeight: "600",
-    cursor: "pointer"
-};
-
-const errorTextStyle = {
-    margin: "6px 0 0 0",
-    fontSize: "13px",
-    color: "#d14343"
-};
-
-const fieldLabelStyle = {
-    margin: "4px 0 0 0",
-    fontSize: "13px",
-    fontWeight: "600",
-    color: "#5a5a5a"
-};
-
-const catalogNoticeStyle = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "12px",
-    padding: "12px 14px",
-    borderRadius: "14px",
-    backgroundColor: "#fff4f4",
-    border: "1px solid #f0cccc"
-};
-
-const catalogNoticeTextStyle = {
-    margin: 0,
-    fontSize: "13px",
-    color: "#9b2c2c"
-};
-
-const retryButtonStyle = {
-    backgroundColor: "#ffffff",
-    color: "#1f1f1f",
-    padding: "8px 12px",
-    borderRadius: "12px",
-    border: "1px solid #dddddd",
-    fontSize: "13px",
-    fontWeight: "600",
-    cursor: "pointer",
-    whiteSpace: "nowrap"
-};
-
-const wikiHintStyle = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "12px",
-    padding: "12px 14px",
-    borderRadius: "14px",
-    backgroundColor: "#f0f4ff",
-    border: "1px solid #d9e3ff"
-};
-
-const wikiHintTextStyle = {
-    margin: 0,
-    fontSize: "13px",
-    color: "#4f5d78"
-};
-
-const wikiLinkButtonStyle = {
-    backgroundColor: "#ffffff",
-    color: "#1f1f1f",
-    padding: "8px 12px",
-    borderRadius: "12px",
-    border: "1px solid #c9d7ff",
-    fontSize: "13px",
-    fontWeight: "600",
-    cursor: "pointer",
-    whiteSpace: "nowrap"
-};
-
 export default RecipesForm;
-

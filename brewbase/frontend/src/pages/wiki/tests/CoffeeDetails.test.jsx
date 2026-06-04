@@ -3,17 +3,17 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
-import CoffeeDetails from "./CoffeeDetails";
-import { sampleCoffee, sampleProfile } from "../../test/fixtures";
+import CoffeeDetails from "../CoffeeDetails";
+import { sampleCoffee, sampleProfile } from "../../../test/fixtures";
 
-vi.mock("../../api/coffeeApi", () => ({
+vi.mock("../../../api/coffeeApi", () => ({
     getCoffeeById: vi.fn(),
     rateCoffee: vi.fn(),
     addCoffeeFavorite: vi.fn(),
     removeCoffeeFavorite: vi.fn(),
 }));
 
-vi.mock("../../api/profileApi", () => ({
+vi.mock("../../../api/profileApi", () => ({
     getProfile: vi.fn(),
 }));
 
@@ -27,8 +27,8 @@ vi.mock("react-router-dom", async () => {
     };
 });
 
-import { getCoffeeById, rateCoffee } from "../../api/coffeeApi";
-import { getProfile } from "../../api/profileApi";
+import { getCoffeeById, rateCoffee } from "../../../api/coffeeApi";
+import { getProfile } from "../../../api/profileApi";
 
 function renderCoffeeDetails() {
     return render(

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import "../../styles/Quicknotes.css";
+import "../../styles/quicknotes/Quicknotes.css";
 import {
     Pencil,
     Trash2,

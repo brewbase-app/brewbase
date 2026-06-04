@@ -23,7 +23,7 @@ import { getProfile } from "./api/profileApi";
 /* HOME */
 
 import Dashboard from "./pages/dashboard/Dashboard";
-import FavoriteCoffees from "./pages/recipe/FavoriteCoffees";
+import FavoriteCoffees from "./pages/wiki/FavoriteCoffees";
 
 /* RECIPES */
 

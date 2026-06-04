@@ -3,17 +3,17 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 
-import PreferencesOnboardingPage from "./PreferencesOnboardingPage";
-import { renderWithRoutes } from "../../test/testUtils";
-import { setAuthToken } from "../../utils/auth";
+import PreferencesOnboardingPage from "../PreferencesOnboardingPage";
+import { renderWithRoutes } from "../../../test/testUtils";
+import { setAuthToken } from "../../../utils/auth";
 import {
     USER_PREFERENCES_STORAGE_KEY,
     DEFAULT_USER_PREFERENCES,
-} from "../../utils/userPreferences";
+} from "../../../utils/userPreferences";
 
 const navigateMock = vi.fn();
 
-vi.mock("../../api/preferenceApi", () => ({
+vi.mock("../../../api/preferenceApi", () => ({
     savePreferences: vi.fn().mockResolvedValue(null),
 }));
 
@@ -26,7 +26,7 @@ vi.mock("react-router-dom", async () => {
     };
 });
 
-import { savePreferences } from "../../api/preferenceApi";
+import { savePreferences } from "../../../api/preferenceApi";
 
 describe("PreferencesOnboardingPage", () => {
     beforeEach(() => {

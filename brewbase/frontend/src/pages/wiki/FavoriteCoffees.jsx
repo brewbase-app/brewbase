@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import "../../styles/FavoriteCoffees.css";
+import "../../styles/wiki/FavoriteCoffees.css";
 
 import { useNavigate } from "react-router-dom";
 

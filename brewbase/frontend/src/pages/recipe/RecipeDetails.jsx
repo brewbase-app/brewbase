@@ -30,8 +30,10 @@ import {
 import { getProfile } from "../../api/profileApi";
 import { getRecipeModerationComment } from "../../utils/recipeModeration";
 
+import "../../styles/recipe/recipeLayout.css";
+import "../../styles/recipe/RecipeDetails.css";
+
 const RecipeDetails = () => {
-    
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -172,67 +174,21 @@ const RecipeDetails = () => {
     };
 
     if (loading) {
-
         return (
-
-            <div
-                style={{
-                    width: "100%",
-                    minHeight: "100vh",
-                    backgroundColor: "#f3f3f3",
-                    padding: "55px 60px",
-                    boxSizing: "border-box"
-                }}
-            >
-
-                <div
-                    style={{
-                        backgroundColor: "#fafafa",
-                        borderRadius: "28px",
-                        border: "1px solid #e6e6e6",
-                        padding: "40px",
-                        maxWidth: "900px",
-                        color: "#2f2f2f",
-                        fontSize: "20px",
-                        fontWeight: "600"
-                    }}
-                >
+            <div className="recipe-page">
+                <div className="recipe-panel">
                     Ładowanie receptury...
                 </div>
-
             </div>
         );
     }
 
     if (!recipe) {
-
         return (
-
-            <div
-                style={{
-                    width: "100%",
-                    minHeight: "100vh",
-                    backgroundColor: "#f3f3f3",
-                    padding: "55px 60px",
-                    boxSizing: "border-box"
-                }}
-            >
-
-                <div
-                    style={{
-                        backgroundColor: "#fafafa",
-                        borderRadius: "28px",
-                        border: "1px solid #e6e6e6",
-                        padding: "40px",
-                        maxWidth: "900px",
-                        color: "#2f2f2f",
-                        fontSize: "20px",
-                        fontWeight: "600"
-                    }}
-                >
+            <div className="recipe-page">
+                <div className="recipe-panel">
                     Nie znaleziono receptury.
                 </div>
-
             </div>
         );
     }
@@ -306,131 +262,51 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
     const hasUserRated = userRating > 0;
 
     return (
-
-        <div
-            style={{
-                width: "100%",
-                minHeight: "100vh",
-                backgroundColor: "#f3f3f3",
-                padding: "55px 60px",
-                boxSizing: "border-box",
-                display: "flex",
-                justifyContent: "center"
-            }}
-        >
-
-            <div style={{ width: "100%", maxWidth: "950px" }}>
-
-                {/* HEADER */}
-
-                <div style={{ marginBottom: "38px" }}>
-
-                    <h1
-                        style={{
-                            fontSize: "58px",
-                            fontWeight: "700",
-                            color: "#1f1f1f",
-                            marginBottom: "14px",
-                            lineHeight: "1"
-                        }}
-                    >
+        <div className="recipe-page recipe-page--centered">
+            <div className="recipe-page__container recipe-page__container--lg">
+                <div className="recipe-page__header">
+                    <h1 className="recipe-page__title recipe-page__title--spaced">
                         {recipe.title}
                     </h1>
 
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            gap: "20px",
-                            flexWrap: "wrap"
-                        }}
-                    >
-
+                    <div className="recipe-details__header-row">
                         <div>
-
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "12px",
-                                    flexWrap: "wrap"
-                                }}
-                            >
-
-                                <div style={badgeStyle}>
+                            <div className="recipe-details__badges">
+                                <div className="recipe-details__badge">
                                     <Coffee size={14} />
                                     {recipe.brewingMethod}
                                 </div>
 
-                                <div style={badgeStyle}>
-
+                                <div className="recipe-details__badge">
                                     {recipe.isPublic ? (
-
                                         <>
                                             <Globe size={14} />
                                             Publiczna
                                         </>
-
                                     ) : (
-
                                         <>
                                             <Lock size={14} />
                                             Wersja robocza
                                         </>
-
                                     )}
-
                                 </div>
-
                             </div>
 
                             {isOwner &&
                                 !recipe.isPublic &&
                                 getRecipeModerationComment(recipe) && (
-                                    <p
-                                        style={{
-                                            marginTop: "16px",
-                                            fontSize: "15px",
-                                            color: "#555555",
-                                            maxWidth: "720px",
-                                        }}
-                                    >
+                                    <p className="recipe-moderation-note recipe-moderation-note--header">
                                         Komentarz moderatora:{" "}
                                         {getRecipeModerationComment(recipe)}
                                     </p>
                                 )}
 
-                            {/* FAVORITES + RATING */}
-
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "20px",
-                                    marginTop: "18px",
-                                    flexWrap: "wrap"
-                                }}
-                            >
-
-                                {/* FAVORITE */}
-
+                            <div className="recipe-details__meta-row">
                                 <button
+                                    type="button"
+                                    className="recipe-details__favorite-btn"
                                     onClick={handleFavorite}
-                                    style={{
-                                        background: "none",
-                                        border: "none",
-                                        cursor: "pointer",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "10px",
-                                        fontSize: "15px",
-                                        fontWeight: "600",
-                                        color: "#2f2f2f",
-                                        padding: 0
-                                    }}
                                 >
-
                                     <Heart
                                         size={20}
                                         fill={
@@ -439,78 +315,36 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                                 : "none"
                                         }
                                     />
-
                                     {isFavorite
                                         ? "Dodano do ulubionych"
                                         : "Dodaj do ulubionych"}
-
                                 </button>
 
-                                {/* RATING */}
-
                                 {isOwner ? (
-
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "10px",
-                                            flexWrap: "wrap"
-                                        }}
-                                    >
-                                        <span
-                                            style={{
-                                                fontSize: "14px",
-                                                color: "#666"
-                                            }}
-                                        >
+                                    <div className="recipe-details__rating">
+                                        <span className="recipe-details__rating-text">
                                             Nie możesz oceniać własnej receptury
                                         </span>
-
-                                        <span
-                                            style={{
-                                                fontSize: "14px",
-                                                color: "#666"
-                                            }}
-                                        >
+                                        <span className="recipe-details__rating-text">
                                             {recipe.averageRating
                                                 ? recipe.averageRating.toFixed(1)
                                                 : "Brak ocen"}
-
                                             {" · "}
-
                                             {recipe.ratingCount || 0} ocen
                                         </span>
                                     </div>
-
                                 ) : (
-
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "10px",
-                                            flexWrap: "wrap"
-                                        }}
-                                    >
-
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                gap: "4px"
-                                            }}
-                                        >
-
+                                    <div className="recipe-details__rating">
+                                        <div className="recipe-details__stars">
                                             {[1, 2, 3, 4, 5].map((star) => (
-
                                                 <Star
                                                     key={star}
                                                     size={20}
-                                                    style={{
-                                                        cursor: hasUserRated
-                                                            ? "default"
-                                                            : "pointer",
-                                                    }}
+                                                    className={
+                                                        hasUserRated
+                                                            ? "recipe-details__star recipe-details__star--readonly"
+                                                            : "recipe-details__star"
+                                                    }
                                                     fill={
                                                         star <= userRating
                                                             ? "#1f1f1f"
@@ -525,36 +359,19 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                                                   )
                                                     }
                                                 />
-
                                             ))}
-
                                         </div>
 
-                                        <span
-                                            style={{
-                                                fontSize: "14px",
-                                                color: "#666"
-                                            }}
-                                        >
-
+                                        <span className="recipe-details__rating-text">
                                             {recipe.averageRating
                                                 ? recipe.averageRating.toFixed(1)
                                                 : "Brak ocen"}
-
                                             {" · "}
-
                                             {recipe.ratingCount || 0} ocen
-
                                         </span>
 
                                         {hasUserRated && (
-                                            <span
-                                                style={{
-                                                    fontSize: "14px",
-                                                    color: "#1f6b3a",
-                                                    fontWeight: 500,
-                                                }}
-                                            >
+                                            <span className="recipe-details__rating-success">
                                                 Twoja ocena: {userRating}/5
                                             </span>
                                         )}
@@ -562,35 +379,21 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                         {ratingMessage && (
                                             <span
                                                 role="status"
-                                                style={{
-                                                    fontSize: "14px",
-                                                    color: "#1f6b3a",
-                                                }}
+                                                className="recipe-details__rating-success"
                                             >
                                                 {ratingMessage}
                                             </span>
                                         )}
-
                                     </div>
-
                                 )}
-
                             </div>
-
                         </div>
 
-                        {/* ACTIONS */}
-
-                        <div
-                            style={{
-                                display: "flex",
-                                gap: "10px"
-                            }}
-                        >
-
+                        <div className="recipe-details__actions">
                             {isOwner && (
                                 <button
-                                    style={editButtonStyle}
+                                    type="button"
+                                    className="recipe-details__btn recipe-details__btn--edit"
                                     onClick={() =>
                                         navigate(`/recipes/edit/${recipe.id}`)
                                     }
@@ -600,7 +403,8 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                             )}
 
                             <button
-                                style={exportButtonStyle}
+                                type="button"
+                                className="recipe-details__btn recipe-details__btn--export"
                                 onClick={exportToTXT}
                             >
                                 <Download size={16} />
@@ -608,7 +412,8 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                             </button>
 
                             <button
-                                style={exportButtonStyle}
+                                type="button"
+                                className="recipe-details__btn recipe-details__btn--export"
                                 onClick={exportToCSV}
                             >
                                 <Download size={16} />
@@ -616,7 +421,8 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                             </button>
 
                             <button
-                                style={reportButtonStyle}
+                                type="button"
+                                className="recipe-details__btn recipe-details__btn--report"
                                 onClick={() =>
                                     navigate("/report", {
                                         state: {
@@ -631,273 +437,96 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                                 <Flag size={16} />
                                 Zgłoś treść
                             </button>
-
                         </div>
-
                     </div>
-
                 </div>
 
-                {/* MAIN CARD */}
-
-                <div
-                    style={{
-                        backgroundColor: "#fafafa",
-                        borderRadius: "28px",
-                        border: "1px solid #e6e6e6",
-                        padding: "34px",
-                        boxShadow:
-                            "0 2px 10px rgba(0,0,0,0.03)"
-                    }}
-                >
-
-                    {/* PARAMETERS */}
-
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns:
-                                "repeat(auto-fit, minmax(220px, 1fr))",
-                            gap: "18px",
-                            marginBottom: "34px"
-                        }}
-                    >
-
-                        <div style={infoCardStyle}>
+                <div className="recipe-details__main-card">
+                    <div className="recipe-details__params">
+                        <div className="recipe-details__info-card">
                             <Scale size={20} />
-
                             <div>
-                                <p style={infoLabel}>
+                                <p className="recipe-details__info-label">
                                     Ilość kawy
                                 </p>
-
-                                <p style={infoValue}>
+                                <p className="recipe-details__info-value">
                                     {recipe.parameters.coffee}
                                 </p>
                             </div>
-
                         </div>
 
-                        <div style={infoCardStyle}>
+                        <div className="recipe-details__info-card">
                             <Droplets size={20} />
-
                             <div>
-                                <p style={infoLabel}>
+                                <p className="recipe-details__info-label">
                                     Ilość wody
                                 </p>
-
-                                <p style={infoValue}>
+                                <p className="recipe-details__info-value">
                                     {recipe.parameters.water}
                                 </p>
                             </div>
-
                         </div>
 
-                        <div style={infoCardStyle}>
+                        <div className="recipe-details__info-card">
                             <Thermometer size={20} />
-
                             <div>
-                                <p style={infoLabel}>
+                                <p className="recipe-details__info-label">
                                     Temperatura
                                 </p>
-
-                                <p style={infoValue}>
+                                <p className="recipe-details__info-value">
                                     {recipe.parameters.temperature}
                                 </p>
                             </div>
-
                         </div>
 
-                        <div style={infoCardStyle}>
+                        <div className="recipe-details__info-card">
                             <Timer size={20} />
-
                             <div>
-                                <p style={infoLabel}>
+                                <p className="recipe-details__info-label">
                                     Czas parzenia
                                 </p>
-
-                                <p style={infoValue}>
+                                <p className="recipe-details__info-value">
                                     {recipe.parameters.brewTime}
                                 </p>
                             </div>
-
                         </div>
-
                     </div>
 
-                    {/* DESCRIPTION */}
-
-                    <div style={{ marginBottom: "28px" }}>
-
-                        <p style={sectionTitle}>
+                    <div className="recipe-details__section">
+                        <p className="recipe-details__section-title">
                             Opis przygotowania
                         </p>
 
-                        <div style={contentCardStyle}>
-
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "flex-start",
-                                    gap: "12px"
-                                }}
-                            >
-
-                                <FileText
-                                    size={18}
-                                    color="#666"
-                                />
-
-                                <div
-                                    style={{
-                                        lineHeight: "1.8",
-                                        color: "#2f2f2f",
-                                        whiteSpace: "pre-line"
-                                    }}
-                                >
+                        <div className="recipe-details__content-card">
+                            <div className="recipe-details__description">
+                                <FileText size={18} color="#666" />
+                                <div className="recipe-details__description-text">
                                     {recipe.steps}
                                 </div>
-
                             </div>
-
                         </div>
-
                     </div>
 
-                    {/* ADDITIONAL */}
-
                     <div>
-
-                        <p style={sectionTitle}>
+                        <p className="recipe-details__section-title">
                             Dodatkowe informacje
                         </p>
 
-                        <div style={contentCardStyle}>
-
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "12px"
-                                }}
-                            >
-
+                        <div className="recipe-details__content-card">
+                            <div className="recipe-details__extra">
                                 <div>
-                                    <span style={labelStyle}>
+                                    <span className="recipe-details__extra-label">
                                         Stopień mielenia:
                                     </span>{" "}
                                     {recipe.parameters.grindSize}
                                 </div>
-
                             </div>
-
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
     );
 };
 
-const sectionTitle = {
-    fontSize: "16px",
-    fontWeight: "600",
-    color: "#4f4f4f",
-    marginBottom: "14px"
-};
-
-const badgeStyle = {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    backgroundColor: "#ebebeb",
-    color: "#2f2f2f",
-    padding: "10px 14px",
-    borderRadius: "16px",
-    fontSize: "14px",
-    fontWeight: "600"
-};
-
-
-const editButtonStyle = {
-    backgroundColor: "#1f1f1f",
-    color: "white",
-    padding: "10px 16px",
-    borderRadius: "16px",
-    border: "1px solid #d9d9d9",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: "600"
-};
-
-const exportButtonStyle = {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    backgroundColor: "white",
-    color: "#2f2f2f",
-    padding: "10px 16px",
-    borderRadius: "16px",
-    border: "1px solid #d9d9d9",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: "600"
-};
-
-const reportButtonStyle = {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    backgroundColor: "transparent",
-    color: "#6b6b6b",
-    padding: "10px 16px",
-    borderRadius: "16px",
-    border: "1px solid #d4d4d4",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: "600"
-};
-
-const infoCardStyle = {
-    backgroundColor: "#f3f3f3",
-    borderRadius: "20px",
-    padding: "18px",
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    color: "#2f2f2f",
-    border: "1px solid #e2e2e2"
-};
-
-const infoLabel = {
-    fontSize: "13px",
-    color: "#707070",
-    marginBottom: "4px"
-};
-
-const infoValue = {
-    fontSize: "17px",
-    fontWeight: "600",
-    color: "#1f1f1f"
-};
-
-const contentCardStyle = {
-    backgroundColor: "#f3f3f3",
-    borderRadius: "22px",
-    padding: "24px",
-    border: "1px solid #e2e2e2",
-    color: "#1f1f1f",
-    fontSize: "15px"
-};
-
-const labelStyle = {
-    fontWeight: "600",
-    color: "#4f4f4f"
-};
-
 export default RecipeDetails;
-

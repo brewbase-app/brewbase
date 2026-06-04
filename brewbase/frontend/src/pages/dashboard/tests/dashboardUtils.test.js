@@ -6,7 +6,7 @@ import {
     getDashboardGreeting,
     getMostUsedBrewingMethod,
     isNotificationUnread,
-} from "./dashboardUtils";
+} from "../dashboardUtils";
 
 describe("getDashboardGreeting", () => {
     it("returns generic greeting while dashboard is loading", () => {

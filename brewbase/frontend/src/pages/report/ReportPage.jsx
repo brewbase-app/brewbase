@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2, Flag } from "lucide-react";
 
 import { submitReport } from "../../api/reportApi";
-import "../../styles/ReportPage.css";
+import "../../styles/report/ReportPage.css";
 
 const REPORT_CATEGORIES = [
     "Dezinformacja",

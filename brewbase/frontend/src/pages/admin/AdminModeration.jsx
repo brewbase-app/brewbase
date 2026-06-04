@@ -19,7 +19,7 @@ import {
 
 import ConfirmDialog from "../../components/ConfirmDialog";
 
-import "../../styles/AdminModeration.css";
+import "../../styles/admin/AdminModeration.css";
 
 const REPORT_CONTENT_TYPE_LABELS = {
     recipe: "Receptura",

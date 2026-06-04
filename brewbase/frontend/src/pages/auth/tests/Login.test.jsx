@@ -3,12 +3,12 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
-import Login from "./Login";
+import Login from "../Login";
 
 const navigateMock = vi.fn();
 
-vi.mock("../../api/apiClient", async () => {
-    const actual = await vi.importActual("../../api/apiClient");
+vi.mock("../../../api/apiClient", async () => {
+    const actual = await vi.importActual("../../../api/apiClient");
 
     return {
         ...actual,
@@ -16,7 +16,7 @@ vi.mock("../../api/apiClient", async () => {
     };
 });
 
-vi.mock("../../api/authSession", () => ({
+vi.mock("../../../api/authSession", () => ({
     establishAuthSession: vi.fn(),
 }));
 
@@ -29,8 +29,8 @@ vi.mock("react-router-dom", async () => {
     };
 });
 
-import { ApiError, apiRequest } from "../../api/apiClient";
-import { establishAuthSession } from "../../api/authSession";
+import { ApiError, apiRequest } from "../../../api/apiClient";
+import { establishAuthSession } from "../../../api/authSession";
 
 describe("Login", () => {
     beforeEach(() => {

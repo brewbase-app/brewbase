@@ -30,7 +30,7 @@ import {
 } from "../../api/communityApi";
 import { getUserRanking } from "../../api/rankingApi";
 
-import "../../styles/profile.css";
+import "../../styles/profile/profile.css";
 
 function resolveUserId(entity) {
     if (!entity) {

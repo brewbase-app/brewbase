@@ -3,15 +3,15 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 
-import RegisterPage from "./RegisterPage";
+import RegisterPage from "../RegisterPage";
 
 const navigateMock = vi.fn();
 
-vi.mock("../../api/apiClient", () => ({
+vi.mock("../../../api/apiClient", () => ({
     apiRequest: vi.fn(),
 }));
 
-vi.mock("../../api/authSession", () => ({
+vi.mock("../../../api/authSession", () => ({
     establishAuthSession: vi.fn(),
 }));
 
@@ -24,8 +24,8 @@ vi.mock("react-router-dom", async () => {
     };
 });
 
-import { apiRequest } from "../../api/apiClient";
-import { establishAuthSession } from "../../api/authSession";
+import { apiRequest } from "../../../api/apiClient";
+import { establishAuthSession } from "../../../api/authSession";
 
 describe("RegisterPage", () => {
     beforeEach(() => {

@@ -1,0 +1,30 @@
+.recipe-hub__cards {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 960px;
+}
+
+.recipe-hub__card {
+    background-color: #fafafa;
+    border-radius: 26px;
+    padding: 24px 28px;
+    cursor: pointer;
+    border: 1px solid #e6e6e6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.recipe-hub__card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.recipe-hub__card-body {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}

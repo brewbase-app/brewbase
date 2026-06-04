@@ -1,0 +1,80 @@
+.recipe-list__items {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    max-width: 950px;
+}
+
+.recipe-list__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.recipe-list__title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.recipe-list__actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.recipe-list__pagination {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 26px;
+    max-width: 950px;
+}
+
+.recipe-list__page-label {
+    color: #555;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.recipe-list__btn {
+    background-color: #efefef;
+    color: #2f2f2f;
+    padding: 12px 18px;
+    border-radius: 18px;
+    border: 1px solid #dddddd;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.recipe-list__btn--icon {
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recipe-list__btn--primary {
+    background-color: #1f1f1f;
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recipe-list__btn--danger {
+    color: #555;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recipe-list__btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
