@@ -6,19 +6,19 @@ import "../../styles/wiki/AddWikiArticle.css";
 
 import { Send } from "lucide-react";
 
-import { createArticle } from "../../api/articlesApi";
+import { createArticle, getArticles } from "../../api/articlesApi";
+import { getBrewingMethods } from "../../api/brewingMethodApi";
 import { lookupCoffeesByName } from "../../api/coffeeApi";
 import ComboBoxInput from "../../components/ComboBoxInput";
 import CountryPicker from "../../components/CountryPicker";
 import FlavorProfilePicker from "../../components/FlavorProfilePicker";
 import RegionPicker from "../../components/RegionPicker";
+import RoasteryPicker from "../../components/RoasteryPicker";
 import MultiSelectInput from "../../components/MultiSelectInput";
 
 import { COFFEE_VARIETIES } from "../../utils/coffeeVarieties";
 import { COFFEE_PROCESSING_METHODS } from "../../utils/coffeeProcessingMethods";
-import { BREWING_METHOD_OPTIONS } from "../../utils/brewingMethodOptions";
 import { ROASTING_STYLE_OPTIONS } from "../../utils/roastingStyleOptions";
-import { COFFEE_ROASTERIES } from "../../utils/coffeeRoasteries";
 
 const CATEGORY_OPTIONS = [
     { value: "coffee", label: "Kawy" },
@@ -70,6 +70,8 @@ function AddWikiArticle() {
 
     const [coffeeRoastery, setCoffeeRoastery] = useState("");
 
+    const [wikiRoastery, setWikiRoastery] = useState("");
+
     const [flavorProfiles, setFlavorProfiles] = useState([]);
 
     const [brewingMethod, setBrewingMethod] = useState("");
@@ -95,6 +97,12 @@ function AddWikiArticle() {
     const [coffeeSuggestions, setCoffeeSuggestions] = useState([]);
 
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+
+    const [catalogBrewingMethods, setCatalogBrewingMethods] = useState([]);
+
+    const [brewingMethodsLoading, setBrewingMethodsLoading] = useState(false);
+
+    const [brewingMethodsLoadError, setBrewingMethodsLoadError] = useState("");
 
     useEffect(() => {
         const moduleParam = searchParams.get("module");
@@ -143,6 +151,33 @@ function AddWikiArticle() {
         return () => clearTimeout(timeoutId);
     }, [category, title]);
 
+    useEffect(() => {
+        if (getCategoryValue(category) !== "brewing") {
+            return undefined;
+        }
+
+        const loadBrewingMethods = async () => {
+            try {
+                setBrewingMethodsLoading(true);
+                setBrewingMethodsLoadError("");
+
+                const methods = await getBrewingMethods();
+                setCatalogBrewingMethods(
+                    Array.isArray(methods) ? methods : []
+                );
+            } catch {
+                setCatalogBrewingMethods([]);
+                setBrewingMethodsLoadError(
+                    "Nie udało się pobrać metod parzenia z katalogu."
+                );
+            } finally {
+                setBrewingMethodsLoading(false);
+            }
+        };
+
+        loadBrewingMethods();
+    }, [category]);
+
     const handleSelectLinkedCoffee = (coffee) => {
         setLinkedCoffeeId(coffee.id);
         setLinkedCoffeeName(coffee.name);
@@ -161,11 +196,36 @@ function AddWikiArticle() {
         const articleTitle =
             categoryValue === "brewing"
                 ? brewingMethod.trim()
-                : title.trim();
+                : categoryValue === "roastery"
+                  ? wikiRoastery.trim()
+                  : title.trim();
 
         if (!module || !articleTitle || !content.trim()) {
             setSubmitError(
-                "Uzupełnij wymagane pola: tytuł, opis i kategorię."
+                categoryValue === "roastery"
+                    ? "Uzupełnij wymagane pola: palarnię, opis i kategorię."
+                    : categoryValue === "brewing"
+                      ? "Uzupełnij wymagane pola: metodę parzenia, opis i kategorię."
+                      : "Uzupełnij wymagane pola: tytuł, opis i kategorię."
+            );
+            return;
+        }
+
+        if (categoryValue === "brewing" && !brewingMethod.trim()) {
+            setSubmitError(
+                "Wybierz metodę parzenia z katalogu."
+            );
+            return;
+        }
+
+        if (
+            categoryValue === "brewing" &&
+            !catalogBrewingMethods.some(
+                (method) => method.name === brewingMethod.trim()
+            )
+        ) {
+            setSubmitError(
+                "Wybrana metoda musi pochodzić z katalogu."
             );
             return;
         }
@@ -198,6 +258,13 @@ function AddWikiArticle() {
             return;
         }
 
+        if (categoryValue === "roastery" && !wikiRoastery.trim()) {
+            setSubmitError(
+                "Wybierz palarnię z katalogu."
+            );
+            return;
+        }
+
         if (categoryValue === "roastery" && roastingStyles.length === 0) {
             setSubmitError(
                 "Wybierz co najmniej jeden styl palenia."
@@ -222,6 +289,57 @@ function AddWikiArticle() {
         try {
             setIsSubmitting(true);
             setSubmitError("");
+
+            if (categoryValue === "roastery") {
+                const existingRoasteryArticles = await getArticles("roastery");
+                const normalizedRoasteryName = wikiRoastery
+                    .trim()
+                    .toLowerCase();
+
+                const hasDuplicateArticle = (
+                    Array.isArray(existingRoasteryArticles)
+                        ? existingRoasteryArticles
+                        : []
+                ).some(
+                    (article) =>
+                        (article.title ?? "").trim().toLowerCase() ===
+                        normalizedRoasteryName
+                );
+
+                if (hasDuplicateArticle) {
+                    setSubmitError(
+                        "Artykuł wiki o tej palarni już istnieje. Wybierz inną palarnię lub edytuj istniejący wpis."
+                    );
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+
+            if (categoryValue === "brewing") {
+                const existingBrewingArticles =
+                    await getArticles("brewing_method");
+                const normalizedMethodName = brewingMethod
+                    .trim()
+                    .toLowerCase();
+
+                const hasDuplicateArticle = (
+                    Array.isArray(existingBrewingArticles)
+                        ? existingBrewingArticles
+                        : []
+                ).some(
+                    (article) =>
+                        (article.title ?? "").trim().toLowerCase() ===
+                        normalizedMethodName
+                );
+
+                if (hasDuplicateArticle) {
+                    setSubmitError(
+                        "Artykuł wiki o tej metodzie parzenia już istnieje. Wybierz inną metodę lub edytuj istniejący wpis."
+                    );
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
 
             let articleContent = content.trim();
 
@@ -470,11 +588,9 @@ function AddWikiArticle() {
                                         Palarnia
                                     </label>
 
-                                    <ComboBoxInput
+                                    <RoasteryPicker
                                         value={coffeeRoastery}
                                         onChange={setCoffeeRoastery}
-                                        options={COFFEE_ROASTERIES}
-                                        placeholder="Wybierz z listy lub wpisz palarnię"
                                     />
 
                                 </div>
@@ -595,12 +711,42 @@ function AddWikiArticle() {
                                     Metoda parzenia
                                 </label>
 
-                                <ComboBoxInput
-                                    value={brewingMethod}
-                                    onChange={setBrewingMethod}
-                                    options={BREWING_METHOD_OPTIONS}
-                                    placeholder="Wybierz z listy lub wpisz metodę"
-                                />
+                                {brewingMethodsLoading && (
+                                    <p>Ładowanie metod parzenia...</p>
+                                )}
+
+                                {brewingMethodsLoadError && (
+                                    <p className="submit-error">
+                                        {brewingMethodsLoadError}
+                                    </p>
+                                )}
+
+                                {!brewingMethodsLoading &&
+                                    !brewingMethodsLoadError && (
+                                    <select
+                                        value={brewingMethod}
+                                        onChange={(event) =>
+                                            setBrewingMethod(
+                                                event.target.value
+                                            )
+                                        }
+                                    >
+                                        <option value="">
+                                            Wybierz metodę z katalogu
+                                        </option>
+
+                                        {catalogBrewingMethods.map(
+                                            (method) => (
+                                                <option
+                                                    key={method.id}
+                                                    value={method.name}
+                                                >
+                                                    {method.name}
+                                                </option>
+                                            )
+                                        )}
+                                    </select>
+                                )}
 
                             </div>
 
@@ -633,55 +779,12 @@ function AddWikiArticle() {
                             <div className="form-group">
 
                                 <label>
-                                    Nazwa palarni
+                                    Palarnia
                                 </label>
 
-                                <input
-                                    type="text"
-                                    placeholder="Np. Coffee Collective"
-                                    value={title}
-                                    onChange={(e) =>
-                                        setTitle(e.target.value)
-                                    }
-                                />
-
-                            </div>
-
-                            <div className="form-group">
-
-                                <label>
-                                    Miasto
-                                </label>
-
-                                <input
-                                    type="text"
-                                    placeholder="Np. Kopenhaga"
-                                />
-
-                            </div>
-
-                            <div className="form-group">
-
-                                <label>
-                                    Kraj
-                                </label>
-
-                                <input
-                                    type="text"
-                                    placeholder="Np. Dania"
-                                />
-
-                            </div>
-
-                            <div className="form-group">
-
-                                <label>
-                                    Rok założenia
-                                </label>
-
-                                <input
-                                    type="text"
-                                    placeholder="Np. 2007"
+                                <RoasteryPicker
+                                    value={wikiRoastery}
+                                    onChange={setWikiRoastery}
                                 />
 
                             </div>
@@ -716,13 +819,37 @@ function AddWikiArticle() {
 
                             </div>
 
+                            <div className="article-actions">
+
+                                {submitError && (
+                                    <p className="submit-error">
+                                        {submitError}
+                                    </p>
+                                )}
+
+                                <button
+                                    className="submit-article-button"
+                                    type="button"
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting}
+                                >
+                                    <Send size={16} />
+
+                                    {isSubmitting
+                                        ? "Wysyłanie..."
+                                        : "Wyślij do moderacji"}
+                                </button>
+
+                            </div>
+
                         </>
 
                     )}
 
                     {/* IMAGES + ACTIONS */}
 
-                    {getCategoryValue(category) && (
+                    {getCategoryValue(category) &&
+                        getCategoryValue(category) !== "roastery" && (
 
                         <>
 

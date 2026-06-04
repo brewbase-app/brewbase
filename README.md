@@ -61,7 +61,7 @@ schema.sql → seed_init.sql → seed_wiki.sql → refresh_all_rankings()
 | 3 | `brewbase/database/seed_wiki.sql` | Artykuły wiki (kawy, kraje, metody parzenia, palarnie) |
 | 4 | `SELECT refresh_all_rankings();` | Wypełnienie tabel snapshot rankingów |
 
-**`seed_wiki.sql`** jest częścią pełnego zestawu demo — bez niego wiki i część katalogu (powiązania artykułów z kawami/metodami) będą wyglądały na puste.
+**`seed_wiki.sql`** jest częścią pełnego zestawu demo — bez niego wiki i część katalogu (powiązania artykułów z kawami/metodami) będą wyglądały na puste. Można uruchamiać wielokrotnie: dodaje tylko brakujące artykuły (nie usuwa danych użytkowników).
 
 **`refresh_all_rankings()`** przelicza rankingi do tabel `*_ranking`. Backend czyta stamtąd listy rankingowe; po samym seedzie bez tego kroku strona rankingów może być pusta. Alternatywa: `POST /api/Ranking/refresh` (wymaga uprawnień).
 

@@ -4,6 +4,7 @@ import { Flag } from "lucide-react";
 
 import { getArticleById } from "../../api/articlesApi";
 import { shouldUseCoffeeDetailRoute } from "../../utils/articleRouting";
+import { parseRoasteryArticleMetadata } from "../../utils/parseCoffeeArticleMetadata";
 
 import "../../styles/wiki/CoffeeDetails.css";
 
@@ -51,6 +52,11 @@ function WikiArticleDetails() {
         return <h1>Nie znaleziono artykułu.</h1>;
     }
 
+    const roasteryMetadata =
+        article.module === "roastery"
+            ? parseRoasteryArticleMetadata(article.content ?? "")
+            : null;
+
     return (
         <div className="article-page">
             <div className="article-hero">
@@ -60,12 +66,29 @@ function WikiArticleDetails() {
                     </span>
 
                     <h1>{article.title}</h1>
+
+                    {roasteryMetadata?.roastingStyles.length > 0 && (
+                        <div className="article-roastery-styles">
+                            {roasteryMetadata.roastingStyles.map((style) => (
+                                <span key={style}>{style}</span>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
             <div className="article-content">
                 <section>
-                    <p style={{ whiteSpace: "pre-wrap" }}>{article.content}</p>
+                    {roasteryMetadata ? (
+                        <p style={{ whiteSpace: "pre-wrap" }}>
+                            {roasteryMetadata.description ||
+                                "Brak opisu palarni."}
+                        </p>
+                    ) : (
+                        <p style={{ whiteSpace: "pre-wrap" }}>
+                            {article.content}
+                        </p>
+                    )}
                 </section>
 
                 <section>

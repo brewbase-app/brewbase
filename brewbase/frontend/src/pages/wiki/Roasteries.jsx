@@ -1,106 +1,99 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 
-import {
-    Search,
-    Flame,
-    MapPin
-} from "lucide-react";
+import { Search, Flame } from "lucide-react";
 
 import "../../styles/wiki/Roasteries.css";
 
-import WikiArticlesSection from "../../components/WikiArticlesSection";
+import { getArticles } from "../../api/articlesApi";
+import { getApprovedArticlePublicPath } from "../../utils/articleRouting";
+import { parseRoasteryArticleMetadata } from "../../utils/parseCoffeeArticleMetadata";
+
+function mapRoasteryArticle(article) {
+    const metadata = parseRoasteryArticleMetadata(article.content ?? "");
+
+    return {
+        id: article.id,
+        title: article.title,
+        authorLogin: article.authorLogin ?? null,
+        roastingStyles: metadata.roastingStyles,
+        descriptionPreview: metadata.description,
+    };
+}
 
 function Roasteries() {
-
     const navigate = useNavigate();
 
-    const [search, setSearch] =
-        useState("");
+    const [search, setSearch] = useState("");
+    const [articles, setArticles] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    const roasteries = [
+    useEffect(() => {
+        const loadArticles = async () => {
+            try {
+                setIsLoading(true);
+                setError("");
 
-        {
-            id: 1,
-            name: "Coffee Collective",
-            country: "Dania",
-            city: "Kopenhaga",
-            roastingStyle: "Light Roast",
-            specialty: "Nordic Specialty Coffee"
-        },
+                const data = await getArticles("roastery");
+                const mappedArticles = (Array.isArray(data) ? data : []).map(
+                    mapRoasteryArticle
+                );
 
-        {
-            id: 2,
-            name: "Audun Coffee",
-            country: "Norwegia",
-            city: "Oslo",
-            roastingStyle: "Omni Roast",
-            specialty: "Competition Coffees"
-        },
+                setArticles(mappedArticles);
+            } catch {
+                setError("Nie udało się pobrać artykułów o palarniach.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-        {
-            id: 3,
-            name: "Story Coffee Roasters",
-            country: "Polska",
-            city: "Warszawa",
-            roastingStyle: "Light Roast",
-            specialty: "Filter Coffee"
-        },
+        loadArticles();
+    }, []);
 
-        {
-            id: 4,
-            name: "Coffee Plant",
-            country: "Polska",
-            city: "Warszawa",
-            roastingStyle: "Espresso Roast",
-            specialty: "Espresso Blends"
+    const filteredArticles = useMemo(() => {
+        const query = search.trim().toLowerCase();
+
+        if (!query) {
+            return articles;
         }
-    ];
 
-    const filteredRoasteries =
-        roasteries.filter((roastery) => {
+        return articles.filter((article) => {
+            const searchableText = [
+                article.title,
+                article.authorLogin,
+                article.descriptionPreview,
+                ...article.roastingStyles,
+            ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
 
-            const query =
-                search.toLowerCase();
-
-            return (
-
-                roastery.name
-                    .toLowerCase()
-                    .includes(query)
-
-                ||
-
-                roastery.country
-                    .toLowerCase()
-                    .includes(query)
-
-                ||
-
-                roastery.city
-                    .toLowerCase()
-                    .includes(query)
-
-                ||
-
-                roastery.specialty
-                    .toLowerCase()
-                    .includes(query)
-            );
+            return searchableText.includes(query);
         });
+    }, [articles, search]);
+
+    if (isLoading) {
+        return (
+            <div className="roasteries-page">
+                <h1>Ładowanie palarni...</h1>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="roasteries-page">
+                <h1>{error}</h1>
+            </div>
+        );
+    }
 
     return (
-
         <div className="roasteries-page">
-
-            {/* HEADER */}
-
             <div className="roasteries-header">
-
-                <h1>
-                    Palarnie
-                </h1>
+                <h1>Palarnie</h1>
 
                 <p>
                     Odkrywaj palarnie specialty coffee
@@ -108,7 +101,6 @@ function Roasteries() {
                 </p>
 
                 <div className="roasteries-search-container">
-
                     <Search size={18} />
 
                     <input
@@ -116,89 +108,69 @@ function Roasteries() {
                         placeholder="Szukaj palarni..."
                         className="roasteries-search"
                         value={search}
-                        onChange={(e) =>
-                            setSearch(e.target.value)
+                        onChange={(event) =>
+                            setSearch(event.target.value)
                         }
                     />
-
                 </div>
-
             </div>
-
-            {/* GRID */}
 
             <div className="roasteries-grid">
-
-                {filteredRoasteries.map((roastery) => (
-
-                    <div
-                        key={roastery.id}
-                        className="roastery-card"
-                        onClick={() =>
-                            navigate(
-                                `/wiki/roasteries/${roastery.id}`
-                            )
-                        }
-                    >
-
-                        <div className="roastery-card-top">
-
-                            <div className="roastery-icon">
-
-                                <Flame size={22} />
-
+                {filteredArticles.length === 0 ? (
+                    <p className="roasteries-empty-state">
+                        {articles.length === 0
+                            ? "Brak zatwierdzonych artykułów o palarniach."
+                            : "Brak wyników dla wybranego wyszukiwania."}
+                    </p>
+                ) : (
+                    filteredArticles.map((article) => (
+                        <div
+                            key={article.id}
+                            className="roastery-card"
+                            onClick={() =>
+                                navigate(
+                                    getApprovedArticlePublicPath({
+                                        id: article.id,
+                                        module: "roastery",
+                                        status: "Approved",
+                                    })
+                                )
+                            }
+                        >
+                            <div className="roastery-card-top">
+                                <div className="roastery-icon">
+                                    <Flame size={22} />
+                                </div>
                             </div>
 
+                            <div className="roastery-content">
+                                <h2>{article.title}</h2>
+
+                                {article.authorLogin && (
+                                    <p className="roastery-author">
+                                        Autor artykułu: {article.authorLogin}
+                                    </p>
+                                )}
+
+                                {article.descriptionPreview && (
+                                    <p className="roastery-preview">
+                                        {article.descriptionPreview}
+                                    </p>
+                                )}
+
+                                {article.roastingStyles.length > 0 && (
+                                    <div className="roastery-tags">
+                                        {article.roastingStyles.map((style) => (
+                                            <span key={style}>{style}</span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-
-                        <div className="roastery-content">
-
-                            <h2>
-                                {roastery.name}
-                            </h2>
-
-                            <div className="roastery-location">
-
-                                <MapPin size={15} />
-
-                                <span>
-
-                                    {roastery.city},
-                                    {" "}
-                                    {roastery.country}
-
-                                </span>
-
-                            </div>
-
-                            <div className="roastery-tags">
-
-                                <span>
-                                    {roastery.roastingStyle}
-                                </span>
-
-                                <span>
-                                    {roastery.specialty}
-                                </span>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                ))}
-
+                    ))
+                )}
             </div>
-
-            <WikiArticlesSection
-                module="roastery"
-                gridClassName="roasteries-grid"
-                cardClassName="roastery-card"
-            />
-
         </div>
-
     );
 }
 
