@@ -49,20 +49,6 @@ public class QuickNotesEndpointsTests : IDisposable
         Assert.Equal(10, list[1].GetProperty("id").GetInt32());
     }
 
-    [Fact(Skip = "SQLite does not support EF.Functions.ILike; verified on PostgreSQL")]
-    public async Task User1_GetAll_WithSearch_FiltersContent()
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/QuickNotes?search=ja%C5%9Bmin");
-        request.Headers.Add(CurrentUserProvider.DevUserIdHeaderName, User1.ToString());
-        var response = await _client.SendAsync(request);
-
-        response.EnsureSuccessStatusCode();
-        var root = await ParseJsonAsync(response);
-        var list = root.EnumerateArray().ToList();
-        Assert.Single(list);
-        Assert.Equal(11, list[0].GetProperty("id").GetInt32());
-    }
-
     [Fact]
     public async Task User1_GetById_OwnNote_ReturnsOk()
     {

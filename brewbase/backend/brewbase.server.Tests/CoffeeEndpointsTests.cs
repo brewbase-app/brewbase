@@ -215,20 +215,6 @@ public class CoffeeEndpointsTests : IDisposable
         });
     }
 
-    [Fact(Skip = "Temporary disabled: EF.Functions.ILike is not translated by SQLite in integration tests.")]
-    public async Task ShouldSearchCoffeesByName()
-    {
-        var response = await _client.GetAsync("/api/Coffee?search=beta");
-        response.EnsureSuccessStatusCode();
-
-        var payload = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(payload);
-        var coffees = document.RootElement;
-
-        Assert.Single(coffees.EnumerateArray());
-        Assert.Equal("Beta Coffee", coffees[0].GetProperty("name").GetString());
-    }
-
     [Fact]
     public async Task ShouldSortCoffeesByNameAscending()
     {
