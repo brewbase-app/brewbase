@@ -1116,8 +1116,6 @@ BEGIN
     SELECT
         source.refreshed_at,
         source.activity_score,
-        source.public_recipe_count,
-        source.received_recipe_favorite_count,
         source.user_id,
         source.position,
         source.public_recipe_count,
