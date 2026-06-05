@@ -113,7 +113,10 @@ describe("AdminModeration", () => {
         expect(await screen.findByText("Treści do moderacji")).toBeInTheDocument();
         expect(screen.getByText("Poradnik V60")).toBeInTheDocument();
         expect(screen.getByText("Zła receptura")).toBeInTheDocument();
-        expect(screen.getByText("1", { selector: ".admin-stat-card h2" })).toBeInTheDocument();
+
+        const statValues = document.querySelectorAll(".admin-stat-card h2");
+        expect(statValues[0]).toHaveTextContent("1");
+        expect(statValues[1]).toHaveTextContent("1");
     });
 
     it("filters items by moderation type", async () => {
@@ -190,22 +193,13 @@ describe("AdminModeration", () => {
     it("dismisses open report", async () => {
         mockModerationData();
         vi.mocked(dismissReport).mockResolvedValue({});
-        vi.mocked(getReports).mockImplementation((scope) => {
-            if (scope === "open") {
-                return Promise.resolve([]);
-            }
-
-            if (scope === "history") {
-                return Promise.resolve([historyReport]);
-            }
-
-            return Promise.resolve([]);
-        });
 
         const user = userEvent.setup();
 
         render(<AdminModeration />);
 
+        await screen.findByText("Treści do moderacji");
+        await user.click(screen.getByRole("button", { name: "Zgłoszenia" }));
         await user.click(await screen.findByText("Zła receptura"));
         await user.click(
             screen.getByRole("button", { name: /Odrzuć zgłoszenie/i })
@@ -241,22 +235,13 @@ describe("AdminModeration", () => {
     it("upholds open report after confirmation", async () => {
         mockModerationData();
         vi.mocked(upholdReport).mockResolvedValue({});
-        vi.mocked(getReports).mockImplementation((scope) => {
-            if (scope === "open") {
-                return Promise.resolve([]);
-            }
-
-            if (scope === "history") {
-                return Promise.resolve([historyReport]);
-            }
-
-            return Promise.resolve([]);
-        });
 
         const user = userEvent.setup();
 
         render(<AdminModeration />);
 
+        await screen.findByText("Treści do moderacji");
+        await user.click(screen.getByRole("button", { name: "Zgłoszenia" }));
         await user.click(await screen.findByText("Zła receptura"));
 
         const textarea = screen.getByPlaceholderText(
