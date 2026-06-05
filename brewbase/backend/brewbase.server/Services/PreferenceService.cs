@@ -185,7 +185,7 @@ public class PreferenceService : IPreferenceService
 
         await _context.SaveChangesAsync();
 
-        foreach (var flavorId in dto.FlavorProfileIds)
+        foreach (var flavorId in dto.FlavorProfileIds ?? [])
         {
             _context.UserPreferenceFlavorProfiles.Add(
                 new UserPreferenceFlavorProfile
@@ -196,7 +196,7 @@ public class PreferenceService : IPreferenceService
         }
 
         // Dodanie metod parzenia
-        foreach (var brewingMethodId in dto.BrewingMethodIds)
+        foreach (var brewingMethodId in dto.BrewingMethodIds ?? [])
         {
             _context.UserPreferenceBrewingMethods.Add(
                 new UserPreferenceBrewingMethod
@@ -207,7 +207,7 @@ public class PreferenceService : IPreferenceService
         }
 
         // Dodanie regionów
-        foreach (var regionId in dto.RegionIds)
+        foreach (var regionId in dto.RegionIds ?? [])
         {
             _context.UserPreferenceRegions.Add(
                 new UserPreferenceRegion
@@ -218,5 +218,52 @@ public class PreferenceService : IPreferenceService
         }
 
         await _context.SaveChangesAsync();
+        
+        await RefreshRecommendationsForCurrentUserAsync(userId.Value);
     }
+        
+    private async Task RefreshRecommendationsForCurrentUserAsync(int userId)
+    {
+        try
+        {
+            var hasRecommendationRefreshFunction = await _context.Database
+                .SqlQueryRaw<bool>("""
+                                       SELECT EXISTS (
+                                           SELECT 1
+                                           FROM pg_proc
+                                           WHERE proname = 'refresh_recommendations_for_user'
+                                       ) AS "Value"
+                                   """)
+                .SingleAsync();
+
+            if (!hasRecommendationRefreshFunction)
+            {
+                return;
+            }
+
+            var hasRankingRefreshFunction = await _context.Database
+                .SqlQueryRaw<bool>("""
+                                       SELECT EXISTS (
+                                           SELECT 1
+                                           FROM pg_proc
+                                           WHERE proname = 'refresh_all_rankings'
+                                       ) AS "Value"
+                                   """)
+                .SingleAsync();
+
+            if (hasRankingRefreshFunction)
+            {
+                await _context.Database.ExecuteSqlRawAsync("SELECT refresh_all_rankings();");
+            }
+
+            await _context.Database.ExecuteSqlRawAsync(
+                "SELECT refresh_recommendations_for_user({0});",
+                userId);
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(exception);
+        }
+    }
+    
 }

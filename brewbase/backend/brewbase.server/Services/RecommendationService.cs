@@ -27,24 +27,13 @@ public class RecommendationService : IRecommendationService
             throw new Exception("User not found");
         }
 
-        var recommendations = await _context.Recommendations
-            .AsNoTracking()
-            .Include(recommendation => recommendation.Coffee)
-                .ThenInclude(coffee => coffee!.Region)
-            .Include(recommendation => recommendation.Coffee)
-                .ThenInclude(coffee => coffee!.ProcessingMethod)
-            .Include(recommendation => recommendation.Coffee)
-                .ThenInclude(coffee => coffee!.Variety)
-            .Include(recommendation => recommendation.Coffee)
-                .ThenInclude(coffee => coffee!.Roastery)
-            .Include(recommendation => recommendation.Recipe)
-                .ThenInclude(recipe => recipe!.User)
-            .Where(recommendation =>
-                recommendation.UserId == userId.Value &&
-                recommendation.Algorithm == "cron-recommendation-v1")
-            .OrderByDescending(recommendation => recommendation.Score)
-            .ThenByDescending(recommendation => recommendation.GeneratedAt)
-            .ToListAsync();
+        var recommendations = await LoadRecommendationsForUserAsync(userId.Value);
+
+        if (recommendations.Count == 0)
+        {
+            await RefreshRecommendationsForUserAsync(userId.Value);
+            recommendations = await LoadRecommendationsForUserAsync(userId.Value);
+        }
 
         var coffeeIds = recommendations
             .Where(recommendation => recommendation.CoffeeId != null)
@@ -100,9 +89,9 @@ public class RecommendationService : IRecommendationService
                         Roastery = recommendation.Coffee.Roastery.Name,
                         AverageRating = ranking?.AverageRating ?? 0,
                         RatingCount = ranking?.RatingCount ?? 0,
-                        MatchScore = recommendation.Score,
-                        PopularityScore = ranking?.RankingScore ?? recommendation.Score,
-                        FinalScore = recommendation.Score
+                        MatchScore = recommendation.MatchScore,
+                        PopularityScore = recommendation.PopularityScore,
+                        FinalScore = recommendation.FinalScore
                     };
                 })
                 .Take(10)
@@ -125,13 +114,43 @@ public class RecommendationService : IRecommendationService
                         UserLogin = recommendation.Recipe.User.Login,
                         AverageRating = ranking?.AverageRating ?? 0,
                         RatingCount = ranking?.RatingCount ?? 0,
-                        MatchScore = recommendation.Score,
-                        PopularityScore = ranking?.RankingScore ?? recommendation.Score,
-                        FinalScore = recommendation.Score
+                        MatchScore = recommendation.MatchScore,
+                        PopularityScore = recommendation.PopularityScore,
+                        FinalScore = recommendation.FinalScore
                     };
                 })
                 .Take(10)
                 .ToList()
         };
     }
+    
+    private async Task<List<Recommendation>> LoadRecommendationsForUserAsync(int userId)
+    {
+        return await _context.Recommendations
+            .AsNoTracking()
+            .Include(recommendation => recommendation.Coffee)
+            .ThenInclude(coffee => coffee!.Region)
+            .Include(recommendation => recommendation.Coffee)
+            .ThenInclude(coffee => coffee!.ProcessingMethod)
+            .Include(recommendation => recommendation.Coffee)
+            .ThenInclude(coffee => coffee!.Variety)
+            .Include(recommendation => recommendation.Coffee)
+            .ThenInclude(coffee => coffee!.Roastery)
+            .Include(recommendation => recommendation.Recipe)
+            .ThenInclude(recipe => recipe!.User)
+            .Where(recommendation =>
+                recommendation.UserId == userId &&
+                recommendation.Algorithm == "cron-recommendation-v1")
+            .OrderByDescending(recommendation => recommendation.FinalScore)
+            .ThenByDescending(recommendation => recommendation.GeneratedAt)
+            .ToListAsync();
+    }
+    
+    private async Task RefreshRecommendationsForUserAsync(int userId)
+    {
+        await _context.Database.ExecuteSqlRawAsync(
+            "SELECT refresh_all_rankings(); SELECT refresh_recommendations_for_user({0});",
+            userId);
+    }
+    
 }

@@ -661,6 +661,9 @@ public partial class BrewDbContext : DbContext
                 .HasColumnName("generated_at");
             entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
             entity.Property(e => e.Score).HasColumnName("score");
+            entity.Property(e => e.MatchScore).HasColumnName("match_score");
+            entity.Property(e => e.PopularityScore).HasColumnName("popularity_score");
+            entity.Property(e => e.FinalScore).HasColumnName("final_score");
             entity.Property(e => e.Source).HasColumnName("source");
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.UserPreferenceId).HasColumnName("user_preference_id");
