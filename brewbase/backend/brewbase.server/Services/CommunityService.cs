@@ -42,6 +42,15 @@ public class CommunityService : ICommunityService
         if (alreadyFollowing)
             throw new Exception("User already followed");
 
+        var followerLogin = await _context.AppUsers
+            .AsNoTracking()
+            .Where(user => user.Id == currentUserId.Value)
+            .Select(user => user.Login)
+            .FirstOrDefaultAsync();
+
+        if (string.IsNullOrWhiteSpace(followerLogin))
+            throw new Exception("User not found");
+
         var follow = new Follow
         {
             FollowerId = currentUserId.Value,
@@ -54,7 +63,7 @@ public class CommunityService : ICommunityService
         _context.Notifications.Add(new Notification
         {
             UserId = followedUserId,
-            Content = "Nowy użytkownik zaczął Cię obserwować.",
+            Content = $"@{followerLogin} zaczął Cię obserwować.",
             CreatedAt = DateTime.Now
         });
 

@@ -69,6 +69,55 @@ public class NotificationEndpointsTests : IClassFixture<CoffeeApiFactory>
     }
 
     [Fact]
+    public async Task GetNotifications_ResolvesLegacyFollowNotificationWithFollowerLogin()
+    {
+        var followCreatedAt = DateTime.UtcNow.AddMinutes(-3);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+            context.Notifications.RemoveRange(context.Notifications);
+            context.Follows.RemoveRange(context.Follows);
+
+            context.Follows.Add(new Follow
+            {
+                FollowerId = 2,
+                FollowedId = 1,
+                CreatedAt = followCreatedAt
+            });
+
+            context.Notifications.Add(new Notification
+            {
+                UserId = 1,
+                Content = "Nowy użytkownik zaczął Cię obserwować.",
+                CreatedAt = followCreatedAt,
+                IsRead = false
+            });
+
+            context.SaveChanges();
+        }
+
+        var response = await _client.GetAsync("/api/notifications");
+
+        response.EnsureSuccessStatusCode();
+
+        var notifications = await response.Content.ReadFromJsonAsync<List<NotificationResponseDto>>();
+
+        Assert.NotNull(notifications);
+        Assert.Single(notifications!);
+        Assert.Equal("@admin.tester zaczął Cię obserwować.", notifications![0].Content);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+            var stored = context.Notifications.Single(n => n.UserId == 1);
+
+            Assert.Equal("@admin.tester zaczął Cię obserwować.", stored.Content);
+        }
+    }
+
+    [Fact]
     public async Task MarkAllAsRead_SetsUnreadNotificationsToRead()
     {
         SeedNotifications(
