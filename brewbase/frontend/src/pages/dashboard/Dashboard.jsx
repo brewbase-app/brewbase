@@ -13,7 +13,7 @@ import {
     isNotificationUnread,
 } from "./dashboardUtils";
 import { loadDashboardData } from "./loadDashboardData";
-
+import { submitRecommendationSummaryFeedback } from "../../api/preferenceApi";
 import {
     Bell,
     Coffee,
@@ -49,6 +49,13 @@ function Dashboard() {
     const [favoriteCoffees, setFavoriteCoffees] = useState([]);
     const [favoriteRecipes, setFavoriteRecipes] = useState([]);
     const [followingFeed, setFollowingFeed] = useState([]);
+    const [showRecommendationFeedbackPopup, setShowRecommendationFeedbackPopup] =
+        useState(false);
+    const [recommendationRating, setRecommendationRating] = useState(3);
+    const [recommendationPreferenceAction, setRecommendationPreferenceAction] =
+        useState("no_change");
+    const [isSubmittingRecommendationFeedback, setIsSubmittingRecommendationFeedback] =
+        useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -90,6 +97,27 @@ function Dashboard() {
         return () => {
             cancelled = true;
         };
+    }, []);
+
+    useEffect(() => {
+        const lastFeedbackAt = localStorage.getItem("recommendationFeedbackLastShownAt");
+
+        if (!lastFeedbackAt) {
+            localStorage.setItem(
+                "recommendationFeedbackLastShownAt",
+                new Date().toISOString()
+            );
+            return;
+        }
+
+        const lastDate = new Date(lastFeedbackAt);
+        const now = new Date();
+        const daysSinceLastFeedback =
+            (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
+
+        if (daysSinceLastFeedback >= 14) {
+            setShowRecommendationFeedbackPopup(true);
+        }
     }, []);
 
     const filteredRecipes = useMemo(
@@ -146,6 +174,33 @@ function Dashboard() {
         }
     };
 
+    const handleSubmitRecommendationFeedback = async () => {
+        setIsSubmittingRecommendationFeedback(true);
+
+        try {
+            await submitRecommendationSummaryFeedback({
+                rating: recommendationRating,
+                preferenceAction: recommendationPreferenceAction,
+            });
+
+            localStorage.setItem(
+                "recommendationFeedbackLastShownAt",
+                new Date().toISOString()
+            );
+
+            setShowRecommendationFeedbackPopup(false);
+
+            const result = await loadDashboardData();
+
+            if (result.ok) {
+                setRecommendedCoffees(result.data.recommendedCoffees);
+                setRecommendedRecipes(result.data.recommendedRecipes);
+            }
+        } finally {
+            setIsSubmittingRecommendationFeedback(false);
+        }
+    };
+
     const getActivityIcon = (activityType) => {
         if (activityType === "Article") {
             return FileText;
@@ -157,9 +212,99 @@ function Dashboard() {
 
         return Star;
     };
-
+    
     return (
         <div className="dashboard">
+            {showRecommendationFeedbackPopup && (
+                <div className="recommendation-feedback-overlay">
+                    <div className="recommendation-feedback-modal">
+                        <h3>Jak oceniasz rekomendacje?</h3>
+
+                        <p>
+                            Twoja odpowiedź pomoże dopasować tryb rekomendacji do Twoich oczekiwań.
+                        </p>
+
+                        <div className="recommendation-rating">
+                            {[1, 2, 3, 4, 5].map((rating) => (
+                                <button
+                                    key={rating}
+                                    type="button"
+                                    className={recommendationRating === rating ? "active" : ""}
+                                    onClick={() => setRecommendationRating(rating)}
+                                >
+                                    {rating}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="recommendation-feedback-options">
+                            <label>
+                                <input
+                                    type="radio"
+                                    name="recommendationPreferenceAction"
+                                    value="more_similar"
+                                    checked={recommendationPreferenceAction === "more_similar"}
+                                    onChange={(event) =>
+                                        setRecommendationPreferenceAction(event.target.value)
+                                    }
+                                />
+                                Chcę więcej podobnych propozycji
+                            </label>
+
+                            <label>
+                                <input
+                                    type="radio"
+                                    name="recommendationPreferenceAction"
+                                    value="more_diverse"
+                                    checked={recommendationPreferenceAction === "more_diverse"}
+                                    onChange={(event) =>
+                                        setRecommendationPreferenceAction(event.target.value)
+                                    }
+                                />
+                                Chcę bardziej różnorodne propozycje
+                            </label>
+
+                            <label>
+                                <input
+                                    type="radio"
+                                    name="recommendationPreferenceAction"
+                                    value="no_change"
+                                    checked={recommendationPreferenceAction === "no_change"}
+                                    onChange={(event) =>
+                                        setRecommendationPreferenceAction(event.target.value)
+                                    }
+                                />
+                                Bez zmian
+                            </label>
+                        </div>
+
+                        <div className="recommendation-feedback-actions">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    localStorage.setItem(
+                                        "recommendationFeedbackLastShownAt",
+                                        new Date().toISOString()
+                                    );
+                                    setShowRecommendationFeedbackPopup(false);
+                                }}
+                            >
+                                Później
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleSubmitRecommendationFeedback}
+                                disabled={isSubmittingRecommendationFeedback}
+                            >
+                                {isSubmittingRecommendationFeedback
+                                    ? "Zapisywanie..."
+                                    : "Zapisz"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="dashboard-top">
                 <div className="dashboard-top-head">
                     <div className="dashboard-greeting">

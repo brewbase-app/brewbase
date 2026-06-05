@@ -143,8 +143,7 @@ function EditProfilePage() {
                         recommendationStyle:
                             preferencesData.recommendationStyle ?? "",
 
-                        allowExploration:
-                            preferencesData.allowExploration ?? false,
+                       
 
                         flavorProfiles:
                             preferencesData.flavorProfiles ?? [],
@@ -308,9 +307,7 @@ function EditProfilePage() {
 
                 recommendationStyle:
                 preferences.recommendationStyle,
-
-                allowExploration:
-                preferences.allowExploration,
+                
 
                 flavorProfileIds: flavorProfiles
                     .filter(x =>
@@ -582,24 +579,7 @@ function EditProfilePage() {
                                 )
                             }
                         />
-
-                        <label className="preferences-checkbox">
-                            <input
-                                type="checkbox"
-                                checked={preferences.allowExploration}
-                                onChange={(event) =>
-                                    setPreferences((previous) => ({
-                                        ...previous,
-                                        allowExploration:
-                                            event.target.checked,
-                                    }))
-                                }
-                            />
-                            <span>
-                                Pokazuj również rekomendacje spoza moich
-                                preferencji
-                            </span>
-                        </label>
+                        
                     </div>
 
                     <button type="submit" className="save-button">

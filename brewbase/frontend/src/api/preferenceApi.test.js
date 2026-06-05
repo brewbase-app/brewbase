@@ -18,7 +18,6 @@ describe("preferenceApi", () => {
             preferredAcidity: "Niska",
             preferredBody: "Lekkie",
             recommendationStyle: "Zbalansowane",
-            allowExploration: false,
             flavorProfiles: ["Owocowe"],
             brewingMethods: ["V60"],
             regions: ["Etiopia"],

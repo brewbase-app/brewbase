@@ -33,7 +33,6 @@ public class PreferenceSaveEndpointsTests : IDisposable
         var response = await _client.PostAsJsonAsync("/api/preferences", new
         {
             preferredRoastLevel = "Średnie",
-            allowExploration = false,
             flavorProfileIds = Array.Empty<int>(),
         });
 
@@ -63,7 +62,6 @@ public class PreferenceSaveEndpointsTests : IDisposable
         var response = await _client.PostAsJsonAsync("/api/preferences", new
         {
             preferredRoastLevel = "Średnie",
-            allowExploration = true,
             flavorProfileIds = new[] { flavorId },
         });
 
@@ -98,7 +96,6 @@ public class PreferenceSaveEndpointsTests : IDisposable
         var firstResponse = await _client.PostAsJsonAsync("/api/preferences", new
         {
             preferredRoastLevel = "Jasne",
-            allowExploration = true,
             flavorProfileIds = new[] { flavorIds[0] },
         });
         Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
@@ -106,7 +103,6 @@ public class PreferenceSaveEndpointsTests : IDisposable
         var secondResponse = await _client.PostAsJsonAsync("/api/preferences", new
         {
             preferredRoastLevel = "Ciemne",
-            allowExploration = false,
             flavorProfileIds = new[] { flavorIds[1] },
         });
         Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
@@ -138,7 +134,6 @@ public class PreferenceSaveEndpointsTests : IDisposable
         var saveResponse = await _client.PostAsJsonAsync("/api/preferences", new
         {
             preferredRoastLevel = "Średnie",
-            allowExploration = true,
             flavorProfileIds = Array.Empty<int>(),
             regionIds = new[] { regionId },
             brewingMethodIds = new[] { brewingMethodId },

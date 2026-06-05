@@ -1238,7 +1238,7 @@ BEGIN
         coffee_ranking_id
     )
     SELECT
-        false AS feedback,
+        NULL AS feedback,
         ROUND(recommendation_data.final_score)::int AS score,
         recommendation_data.match_score,
         recommendation_data.popularity_score,
@@ -1253,209 +1253,390 @@ BEGIN
         recommendation_data.coffee_ranking_id
     FROM (
              SELECT
-                 coffee_data.user_id,
-                 coffee_data.user_preference_id,
-                 coffee_data.coffee_id,
+                 coffee_ranked.user_id,
+                 coffee_ranked.user_preference_id,
+                 coffee_ranked.coffee_id,
                  NULL::int AS recipe_id,
-                 coffee_data.coffee_ranking_id,
-                 coffee_data.match_score,
-                 coffee_data.popularity_score,
-                 (
-                     CASE
-                         WHEN COALESCE(coffee_data.recommendation_style, '') IN ('safe', 'Bezpieczne', 'Bezpieczne wybory') THEN coffee_data.match_score * 0.8 + coffee_data.popularity_score * 0.2
-                         WHEN COALESCE(coffee_data.recommendation_style, '') IN ('explore', 'Zaskocz mnie', 'Eksploracyjne') THEN coffee_data.match_score * 0.3 + coffee_data.popularity_score * 0.7
-                         ELSE coffee_data.match_score * 0.6 + coffee_data.popularity_score * 0.4
-                         END
-                     ) AS final_score,
-                 'coffee' AS source,
-                 row_number() OVER (
-                     PARTITION BY coffee_data.user_id
-                     ORDER BY
-                         (
-                             CASE
-                                 WHEN COALESCE(coffee_data.recommendation_style, '') IN ('safe', 'Bezpieczne', 'Bezpieczne wybory') THEN coffee_data.match_score * 0.8 + coffee_data.popularity_score * 0.2
-                                 WHEN COALESCE(coffee_data.recommendation_style, '') IN ('explore', 'Zaskocz mnie', 'Eksploracyjne') THEN coffee_data.match_score * 0.3 + coffee_data.popularity_score * 0.7
-                                 ELSE coffee_data.match_score * 0.6 + coffee_data.popularity_score * 0.4
-                                 END
-                             ) DESC,
-                         coffee_data.popularity_score DESC,
-                         coffee_data.position ASC,
-                         coffee_data.coffee_name ASC
-                     ) AS recommendation_position
+                 coffee_ranked.coffee_ranking_id,
+                 coffee_ranked.match_score,
+                 coffee_ranked.popularity_score,
+                 coffee_ranked.final_score,
+                 'coffee' AS source
              FROM (
                       SELECT
-                          u.id AS user_id,
-                          up.id AS user_preference_id,
-                          up.recommendation_style,
-                          up.allow_exploration,
-                          cr.coffee_id,
-                          cr.id AS coffee_ranking_id,
-                          cr.position,
-                          c.name AS coffee_name,
-                          cr.ranking_score AS popularity_score,
-                          (
-                              CASE
-                                  WHEN EXISTS (
-                                      SELECT 1
-                                      FROM user_preference_region upr
-                                      WHERE upr.user_preference_id = up.id
-                                        AND upr.region_id = c.region_id
-                                  ) THEN 20
-                                  ELSE 0
-                                  END
-                                  +
-                              CASE
-                                  WHEN up.preferred_acidity IS NOT NULL
-                                      AND a.name IS NOT NULL
-                                      AND lower(a.name) = lower(up.preferred_acidity) THEN 15
-                                  ELSE 0
-                                  END
-                                  +
-                              CASE
-                                  WHEN up.preferred_body IS NOT NULL
-                                      AND b.name IS NOT NULL
-                                      AND lower(b.name) = lower(up.preferred_body) THEN 15
-                                  ELSE 0
-                                  END
-                                  +
-                              (
-                                  SELECT COUNT(*) * 25
-                                  FROM user_preference_flavor_profile upfp
-                                           JOIN coffee_flavor_profile cfp
-                                                ON cfp.flavor_profile_id = upfp.flavor_profile_id
-                                  WHERE upfp.user_preference_id = up.id
-                                    AND cfp.coffee_id = c.id
-                              )
-                              )::double precision AS match_score
-                      FROM app_user u
-                               JOIN user_preference up
-                                    ON up.user_id = u.id
-                                        AND up.quiz_completed = true
-                               JOIN coffee_ranking cr
-                                    ON cr.position > 0
-                               JOIN coffee c
-                                    ON c.id = cr.coffee_id
-                               LEFT JOIN acidity a
-                                         ON a.id = c.acidity_id
-                               LEFT JOIN body b
-                                         ON b.id = c.body_id
-                      WHERE u.id = target_user_id
-                        AND COALESCE(u.is_blocked, false) = false
-                  ) coffee_data
-             WHERE coffee_data.allow_exploration = true
-                OR coffee_data.match_score > 0
+                          coffee_candidates.*,
+                          row_number() OVER (
+                              PARTITION BY coffee_candidates.user_id, coffee_candidates.recommendation_bucket
+                              ORDER BY
+                                  coffee_candidates.final_score DESC,
+                                  coffee_candidates.match_score DESC,
+                                  coffee_candidates.popularity_score DESC,
+                                  coffee_candidates.position ASC,
+                                  coffee_candidates.coffee_name ASC
+                              ) AS bucket_position
+                      FROM (
+                               SELECT
+                                   u.id AS user_id,
+                                   up.id AS user_preference_id,
+                                   up.recommendation_style,
+                                   cr.coffee_id,
+                                   cr.id AS coffee_ranking_id,
+                                   cr.position,
+                                   c.name AS coffee_name,
+                                   cr.ranking_score AS popularity_score,
+                                   (
+                                       CASE
+                                           WHEN EXISTS (
+                                               SELECT 1
+                                               FROM user_preference_region upr
+                                               WHERE upr.user_preference_id = up.id
+                                                 AND upr.region_id = c.region_id
+                                           ) THEN 20
+                                           ELSE 0
+                                           END
+                                           +
+                                       CASE
+                                           WHEN up.preferred_acidity IS NOT NULL
+                                               AND a.name IS NOT NULL
+                                               AND lower(a.name) = lower(up.preferred_acidity) THEN 15
+                                           ELSE 0
+                                           END
+                                           +
+                                       CASE
+                                           WHEN up.preferred_body IS NOT NULL
+                                               AND b.name IS NOT NULL
+                                               AND lower(b.name) = lower(up.preferred_body) THEN 15
+                                           ELSE 0
+                                           END
+                                           +
+                                       (
+                                           SELECT COUNT(*) * 25
+                                           FROM user_preference_flavor_profile upfp
+                                                    JOIN coffee_flavor_profile cfp
+                                                         ON cfp.flavor_profile_id = upfp.flavor_profile_id
+                                           WHERE upfp.user_preference_id = up.id
+                                             AND cfp.coffee_id = c.id
+                                       )
+                                       )::double precision AS match_score,
+                                   (
+                                       (
+                                           CASE
+                                               WHEN EXISTS (
+                                                   SELECT 1
+                                                   FROM user_preference_region upr
+                                                   WHERE upr.user_preference_id = up.id
+                                                     AND upr.region_id = c.region_id
+                                               ) THEN 20
+                                               ELSE 0
+                                               END
+                                               +
+                                           CASE
+                                               WHEN up.preferred_acidity IS NOT NULL
+                                                   AND a.name IS NOT NULL
+                                                   AND lower(a.name) = lower(up.preferred_acidity) THEN 15
+                                               ELSE 0
+                                               END
+                                               +
+                                           CASE
+                                               WHEN up.preferred_body IS NOT NULL
+                                                   AND b.name IS NOT NULL
+                                                   AND lower(b.name) = lower(up.preferred_body) THEN 15
+                                               ELSE 0
+                                               END
+                                               +
+                                           (
+                                               SELECT COUNT(*) * 25
+                                               FROM user_preference_flavor_profile upfp
+                                                        JOIN coffee_flavor_profile cfp
+                                                             ON cfp.flavor_profile_id = upfp.flavor_profile_id
+                                               WHERE upfp.user_preference_id = up.id
+                                                 AND cfp.coffee_id = c.id
+                                           )
+                                           ) * 10 + LEAST(cr.ranking_score, 100) * 0.1
+                                       )::double precision AS final_score,
+                                   CASE
+                                       WHEN (
+                                                CASE
+                                                    WHEN EXISTS (
+                                                        SELECT 1
+                                                        FROM user_preference_region upr
+                                                        WHERE upr.user_preference_id = up.id
+                                                          AND upr.region_id = c.region_id
+                                                    ) THEN 20
+                                                    ELSE 0
+                                                    END
+                                                    +
+                                                CASE
+                                                    WHEN up.preferred_acidity IS NOT NULL
+                                                        AND a.name IS NOT NULL
+                                                        AND lower(a.name) = lower(up.preferred_acidity) THEN 15
+                                                    ELSE 0
+                                                    END
+                                                    +
+                                                CASE
+                                                    WHEN up.preferred_body IS NOT NULL
+                                                        AND b.name IS NOT NULL
+                                                        AND lower(b.name) = lower(up.preferred_body) THEN 15
+                                                    ELSE 0
+                                                    END
+                                                    +
+                                                (
+                                                    SELECT COUNT(*) * 25
+                                                    FROM user_preference_flavor_profile upfp
+                                                             JOIN coffee_flavor_profile cfp
+                                                                  ON cfp.flavor_profile_id = upfp.flavor_profile_id
+                                                    WHERE upfp.user_preference_id = up.id
+                                                      AND cfp.coffee_id = c.id
+                                                )
+                                                ) >= 50 THEN 'matched'
+                                       ELSE 'exploration'
+                                       END AS recommendation_bucket
+                               FROM app_user u
+                                        JOIN user_preference up
+                                             ON up.user_id = u.id
+                                                 AND up.quiz_completed = true
+                                        JOIN coffee_ranking cr
+                                             ON cr.position > 0
+                                        JOIN coffee c
+                                             ON c.id = cr.coffee_id
+                                        LEFT JOIN acidity a
+                                                  ON a.id = c.acidity_id
+                                        LEFT JOIN body b
+                                                  ON b.id = c.body_id
+                               WHERE u.id = target_user_id
+                                 AND COALESCE(u.is_blocked, false) = false
+                           ) coffee_candidates
+                  ) coffee_ranked
+             WHERE coffee_ranked.bucket_position <=
+                   CASE
+                       WHEN coffee_ranked.recommendation_bucket = 'matched'
+                           THEN CASE
+                                    WHEN lower(COALESCE(coffee_ranked.recommendation_style, 'balanced')) IN ('safe', 'bezpieczne', 'bezpieczne wybory') THEN 8
+                                    WHEN lower(COALESCE(coffee_ranked.recommendation_style, 'balanced')) IN ('explore', 'zaskocz mnie', 'eksploracyjne') THEN 2
+                                    ELSE 5
+                           END
+                       ELSE CASE
+                                WHEN lower(COALESCE(coffee_ranked.recommendation_style, 'balanced')) IN ('safe', 'bezpieczne', 'bezpieczne wybory') THEN 2
+                                WHEN lower(COALESCE(coffee_ranked.recommendation_style, 'balanced')) IN ('explore', 'zaskocz mnie', 'eksploracyjne') THEN 8
+                                ELSE 5
+                           END
+                       END
 
              UNION ALL
 
              SELECT
-                 recipe_data.user_id,
-                 recipe_data.user_preference_id,
+                 recipe_ranked.user_id,
+                 recipe_ranked.user_preference_id,
                  NULL::int AS coffee_id,
-                 recipe_data.recipe_id,
+                 recipe_ranked.recipe_id,
                  NULL::int AS coffee_ranking_id,
-                 recipe_data.match_score,
-                 recipe_data.popularity_score,
-                 (
-                     CASE
-                         WHEN COALESCE(recipe_data.recommendation_style, '') IN ('safe', 'Bezpieczne', 'Bezpieczne wybory') THEN recipe_data.match_score * 0.8 + recipe_data.popularity_score * 0.2
-                         WHEN COALESCE(recipe_data.recommendation_style, '') IN ('explore', 'Zaskocz mnie', 'Eksploracyjne') THEN recipe_data.match_score * 0.3 + recipe_data.popularity_score * 0.7
-                         ELSE recipe_data.match_score * 0.6 + recipe_data.popularity_score * 0.4
-                         END
-                     ) AS final_score,
-                 'recipe' AS source,
-                 row_number() OVER (
-                     PARTITION BY recipe_data.user_id
-                     ORDER BY
-                         (
-                             CASE
-                                 WHEN COALESCE(recipe_data.recommendation_style, '') IN ('safe', 'Bezpieczne', 'Bezpieczne wybory') THEN recipe_data.match_score * 0.8 + recipe_data.popularity_score * 0.2
-                                 WHEN COALESCE(recipe_data.recommendation_style, '') IN ('explore', 'Zaskocz mnie', 'Eksploracyjne') THEN recipe_data.match_score * 0.3 + recipe_data.popularity_score * 0.7
-                                 ELSE recipe_data.match_score * 0.6 + recipe_data.popularity_score * 0.4
-                                 END
-                             ) DESC,
-                         recipe_data.popularity_score DESC,
-                         recipe_data.position ASC,
-                         recipe_data.recipe_title ASC
-                     ) AS recommendation_position
+                 recipe_ranked.match_score,
+                 recipe_ranked.popularity_score,
+                 recipe_ranked.final_score,
+                 'recipe' AS source
              FROM (
                       SELECT
-                          u.id AS user_id,
-                          up.id AS user_preference_id,
-                          up.recommendation_style,
-                          up.allow_exploration,
-                          rr.recipe_id,
-                          rr.position,
-                          r.title AS recipe_title,
-                          rr.ranking_score AS popularity_score,
-                          (
-                              CASE
-                                  WHEN r.brewing_method_id IS NOT NULL
-                                      AND EXISTS (
-                                          SELECT 1
-                                          FROM user_preference_brewing_method upbm
-                                          WHERE upbm.user_preference_id = up.id
-                                            AND upbm.brewing_method_id = r.brewing_method_id
-                                      ) THEN 30
-                                  ELSE 0
-                                  END
-                                  +
-                              CASE
-                                  WHEN c.id IS NOT NULL
-                                      AND EXISTS (
-                                          SELECT 1
-                                          FROM user_preference_region upr
-                                          WHERE upr.user_preference_id = up.id
-                                            AND upr.region_id = c.region_id
-                                      ) THEN 20
-                                  ELSE 0
-                                  END
-                                  +
-                              CASE
-                                  WHEN c.id IS NOT NULL
-                                      AND up.preferred_acidity IS NOT NULL
-                                      AND a.name IS NOT NULL
-                                      AND lower(a.name) = lower(up.preferred_acidity) THEN 10
-                                  ELSE 0
-                                  END
-                                  +
-                              CASE
-                                  WHEN c.id IS NOT NULL
-                                      AND up.preferred_body IS NOT NULL
-                                      AND b.name IS NOT NULL
-                                      AND lower(b.name) = lower(up.preferred_body) THEN 10
-                                  ELSE 0
-                                  END
-                                  +
-                              (
-                                  SELECT COUNT(*) * 25
-                                  FROM user_preference_flavor_profile upfp
-                                           JOIN coffee_flavor_profile cfp
-                                                ON cfp.flavor_profile_id = upfp.flavor_profile_id
-                                  WHERE upfp.user_preference_id = up.id
-                                    AND cfp.coffee_id = c.id
-                              )
-                              )::double precision AS match_score
-                      FROM app_user u
-                               JOIN user_preference up
-                                    ON up.user_id = u.id
-                                        AND up.quiz_completed = true
-                               JOIN recipe_ranking rr
-                                    ON rr.position > 0
-                               JOIN recipe r
-                                    ON r.id = rr.recipe_id
-                                        AND r.is_public = true
-                               LEFT JOIN coffee c
-                                         ON c.id = r.coffee_id
-                               LEFT JOIN acidity a
-                                         ON a.id = c.acidity_id
-                               LEFT JOIN body b
-                                         ON b.id = c.body_id
-                      WHERE u.id = target_user_id
-                        AND COALESCE(u.is_blocked, false) = false
-                  ) recipe_data
-             WHERE recipe_data.allow_exploration = true
-                OR recipe_data.match_score > 0
-         ) recommendation_data
-    WHERE recommendation_data.recommendation_position <= 10;
+                          recipe_candidates.*,
+                          row_number() OVER (
+                              PARTITION BY recipe_candidates.user_id, recipe_candidates.recommendation_bucket
+                              ORDER BY
+                                  recipe_candidates.final_score DESC,
+                                  recipe_candidates.match_score DESC,
+                                  recipe_candidates.popularity_score DESC,
+                                  recipe_candidates.position ASC,
+                                  recipe_candidates.recipe_title ASC
+                              ) AS bucket_position
+                      FROM (
+                               SELECT
+                                   u.id AS user_id,
+                                   up.id AS user_preference_id,
+                                   up.recommendation_style,
+                                   rr.recipe_id,
+                                   rr.position,
+                                   r.title AS recipe_title,
+                                   rr.ranking_score AS popularity_score,
+                                   (
+                                       CASE
+                                           WHEN r.brewing_method_id IS NOT NULL
+                                               AND EXISTS (
+                                                   SELECT 1
+                                                   FROM user_preference_brewing_method upbm
+                                                   WHERE upbm.user_preference_id = up.id
+                                                     AND upbm.brewing_method_id = r.brewing_method_id
+                                               ) THEN 30
+                                           ELSE 0
+                                           END
+                                           +
+                                       CASE
+                                           WHEN c.id IS NOT NULL
+                                               AND EXISTS (
+                                                   SELECT 1
+                                                   FROM user_preference_region upr
+                                                   WHERE upr.user_preference_id = up.id
+                                                     AND upr.region_id = c.region_id
+                                               ) THEN 20
+                                           ELSE 0
+                                           END
+                                           +
+                                       CASE
+                                           WHEN c.id IS NOT NULL
+                                               AND up.preferred_acidity IS NOT NULL
+                                               AND a.name IS NOT NULL
+                                               AND lower(a.name) = lower(up.preferred_acidity) THEN 10
+                                           ELSE 0
+                                           END
+                                           +
+                                       CASE
+                                           WHEN c.id IS NOT NULL
+                                               AND up.preferred_body IS NOT NULL
+                                               AND b.name IS NOT NULL
+                                               AND lower(b.name) = lower(up.preferred_body) THEN 10
+                                           ELSE 0
+                                           END
+                                           +
+                                       (
+                                           SELECT COUNT(*) * 25
+                                           FROM user_preference_flavor_profile upfp
+                                                    JOIN coffee_flavor_profile cfp
+                                                         ON cfp.flavor_profile_id = upfp.flavor_profile_id
+                                           WHERE upfp.user_preference_id = up.id
+                                             AND cfp.coffee_id = c.id
+                                       )
+                                       )::double precision AS match_score,
+                                   (
+                                       (
+                                           CASE
+                                               WHEN r.brewing_method_id IS NOT NULL
+                                                   AND EXISTS (
+                                                       SELECT 1
+                                                       FROM user_preference_brewing_method upbm
+                                                       WHERE upbm.user_preference_id = up.id
+                                                         AND upbm.brewing_method_id = r.brewing_method_id
+                                                   ) THEN 30
+                                               ELSE 0
+                                               END
+                                               +
+                                           CASE
+                                               WHEN c.id IS NOT NULL
+                                                   AND EXISTS (
+                                                       SELECT 1
+                                                       FROM user_preference_region upr
+                                                       WHERE upr.user_preference_id = up.id
+                                                         AND upr.region_id = c.region_id
+                                                   ) THEN 20
+                                               ELSE 0
+                                               END
+                                               +
+                                           CASE
+                                               WHEN c.id IS NOT NULL
+                                                   AND up.preferred_acidity IS NOT NULL
+                                                   AND a.name IS NOT NULL
+                                                   AND lower(a.name) = lower(up.preferred_acidity) THEN 10
+                                               ELSE 0
+                                               END
+                                               +
+                                           CASE
+                                               WHEN c.id IS NOT NULL
+                                                   AND up.preferred_body IS NOT NULL
+                                                   AND b.name IS NOT NULL
+                                                   AND lower(b.name) = lower(up.preferred_body) THEN 10
+                                               ELSE 0
+                                               END
+                                               +
+                                           (
+                                               SELECT COUNT(*) * 25
+                                               FROM user_preference_flavor_profile upfp
+                                                        JOIN coffee_flavor_profile cfp
+                                                             ON cfp.flavor_profile_id = upfp.flavor_profile_id
+                                               WHERE upfp.user_preference_id = up.id
+                                                 AND cfp.coffee_id = c.id
+                                           )
+                                           ) * 10 + LEAST(rr.ranking_score, 100) * 0.1
+                                       )::double precision AS final_score,
+                                   CASE
+                                       WHEN (
+                                                CASE
+                                                    WHEN r.brewing_method_id IS NOT NULL
+                                                        AND EXISTS (
+                                                            SELECT 1
+                                                            FROM user_preference_brewing_method upbm
+                                                            WHERE upbm.user_preference_id = up.id
+                                                              AND upbm.brewing_method_id = r.brewing_method_id
+                                                        ) THEN 30
+                                                    ELSE 0
+                                                    END
+                                                    +
+                                                CASE
+                                                    WHEN c.id IS NOT NULL
+                                                        AND EXISTS (
+                                                            SELECT 1
+                                                            FROM user_preference_region upr
+                                                            WHERE upr.user_preference_id = up.id
+                                                              AND upr.region_id = c.region_id
+                                                        ) THEN 20
+                                                    ELSE 0
+                                                    END
+                                                    +
+                                                CASE
+                                                    WHEN c.id IS NOT NULL
+                                                        AND up.preferred_acidity IS NOT NULL
+                                                        AND a.name IS NOT NULL
+                                                        AND lower(a.name) = lower(up.preferred_acidity) THEN 10
+                                                    ELSE 0
+                                                    END
+                                                    +
+                                                CASE
+                                                    WHEN c.id IS NOT NULL
+                                                        AND up.preferred_body IS NOT NULL
+                                                        AND b.name IS NOT NULL
+                                                        AND lower(b.name) = lower(up.preferred_body) THEN 10
+                                                    ELSE 0
+                                                    END
+                                                    +
+                                                (
+                                                    SELECT COUNT(*) * 25
+                                                    FROM user_preference_flavor_profile upfp
+                                                             JOIN coffee_flavor_profile cfp
+                                                                  ON cfp.flavor_profile_id = upfp.flavor_profile_id
+                                                    WHERE upfp.user_preference_id = up.id
+                                                      AND cfp.coffee_id = c.id
+                                                )
+                                                ) >= 50 THEN 'matched'
+                                       ELSE 'exploration'
+                                       END AS recommendation_bucket
+                               FROM app_user u
+                                        JOIN user_preference up
+                                             ON up.user_id = u.id
+                                                 AND up.quiz_completed = true
+                                        JOIN recipe_ranking rr
+                                             ON rr.position > 0
+                                        JOIN recipe r
+                                             ON r.id = rr.recipe_id
+                                                 AND r.is_public = true
+                                        LEFT JOIN coffee c
+                                                  ON c.id = r.coffee_id
+                                        LEFT JOIN acidity a
+                                                  ON a.id = c.acidity_id
+                                        LEFT JOIN body b
+                                                  ON b.id = c.body_id
+                               WHERE u.id = target_user_id
+                                 AND COALESCE(u.is_blocked, false) = false
+                           ) recipe_candidates
+                  ) recipe_ranked
+             WHERE recipe_ranked.bucket_position <=
+                   CASE
+                       WHEN recipe_ranked.recommendation_bucket = 'matched'
+                           THEN CASE
+                                    WHEN lower(COALESCE(recipe_ranked.recommendation_style, 'balanced')) IN ('safe', 'bezpieczne', 'bezpieczne wybory') THEN 8
+                                    WHEN lower(COALESCE(recipe_ranked.recommendation_style, 'balanced')) IN ('explore', 'zaskocz mnie', 'eksploracyjne') THEN 2
+                                    ELSE 5
+                           END
+                       ELSE CASE
+                                WHEN lower(COALESCE(recipe_ranked.recommendation_style, 'balanced')) IN ('safe', 'bezpieczne', 'bezpieczne wybory') THEN 2
+                                WHEN lower(COALESCE(recipe_ranked.recommendation_style, 'balanced')) IN ('explore', 'zaskocz mnie', 'eksploracyjne') THEN 8
+                                ELSE 5
+                           END
+                       END
+         ) recommendation_data;
 END;
 $$;

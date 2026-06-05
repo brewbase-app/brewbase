@@ -44,7 +44,6 @@ public class PreferenceService : IPreferenceService
             PreferredAcidity = preference.PreferredAcidity,
             PreferredBody = preference.PreferredBody,
             RecommendationStyle = preference.RecommendationStyle,
-            AllowExploration = preference.AllowExploration,
 
             FlavorProfiles = preference
                 .UserPreferenceFlavorProfiles
@@ -94,7 +93,6 @@ public class PreferenceService : IPreferenceService
         preference.PreferredAcidity = dto.PreferredAcidity;
         preference.PreferredBody = dto.PreferredBody;
         preference.RecommendationStyle = dto.RecommendationStyle;
-        preference.AllowExploration = dto.AllowExploration;
         preference.QuizCompleted = true;
 
         _context.UserPreferenceFlavorProfiles.RemoveRange(
@@ -159,7 +157,6 @@ public class PreferenceService : IPreferenceService
         preference.PreferredRoastLevel = dto.PreferredRoastLevel;
         preference.FavoriteNotes = "";
         preference.QuizCompleted = true;
-        preference.AllowExploration = dto.AllowExploration;
 
         // Pola opcjonalne
         preference.ExperienceLevel = dto.ExperienceLevel;
@@ -224,23 +221,12 @@ public class PreferenceService : IPreferenceService
         
     private async Task RefreshRecommendationsForCurrentUserAsync(int userId)
     {
+        if (!_context.Database.IsNpgsql())
+        {
+            return;
+        }
         try
         {
-            var hasRecommendationRefreshFunction = await _context.Database
-                .SqlQueryRaw<bool>("""
-                                       SELECT EXISTS (
-                                           SELECT 1
-                                           FROM pg_proc
-                                           WHERE proname = 'refresh_recommendations_for_user'
-                                       ) AS "Value"
-                                   """)
-                .SingleAsync();
-
-            if (!hasRecommendationRefreshFunction)
-            {
-                return;
-            }
-
             var hasRankingRefreshFunction = await _context.Database
                 .SqlQueryRaw<bool>("""
                                        SELECT EXISTS (
@@ -250,15 +236,25 @@ public class PreferenceService : IPreferenceService
                                        ) AS "Value"
                                    """)
                 .SingleAsync();
-
             if (hasRankingRefreshFunction)
             {
                 await _context.Database.ExecuteSqlRawAsync("SELECT refresh_all_rankings();");
             }
-
-            await _context.Database.ExecuteSqlRawAsync(
-                "SELECT refresh_recommendations_for_user({0});",
-                userId);
+            var hasRecommendationRefreshFunction = await _context.Database
+                .SqlQueryRaw<bool>("""
+                                       SELECT EXISTS (
+                                           SELECT 1
+                                           FROM pg_proc
+                                           WHERE proname = 'refresh_recommendations_for_user'
+                                       ) AS "Value"
+                                   """)
+                .SingleAsync();
+            if (hasRecommendationRefreshFunction)
+            {
+                await _context.Database.ExecuteSqlRawAsync(
+                    "SELECT refresh_recommendations_for_user({0});",
+                    userId);
+            }
         }
         catch (Exception exception)
         {

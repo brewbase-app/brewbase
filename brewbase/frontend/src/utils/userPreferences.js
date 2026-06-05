@@ -8,8 +8,7 @@ export const DEFAULT_USER_PREFERENCES = {
     body: "",
     regions: [],
     processingMethods: [],
-    recommendationStyle: "",
-    allowExploration: false,
+    recommendationStyle: ""
 };
 
 export const USER_PREFERENCE_OPTIONS = {
@@ -82,7 +81,6 @@ export function hasAnyPreferences(preferences) {
         Boolean(preferences.acidity) ||
         Boolean(preferences.body) ||
         preferences.regions.length > 0 ||
-        Boolean(preferences.recommendationStyle) ||
-        preferences.allowExploration
+        Boolean(preferences.recommendationStyle)
     );
 }
