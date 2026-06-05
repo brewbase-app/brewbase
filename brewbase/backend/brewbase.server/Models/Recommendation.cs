@@ -7,9 +7,15 @@ public partial class Recommendation
 {
     public int Id { get; set; }
 
-    public bool Feedback { get; set; }
+    public bool? Feedback { get; set; }
 
     public int Score { get; set; }
+    
+    public double MatchScore { get; set; }
+
+    public double PopularityScore { get; set; }
+
+    public double FinalScore { get; set; }
 
     public string Algorithm { get; set; } = null!;
 
