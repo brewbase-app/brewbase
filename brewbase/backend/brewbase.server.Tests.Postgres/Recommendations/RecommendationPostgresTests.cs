@@ -26,7 +26,6 @@ public sealed class RecommendationPostgresTests : PostgresIntegrationTestBase
         var saveResponse = await Client.PostAsJsonAsync("/api/preferences", new
         {
             preferredRoastLevel = "Średnie",
-            allowExploration = true,
             flavorProfileIds = new[] { 1 },
             regionIds = new[] { 1 },
             brewingMethodIds = new[] { 1 },
@@ -68,7 +67,6 @@ public sealed class RecommendationPostgresTests : PostgresIntegrationTestBase
         var saveResponse = await Client.PostAsJsonAsync("/api/preferences", new
         {
             preferredRoastLevel = "Średnie",
-            allowExploration = true,
             flavorProfileIds = new[] { 1 },
             regionIds = new[] { 1 },
             brewingMethodIds = new[] { 1 },

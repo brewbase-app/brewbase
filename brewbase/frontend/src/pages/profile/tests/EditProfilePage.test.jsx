@@ -68,8 +68,7 @@ describe("EditProfilePage", () => {
             acidity: "",
             body: "",
             regions: [],
-            recommendationStyle: "",
-            allowExploration: false,
+            recommendationStyle: ""
         });
 
         vi.mocked(getBrewingMethods).mockResolvedValue([]);

@@ -80,6 +80,8 @@ public partial class BrewDbContext : DbContext
 
     public virtual DbSet<Body> Bodies { get; set; }
     
+    public virtual DbSet<RecommendationFeedbackSummary> RecommendationFeedbackSummaries { get; set; }
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AppUser>(entity =>
@@ -488,6 +490,26 @@ public partial class BrewDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("notification_user");
         });
+        
+        modelBuilder.Entity<RecommendationFeedbackSummary>(entity =>
+        {
+            entity.ToTable("recommendation_feedback_summary");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Rating).HasColumnName("rating");
+            entity.Property(e => e.PreferenceAction).HasColumnName("preference_action");
+            entity.Property(e => e.PreviousRecommendationStyle).HasColumnName("previous_recommendation_style");
+            entity.Property(e => e.NewRecommendationStyle).HasColumnName("new_recommendation_style");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
         modelBuilder.Entity<ProcessingMethod>(entity =>
         {
@@ -779,8 +801,6 @@ public partial class BrewDbContext : DbContext
             entity.Property(e => e.RecommendationStyle)
                 .HasMaxLength(50)
                 .HasColumnName("recommendation_style");
-            entity.Property(e => e.AllowExploration)
-                .HasColumnName("allow_exploration");
             entity.HasOne(d => d.User).WithMany(p => p.UserPreferences)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)

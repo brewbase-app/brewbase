@@ -9,9 +9,7 @@ public class UserPreferencesDto
     public string? PreferredBody { get; set; }
 
     public string? RecommendationStyle { get; set; }
-
-    public bool AllowExploration { get; set; }
-
+    
     public List<string> FlavorProfiles { get; set; } = [];
 
     public List<string> BrewingMethods { get; set; } = [];

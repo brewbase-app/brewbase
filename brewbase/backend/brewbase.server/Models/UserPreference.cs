@@ -23,9 +23,7 @@ public partial class UserPreference
     public string? PreferredBody { get; set; }
 
     public string? RecommendationStyle { get; set; }
-
-    public bool AllowExploration { get; set; }
-
+    
     public virtual ICollection<Recommendation> Recommendations { get; set; } = new List<Recommendation>();
 
     public virtual AppUser User { get; set; } = null!;

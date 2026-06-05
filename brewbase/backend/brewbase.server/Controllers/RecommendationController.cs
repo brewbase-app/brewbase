@@ -1,6 +1,7 @@
 ﻿using brewbase.server.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using brewbase.server.Dtos;
 
 namespace brewbase.server.Controllers;
 
@@ -25,5 +26,14 @@ public class RecommendationController : ControllerBase
                 .GetRecommendationsAsync();
 
         return Ok(result);
+    }
+    
+    [HttpPost("summary-feedback")]
+    public async Task<IActionResult> SubmitSummaryFeedback(
+        RecommendationSummaryFeedbackRequestDto request)
+    {
+        await _recommendationService.SubmitSummaryFeedbackAsync(request);
+
+        return NoContent();
     }
 }

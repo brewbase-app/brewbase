@@ -116,8 +116,7 @@ export default function PreferencesOnboardingPage() {
                 recommendationStyle:
                 preferences.recommendationStyle,
 
-                allowExploration:
-                preferences.allowExploration,
+
 
                 flavorProfileIds: flavorPreferencesUndecided
                     ? []
@@ -544,26 +543,6 @@ export default function PreferencesOnboardingPage() {
                                 {style}
                             </button>
                         ))}
-
-                        <div className="checkbox-wrapper">
-
-                            <input
-                                type="checkbox"
-                                checked={preferences.allowExploration}
-                                onChange={(e) =>
-                                    setPreferences({
-                                        ...preferences,
-                                        allowExploration: e.target.checked,
-                                    })
-                                }
-                            />
-
-                            <span>
-                                Pokazuj również rekomendacje
-                                spoza moich preferencji
-                            </span>
-
-                        </div>
                     </>
                 );
 

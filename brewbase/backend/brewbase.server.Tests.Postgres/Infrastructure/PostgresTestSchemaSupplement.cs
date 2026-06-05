@@ -19,9 +19,6 @@ internal static class PostgresTestSchemaSupplement
         ALTER TABLE user_preference
             ADD COLUMN IF NOT EXISTS recommendation_style varchar(100);
 
-        ALTER TABLE user_preference
-            ADD COLUMN IF NOT EXISTS allow_exploration boolean NOT NULL DEFAULT false;
-
         CREATE TABLE IF NOT EXISTS user_preference_brewing_method (
             user_preference_id integer NOT NULL,
             brewing_method_id integer NOT NULL,
