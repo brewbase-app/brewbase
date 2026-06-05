@@ -212,6 +212,126 @@ public class ReportEndpointsTests : IDisposable
         Assert.Equal(HttpStatusCode.BadRequest, uphold.StatusCode);
     }
 
+    [Fact]
+    public async Task Admin_UpholdArticleReport_RemovesArticle()
+    {
+        const string moderationComment = "Artykuł narusza zasady społeczności.";
+        var articleId = await SeedApprovedArticleAsync("Uphold removes article");
+        await _userClient.PostAsJsonAsync(
+            $"/api/reports/article/{articleId}",
+            ValidReportBody());
+
+        var reportId = await GetOpenReportIdForArticleAsync(articleId);
+
+        var uphold = await _adminClient.PatchAsJsonAsync(
+            $"/api/admin/reports/{reportId}/uphold",
+            new ModerateArticleRequestDto
+            {
+                Comment = moderationComment
+            });
+        Assert.Equal(HttpStatusCode.NoContent, uphold.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var article = await context.Articles.SingleAsync(a => a.Id == articleId);
+        Assert.Equal("Removed", article.Status);
+        Assert.Null(article.PublishedAt);
+    }
+
+    [Fact]
+    public async Task Admin_UpholdArticleReport_RemovesAssociatedReports()
+    {
+        var articleId = await SeedApprovedArticleAsync("Uphold resolves reports");
+        await _userClient.PostAsJsonAsync(
+            $"/api/reports/article/{articleId}",
+            ValidReportBody());
+
+        var reportId = await GetOpenReportIdForArticleAsync(articleId);
+
+        var uphold = await _adminClient.PatchAsJsonAsync(
+            $"/api/admin/reports/{reportId}/uphold",
+            new ModerateArticleRequestDto
+            {
+                Comment = "Treść narusza zasady społeczności."
+            });
+        Assert.Equal(HttpStatusCode.NoContent, uphold.StatusCode);
+
+        var openResponse = await _adminClient.GetAsync("/api/admin/reports?scope=open");
+        openResponse.EnsureSuccessStatusCode();
+        var openReports = await openResponse.Content.ReadFromJsonAsync<List<JsonElement>>();
+
+        Assert.DoesNotContain(openReports!, report =>
+            report.GetProperty("reportId").GetInt32() == reportId);
+
+        var historyResponse = await _adminClient.GetAsync("/api/admin/reports?scope=history");
+        historyResponse.EnsureSuccessStatusCode();
+        var historyReports = await historyResponse.Content.ReadFromJsonAsync<List<JsonElement>>();
+
+        Assert.Contains(historyReports!, report =>
+            report.GetProperty("reportId").GetInt32() == reportId
+            && report.GetProperty("status").GetString() == "upheld");
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        Assert.Equal(1, await context.Reports.CountAsync(report => report.Id == reportId));
+    }
+
+    [Fact]
+    public async Task Admin_UpholdArticleReport_CreatesNotificationIfApplicable()
+    {
+        const string moderationComment = "Moderacja po zgłoszeniu artykułu.";
+        var articleId = await SeedApprovedArticleAsync("Uphold notification article");
+        await _userClient.PostAsJsonAsync(
+            $"/api/reports/article/{articleId}",
+            ValidReportBody());
+
+        var reportId = await GetOpenReportIdForArticleAsync(articleId);
+
+        var uphold = await _adminClient.PatchAsJsonAsync(
+            $"/api/admin/reports/{reportId}/uphold",
+            new ModerateArticleRequestDto
+            {
+                Comment = moderationComment
+            });
+        Assert.Equal(HttpStatusCode.NoContent, uphold.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var notification = await context.Notifications
+            .Where(n => n.UserId == 1)
+            .OrderByDescending(n => n.Id)
+            .FirstAsync();
+
+        Assert.Contains("Twój artykuł został usunięty", notification.Content);
+        Assert.Contains(moderationComment, notification.Content);
+    }
+
+    [Fact]
+    public async Task Admin_DismissArticleReport_KeepsArticle()
+    {
+        var articleId = await SeedApprovedArticleAsync("Dismiss keeps article");
+        await _userClient.PostAsJsonAsync(
+            $"/api/reports/article/{articleId}",
+            ValidReportBody());
+
+        var reportId = await GetOpenReportIdForArticleAsync(articleId);
+
+        var dismiss = await _adminClient.PatchAsync(
+            $"/api/admin/reports/{reportId}/dismiss",
+            null);
+        Assert.Equal(HttpStatusCode.NoContent, dismiss.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var article = await context.Articles.SingleAsync(a => a.Id == articleId);
+        Assert.Equal("Approved", article.Status);
+        Assert.NotNull(article.PublishedAt);
+    }
+
     private async Task<int> SeedPublicRecipeAsync(string title)
     {
         var body = $$"""
