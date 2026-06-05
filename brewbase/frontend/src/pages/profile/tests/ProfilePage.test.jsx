@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 import ProfilePage from "../ProfilePage";
@@ -28,6 +29,7 @@ vi.mock("../../../api/recipeApi", () => ({
 
 import { getProfile } from "../../../api/profileApi";
 import {
+    followUser,
     getFollowers,
     getFollowing,
     getUserProfile,
@@ -79,6 +81,7 @@ function mockOwnProfileLoaded() {
 
 describe("ProfilePage", () => {
     beforeEach(() => {
+        vi.useRealTimers();
         vi.mocked(getProfile).mockReset();
         vi.mocked(getUserProfile).mockReset();
         vi.mocked(getUserProfileByLogin).mockReset();
@@ -116,6 +119,66 @@ describe("ProfilePage", () => {
         expect(
             await screen.findByText("Nie udało się pobrać profilu.")
         ).toBeInTheDocument();
+    });
+
+    it(
+        "shows Obserwujesz briefly before removing user from discover",
+        async () => {
+            vi.mocked(getProfile).mockResolvedValue(sampleProfile);
+            vi.mocked(getUserProfile).mockResolvedValue(publicProfile);
+            vi.mocked(getUserRanking).mockResolvedValue([
+                { userId: 1, login: "maria", position: 1 },
+                { userId: 3, login: "ania", position: 3 },
+            ]);
+            vi.mocked(getFollowing).mockResolvedValue([]);
+            vi.mocked(getFollowers).mockResolvedValue([]);
+            vi.mocked(getRecipes).mockResolvedValue([]);
+            vi.mocked(followUser).mockResolvedValue(undefined);
+
+            const user = userEvent.setup();
+
+            renderProfile();
+
+            expect(await screen.findByText("@ania")).toBeInTheDocument();
+
+            await user.click(
+                screen.getByRole("button", { name: "Obserwuj" })
+            );
+
+            expect(
+                await screen.findByRole("button", { name: "Obserwujesz" })
+            ).toBeInTheDocument();
+            expect(screen.getByText("@ania")).toBeInTheDocument();
+
+            await waitFor(
+                () => {
+                    expect(screen.queryByText("@ania")).not.toBeInTheDocument();
+                },
+                { timeout: 3500 }
+            );
+        },
+        5000
+    );
+
+    it("hides already followed users from discover section", async () => {
+        vi.mocked(getProfile).mockResolvedValue(sampleProfile);
+        vi.mocked(getUserProfile).mockResolvedValue(publicProfile);
+        vi.mocked(getUserRanking).mockResolvedValue([
+            { userId: 1, login: "maria", position: 1 },
+            { userId: 2, login: "jan", position: 2 },
+            { userId: 3, login: "ania", position: 3 },
+        ]);
+        vi.mocked(getFollowing).mockResolvedValue([
+            { userId: 2, login: "jan", label: null },
+        ]);
+        vi.mocked(getFollowers).mockResolvedValue([]);
+        vi.mocked(getRecipes).mockResolvedValue([]);
+
+        renderProfile();
+
+        expect(await screen.findByText("ODKRYWAJ")).toBeInTheDocument();
+        expect(screen.queryByText("@jan")).not.toBeInTheDocument();
+        expect(screen.getByText("@ania")).toBeInTheDocument();
     });
 
     it("shows follow button on another users profile", async () => {
