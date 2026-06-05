@@ -6,6 +6,7 @@ function ComboBoxInput({
     options,
     placeholder,
     id,
+    disabled = false,
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef(null);
@@ -52,11 +53,16 @@ function ComboBoxInput({
                 value={value}
                 placeholder={placeholder}
                 autoComplete="off"
+                disabled={disabled}
                 onChange={(event) => {
                     onChange(event.target.value);
                     setIsOpen(true);
                 }}
-                onFocus={() => setIsOpen(true)}
+                onFocus={() => {
+                    if (!disabled) {
+                        setIsOpen(true);
+                    }
+                }}
             />
 
             {isOpen && filteredOptions.length > 0 && (

@@ -21,9 +21,7 @@ public sealed class UpdateCuppingSessionCoffeeRequestDto
 
     [MaxLength(1000)]
     public string? FlavorProfileNotes { get; set; }
-
-    public bool? CleanCup { get; set; }
-
+    
     [Range(1, 10)]
     public int? OverallScore { get; set; }
 }

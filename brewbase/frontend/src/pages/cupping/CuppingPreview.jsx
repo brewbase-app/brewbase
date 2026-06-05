@@ -5,7 +5,7 @@ import {
     deleteCuppingSession,
     getCuppingSessionDetails
 } from "../../api/cuppingSessionsApi";
-import "../../styles/CuppingPreview.css";
+import "../../styles/cupping/CuppingPreview.css";
 
 const CuppingPreview = () => {
     const { id } = useParams();
@@ -37,18 +37,6 @@ const CuppingPreview = () => {
         }
 
         return new Date(date).toLocaleDateString("pl-PL");
-    };
-
-    const formatCleanCup = (value) => {
-        if (value === true) {
-            return "Tak";
-        }
-
-        if (value === false) {
-            return "Nie";
-        }
-
-        return "Brak";
     };
 
     const handleDeleteSession = async () => {
@@ -180,11 +168,6 @@ const CuppingPreview = () => {
                                     <p>
                                         <strong>Komentarz:</strong>{" "}
                                         {coffee.notes || "Brak"}
-                                    </p>
-
-                                    <p>
-                                        <strong>Czysta filiżanka:</strong>{" "}
-                                        {formatCleanCup(coffee.cleanCup)}
                                     </p>
                                 </div>
                             </div>

@@ -18,6 +18,49 @@ public class PreferenceService : IPreferenceService
         _context = context;
         _currentUserProvider = currentUserProvider;
     }
+    
+    public async Task<UserPreferencesDto?> GetPreferencesAsync()
+    {
+        var userId = _currentUserProvider.GetUserId();
+
+        if (userId == null)
+            throw new Exception("User not found");
+
+        var preference = await _context.UserPreferences
+            .Include(x => x.UserPreferenceFlavorProfiles)
+            .ThenInclude(x => x.FlavorProfile)
+            .Include(x => x.UserPreferenceBrewingMethods)
+            .ThenInclude(x => x.BrewingMethod)
+            .Include(x => x.UserPreferenceRegions)
+            .ThenInclude(x => x.Region)
+            .FirstOrDefaultAsync(x => x.UserId == userId);
+
+        if (preference == null)
+            return null;
+
+        return new UserPreferencesDto
+        {
+            ExperienceLevel = preference.ExperienceLevel,
+            PreferredAcidity = preference.PreferredAcidity,
+            PreferredBody = preference.PreferredBody,
+            RecommendationStyle = preference.RecommendationStyle,
+
+            FlavorProfiles = preference
+                .UserPreferenceFlavorProfiles
+                .Select(x => x.FlavorProfile.Name)
+                .ToList(),
+
+            BrewingMethods = preference
+                .UserPreferenceBrewingMethods
+                .Select(x => x.BrewingMethod.Name)
+                .ToList(),
+
+            Regions = preference
+                .UserPreferenceRegions
+                .Select(x => x.Region.Name)
+                .ToList()
+        };
+    }
 
     /*public async Task SavePreferencesAsync(
         SaveUserPreferencesRequestDto dto)
@@ -50,7 +93,6 @@ public class PreferenceService : IPreferenceService
         preference.PreferredAcidity = dto.PreferredAcidity;
         preference.PreferredBody = dto.PreferredBody;
         preference.RecommendationStyle = dto.RecommendationStyle;
-        preference.AllowExploration = dto.AllowExploration;
         preference.QuizCompleted = true;
 
         _context.UserPreferenceFlavorProfiles.RemoveRange(
@@ -91,8 +133,7 @@ public class PreferenceService : IPreferenceService
 
         await _context.SaveChangesAsync();
     }*/
-        public async Task SavePreferencesAsync(
-        SaveUserPreferencesRequestDto dto)
+        public async Task SavePreferencesAsync(SaveUserPreferencesRequestDto dto)
     {
         var userId = _currentUserProvider.GetUserId();
 
@@ -116,7 +157,6 @@ public class PreferenceService : IPreferenceService
         preference.PreferredRoastLevel = dto.PreferredRoastLevel;
         preference.FavoriteNotes = "";
         preference.QuizCompleted = true;
-        preference.AllowExploration = dto.AllowExploration;
 
         // Pola opcjonalne
         preference.ExperienceLevel = dto.ExperienceLevel;
@@ -142,7 +182,7 @@ public class PreferenceService : IPreferenceService
 
         await _context.SaveChangesAsync();
 
-        foreach (var flavorId in dto.FlavorProfileIds)
+        foreach (var flavorId in dto.FlavorProfileIds ?? [])
         {
             _context.UserPreferenceFlavorProfiles.Add(
                 new UserPreferenceFlavorProfile
@@ -153,7 +193,7 @@ public class PreferenceService : IPreferenceService
         }
 
         // Dodanie metod parzenia
-        foreach (var brewingMethodId in dto.BrewingMethodIds)
+        foreach (var brewingMethodId in dto.BrewingMethodIds ?? [])
         {
             _context.UserPreferenceBrewingMethods.Add(
                 new UserPreferenceBrewingMethod
@@ -164,7 +204,7 @@ public class PreferenceService : IPreferenceService
         }
 
         // Dodanie regionów
-        foreach (var regionId in dto.RegionIds)
+        foreach (var regionId in dto.RegionIds ?? [])
         {
             _context.UserPreferenceRegions.Add(
                 new UserPreferenceRegion
@@ -175,5 +215,51 @@ public class PreferenceService : IPreferenceService
         }
 
         await _context.SaveChangesAsync();
+        
+        await RefreshRecommendationsForCurrentUserAsync(userId.Value);
     }
+        
+    private async Task RefreshRecommendationsForCurrentUserAsync(int userId)
+    {
+        if (!_context.Database.IsNpgsql())
+        {
+            return;
+        }
+        try
+        {
+            var hasRankingRefreshFunction = await _context.Database
+                .SqlQueryRaw<bool>("""
+                                       SELECT EXISTS (
+                                           SELECT 1
+                                           FROM pg_proc
+                                           WHERE proname = 'refresh_all_rankings'
+                                       ) AS "Value"
+                                   """)
+                .SingleAsync();
+            if (hasRankingRefreshFunction)
+            {
+                await _context.Database.ExecuteSqlRawAsync("SELECT refresh_all_rankings();");
+            }
+            var hasRecommendationRefreshFunction = await _context.Database
+                .SqlQueryRaw<bool>("""
+                                       SELECT EXISTS (
+                                           SELECT 1
+                                           FROM pg_proc
+                                           WHERE proname = 'refresh_recommendations_for_user'
+                                       ) AS "Value"
+                                   """)
+                .SingleAsync();
+            if (hasRecommendationRefreshFunction)
+            {
+                await _context.Database.ExecuteSqlRawAsync(
+                    "SELECT refresh_recommendations_for_user({0});",
+                    userId);
+            }
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(exception);
+        }
+    }
+    
 }

@@ -80,6 +80,8 @@ public partial class BrewDbContext : DbContext
 
     public virtual DbSet<Body> Bodies { get; set; }
     
+    public virtual DbSet<RecommendationFeedbackSummary> RecommendationFeedbackSummaries { get; set; }
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AppUser>(entity =>
@@ -418,7 +420,6 @@ public partial class BrewDbContext : DbContext
             entity.Property(e => e.AcidityScore).HasColumnName("acidity_score");
             entity.Property(e => e.BodyScore).HasColumnName("body_score");
             entity.Property(e => e.FlavorProfileNotes).HasColumnName("flavor_profile_notes");
-            entity.Property(e => e.CleanCup).HasColumnName("clean_cup");
             entity.Property(e => e.OverallScore).HasColumnName("overall_score");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
@@ -488,6 +489,26 @@ public partial class BrewDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("notification_user");
+        });
+        
+        modelBuilder.Entity<RecommendationFeedbackSummary>(entity =>
+        {
+            entity.ToTable("recommendation_feedback_summary");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Rating).HasColumnName("rating");
+            entity.Property(e => e.PreferenceAction).HasColumnName("preference_action");
+            entity.Property(e => e.PreviousRecommendationStyle).HasColumnName("previous_recommendation_style");
+            entity.Property(e => e.NewRecommendationStyle).HasColumnName("new_recommendation_style");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<ProcessingMethod>(entity =>
@@ -586,7 +607,6 @@ public partial class BrewDbContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("refreshed_at");
             entity.Property(e => e.RatingCount).HasColumnName("rating_count");
-            entity.Property(e => e.LikeCount).HasColumnName("like_count");
             entity.Property(e => e.SaveCount).HasColumnName("save_count");
             entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
 
@@ -663,6 +683,9 @@ public partial class BrewDbContext : DbContext
                 .HasColumnName("generated_at");
             entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
             entity.Property(e => e.Score).HasColumnName("score");
+            entity.Property(e => e.MatchScore).HasColumnName("match_score");
+            entity.Property(e => e.PopularityScore).HasColumnName("popularity_score");
+            entity.Property(e => e.FinalScore).HasColumnName("final_score");
             entity.Property(e => e.Source).HasColumnName("source");
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.UserPreferenceId).HasColumnName("user_preference_id");
@@ -778,8 +801,6 @@ public partial class BrewDbContext : DbContext
             entity.Property(e => e.RecommendationStyle)
                 .HasMaxLength(50)
                 .HasColumnName("recommendation_style");
-            entity.Property(e => e.AllowExploration)
-                .HasColumnName("allow_exploration");
             entity.HasOne(d => d.User).WithMany(p => p.UserPreferences)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -918,17 +939,13 @@ public partial class BrewDbContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("refreshed_at");
             entity.Property(e => e.ActivityScore).HasColumnName("activity_score");
-            entity.Property(e => e.RecipeCount).HasColumnName("recipe_count");
-            entity.Property(e => e.LikeCount).HasColumnName("like_count");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.Property(e => e.Position).HasColumnName("position");
             entity.Property(e => e.PublicRecipeCount).HasColumnName("public_recipe_count");
             entity.Property(e => e.CoffeeRatingCount).HasColumnName("coffee_rating_count");
             entity.Property(e => e.RecipeRatingCount).HasColumnName("recipe_rating_count");
-            entity.Property(e => e.QuickNoteCount).HasColumnName("quick_note_count");
             entity.Property(e => e.CuppingSessionCount).HasColumnName("cupping_session_count");
-            entity.Property(e => e.CuppingSessionCoffeeCount).HasColumnName("cupping_session_coffee_count");
             entity.Property(e => e.FollowersCount).HasColumnName("followers_count");
             entity.Property(e => e.ReceivedRecipeFavoriteCount).HasColumnName("received_recipe_favorite_count");
             entity.Property(e => e.PublishedArticleCount).HasColumnName("published_article_count");

@@ -1,0 +1,172 @@
+.cupping-container {
+    width: 100%;
+    min-height: 100vh;
+    background: #f3f3f3;
+    padding: 55px 60px;
+    box-sizing: border-box;
+    font-family: "Inter", sans-serif;
+}
+
+.cupping-inner {
+    max-width: 950px;
+}
+
+.cupping-actions {
+    margin-bottom: 32px;
+}
+
+.add-session-btn,
+.details-btn {
+    border: none;
+    border-radius: 18px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s ease;
+}
+
+.add-session-btn {
+    background: #1f1f1f;
+    color: white;
+}
+
+.add-session-btn:hover {
+    background: #000;
+    transform: translateY(-1px);
+}
+
+.cupping-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.cupping-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 24px 28px;
+    border-radius: 26px;
+    border: 1px solid #e6e6e6;
+    background: #fafafa;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    transition: 0.2s ease;
+}
+
+.cupping-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.card-left {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    min-width: 0;
+}
+
+.card-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    background: #efefef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2a2a2a;
+    flex-shrink: 0;
+}
+
+.card-content h3 {
+    margin: 0 0 8px 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1f1f1f;
+}
+
+.card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    color: #707070;
+    font-size: 14px;
+}
+
+.card-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.details-btn {
+    background: #1f1f1f;
+    color: white;
+    flex-shrink: 0;
+}
+
+.details-btn:hover {
+    background: #000;
+    transform: translateY(-1px);
+}
+
+.card-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.delete-btn {
+    border: 1px solid #dddddd;
+    border-radius: 18px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s ease;
+    background: #efefef;
+    color: #555;
+}
+
+.delete-btn:hover {
+    background: #e8e8e8;
+}
+
+.empty-text {
+    background: #fafafa;
+    border-radius: 28px;
+    border: 1px solid #e6e6e6;
+    padding: 50px;
+    color: #707070;
+    font-size: 16px;
+    margin: 0;
+}
+
+.error-text {
+    color: #b42318;
+    font-size: 14px;
+    margin: 0 0 20px 0;
+}
+
+@media (max-width: 900px) {
+    .cupping-container {
+        padding: 40px 24px;
+    }
+
+    .cupping-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .details-btn {
+        justify-content: center;
+    }
+}

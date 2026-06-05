@@ -11,7 +11,7 @@ import {
     deleteCuppingSession,
     getCuppingSessions
 } from "../../api/cuppingSessionsApi";
-import "../../styles/CuppingList.css";
+import "../../styles/cupping/CuppingList.css";
 
 const CuppingList = () => {
     const navigate = useNavigate();

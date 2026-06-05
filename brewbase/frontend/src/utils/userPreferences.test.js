@@ -18,7 +18,6 @@ describe("userPreferences utils", () => {
             ...DEFAULT_USER_PREFERENCES,
             experienceLevel: "Początkujący",
             brewingMethods: ["V60"],
-            allowExploration: true,
         };
 
         saveUserPreferences(preferences);

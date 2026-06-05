@@ -71,6 +71,10 @@ public class CoffeeReadService : ICoffeeReadService
                 BeanOriginCountry = c.Region != null && c.Region.Country != null
                     ? c.Region.Country.Name
                     : null,
+                FlavorProfiles = c.CoffeeFlavorProfiles
+                    .Select(coffeeFlavorProfile => coffeeFlavorProfile.FlavorProfile.Name)
+                    .OrderBy(name => name)
+                    .ToList(),
                 AverageRating = _context.CoffeeRatings
                     .Where(rating => rating.CoffeeId == c.Id)
                     .Average(rating => (double?)rating.Value),
@@ -214,7 +218,10 @@ public class CoffeeReadService : ICoffeeReadService
                 coffee.ProcessingMethod = processingMethod;
             }
 
-            coffee.FlavorProfiles = flavorProfiles.ToList();
+            if (coffee.FlavorProfiles.Count == 0 && flavorProfiles.Any())
+            {
+                coffee.FlavorProfiles = flavorProfiles.ToList();
+            }
         }
     }
 }

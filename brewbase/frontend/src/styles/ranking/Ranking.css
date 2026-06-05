@@ -1,0 +1,323 @@
+*{
+    font-family:"Inter", sans-serif;
+}
+
+.ranking-page{
+    flex:1;
+
+    min-height:100vh;
+
+    background:#f5f5f5;
+
+    padding:40px 90px;
+
+    box-sizing:border-box;
+}
+
+/* HEADER */
+
+/* TABS */
+
+.ranking-tabs{
+    display:flex;
+
+    gap:14px;
+
+    margin-bottom:52px;
+}
+
+.ranking-tabs button{
+    border:none;
+
+    background:white;
+
+    padding:14px 22px;
+
+    border-radius:18px;
+
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    font-size:15px;
+    font-weight:500;
+
+    color:#555;
+
+    cursor:pointer;
+
+    transition:0.2s ease;
+
+    border:1px solid #ececec;
+
+    box-shadow:
+            0 2px 10px rgba(0,0,0,0.03);
+}
+
+.ranking-tabs button:hover{
+    transform:translateY(-2px);
+}
+
+.ranking-tabs button.active{
+    background:#1f1f1f;
+
+    color:white;
+}
+
+/* PODIUM */
+
+.top-ranking-podium{
+    display:flex;
+
+    align-items:flex-end;
+    justify-content:center;
+
+    gap:24px;
+
+    margin-bottom:52px;
+}
+
+/* TOP CARD */
+
+.top-card{
+    position:relative;
+
+    background:white;
+
+    border-radius:28px;
+
+    padding:30px;
+
+    border:1px solid #ececec;
+
+    box-shadow:
+            0 2px 10px rgba(0,0,0,0.03);
+
+    transition:0.25s ease;
+
+    display:flex;
+    flex-direction:column;
+}
+
+.top-card:hover{
+    transform:translateY(-4px);
+}
+
+/* PODIUM SIZES */
+
+.first-place{
+    width:420px;
+
+    min-height:220px;
+
+    transform:translateY(20px);
+}
+
+.second-place{
+    width:320px;
+
+    min-height:180px;
+}
+
+.third-place{
+    width:280px;
+
+    min-height:150px;
+}
+
+/* BADGE */
+
+.top-badge{
+    position:absolute;
+
+    top:20px;
+    right:20px;
+
+    padding:10px 18px;
+
+    border-radius:999px;
+
+    background:#f3f3f3;
+
+    color:#1f1f1f;
+
+    font-size:18px;
+    font-weight:800;
+
+    border:1px solid #e5e5e5;
+
+    z-index:2;
+
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+/* TEXT */
+
+.top-card h2{
+    margin-top:auto;
+    margin-bottom:10px;
+
+    font-size:34px;
+    font-weight:700;
+
+    letter-spacing:-1.5px;
+
+    color:#1f1f1f;
+
+    line-height:1.1;
+}
+
+.second-place h2{
+    font-size:28px;
+}
+
+.third-place h2{
+    font-size:24px;
+}
+
+.top-card p{
+    margin:0 0 20px 0;
+
+    font-size:15px;
+
+    color:#777;
+
+    line-height:1.5;
+}
+
+/* RATING */
+
+.top-rating{
+    display:flex;
+    align-items:center;
+
+    gap:8px;
+
+    color:#1f1f1f;
+
+    font-weight:600;
+}
+
+.top-rating small{
+    color:#777;
+
+    font-weight:400;
+}
+
+/* LEADERBOARD */
+
+.leaderboard{
+    background:white;
+
+    border-radius:32px;
+
+    padding:30px;
+
+    border:1px solid #ececec;
+
+    box-shadow:
+            0 4px 18px rgba(0,0,0,0.03);
+}
+
+.leaderboard-header{
+    margin-bottom:26px;
+}
+
+.leaderboard-header h3{
+    margin:0;
+
+    font-size:32px;
+    font-weight:700;
+
+    letter-spacing:-1px;
+
+    color:#1f1f1f;
+}
+
+/* LIST */
+
+.leaderboard-list{
+    display:flex;
+    flex-direction:column;
+
+    gap:16px;
+}
+
+.leaderboard-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    gap:18px;
+
+    background:#fafafa;
+
+    border-radius:20px;
+
+    padding:20px 22px;
+
+    border:1px solid #ececec;
+
+    transition:0.2s ease;
+}
+
+.leaderboard-item:hover{
+    transform:translateX(4px);
+
+    background:white;
+}
+
+.leaderboard-position{
+    width:48px;
+    height:48px;
+
+    border-radius:16px;
+
+    background:#1f1f1f;
+
+    color:white;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:15px;
+    font-weight:600;
+
+    flex-shrink:0;
+}
+
+.leaderboard-content{
+    flex:1;
+}
+
+.leaderboard-content h4{
+    margin:0 0 6px 0;
+
+    font-size:18px;
+    font-weight:600;
+
+    color:#1f1f1f;
+}
+
+.leaderboard-content p{
+    margin:0;
+
+    color:#777;
+
+    font-size:14px;
+}
+
+.leaderboard-score{
+    display:flex;
+    align-items:center;
+
+    gap:8px;
+
+    font-size:16px;
+    font-weight:600;
+
+    color:#1f1f1f;
+}

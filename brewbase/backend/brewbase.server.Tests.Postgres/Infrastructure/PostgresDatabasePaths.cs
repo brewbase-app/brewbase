@@ -8,6 +8,9 @@ internal static class PostgresDatabasePaths
     public static string GlobalSearchMigrationSql =>
         ResolveDatabaseFile(Path.Combine("migrations", "013_global_search_extensions.sql"));
 
+    public static string UserRankingFixMigrationSql =>
+        ResolveDatabaseFile(Path.Combine("migrations", "2026-06-03_fix_user_ranking_activity_score.sql"));
+
     private static string ResolveDatabaseFile(string relativePath)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

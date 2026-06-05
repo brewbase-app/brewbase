@@ -189,6 +189,11 @@ builder.Services.AddScoped<IGlobalSearchService, GlobalSearchService>();
 builder.Services.AddScoped<IPreferenceService, PreferenceService>();
 builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 builder.Services.AddScoped<IFlavorProfileService, FlavorProfileService>();
+builder.Services.AddScoped<ICountryService, CountryService>();
+builder.Services.AddScoped<IRegionService, RegionService>();
+builder.Services.AddScoped<IRoasteryService, RoasteryService>();
+builder.Services.AddScoped<IBodyReadService, BodyReadService>();
+builder.Services.AddScoped<IAcidityReadService, AcidityReadService>();
 
 var app = builder.Build();
 

@@ -24,4 +24,18 @@ public class PreferenceController : ControllerBase
 
         return Ok();
     }
+    
+    [HttpGet]
+    public async Task<IActionResult> GetPreferences()
+    {
+        var preferences =
+            await _preferenceService.GetPreferencesAsync();
+
+        if (preferences == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(preferences);
+    }
 }

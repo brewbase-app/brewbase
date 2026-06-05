@@ -15,9 +15,7 @@ ALTER TABLE user_ranking
     ADD COLUMN IF NOT EXISTS public_recipe_count integer NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS coffee_rating_count integer NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS recipe_rating_count integer NOT NULL DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS quick_note_count integer NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS cupping_session_count integer NOT NULL DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS cupping_session_coffee_count integer NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS followers_count integer NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS received_recipe_favorite_count integer NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS published_article_count integer NOT NULL DEFAULT 0;
@@ -129,7 +127,6 @@ SELECT
         AVG(rr.value)::double precision AS average_rating,
         COUNT(rr.id)::integer AS rating_count,
         COUNT(urf.recipe_id)::integer AS save_count,
-        COUNT(urf.recipe_id)::integer AS like_count,
         (
             AVG(rr.value)::double precision * 100
             + COUNT(rr.id)::double precision * 2
@@ -147,7 +144,6 @@ SET
     position = source.position,
     average_rating = source.average_rating,
     rating_count = source.rating_count,
-    like_count = source.like_count,
     save_count = source.save_count,
     ranking_score = source.ranking_score,
     refreshed_at = source.refreshed_at
@@ -157,7 +153,6 @@ WHERE target.recipe_id = source.recipe_id;
 INSERT INTO recipe_ranking (
     refreshed_at,
     rating_count,
-    like_count,
     save_count,
     recipe_id,
     position,
@@ -167,7 +162,6 @@ INSERT INTO recipe_ranking (
 SELECT
     source.refreshed_at,
     source.rating_count,
-    source.like_count,
     source.save_count,
     source.recipe_id,
     source.position,
@@ -185,7 +179,6 @@ SET
     position = 0,
     average_rating = 0,
     rating_count = 0,
-    like_count = 0,
     save_count = 0,
     ranking_score = 0,
     refreshed_at = CURRENT_TIMESTAMP
@@ -226,20 +219,9 @@ CREATE TEMP TABLE tmp_user_ranking ON COMMIT DROP AS
             )::integer AS recipe_rating_count,
             (
                 SELECT COUNT(*)
-                FROM quick_note qn
-                WHERE qn.user_id = u.id
-            )::integer AS quick_note_count,
-            (
-                SELECT COUNT(*)
                 FROM cupping_session cs
                 WHERE cs.user_id = u.id
             )::integer AS cupping_session_count,
-            (
-                SELECT COUNT(*)
-                FROM cupping_session cs
-                JOIN cupping_session_coffee csc ON csc.cupping_session_id = cs.id
-                WHERE cs.user_id = u.id
-            )::integer AS cupping_session_coffee_count,
             (
                 SELECT COUNT(*)
                 FROM follow f
@@ -266,9 +248,7 @@ CREATE TEMP TABLE tmp_user_ranking ON COMMIT DROP AS
             public_recipe_count,
             coffee_rating_count,
             recipe_rating_count,
-            quick_note_count,
             cupping_session_count,
-            cupping_session_coffee_count,
             followers_count,
             received_recipe_favorite_count,
             published_article_count,
@@ -295,9 +275,7 @@ SELECT
         su.public_recipe_count,
         su.coffee_rating_count,
         su.recipe_rating_count,
-        su.quick_note_count,
         su.cupping_session_count,
-        su.cupping_session_coffee_count,
         su.followers_count,
         su.received_recipe_favorite_count,
         su.published_article_count,
@@ -310,14 +288,10 @@ UPDATE user_ranking target
 SET
     position = source.position,
     activity_score = source.activity_score,
-    recipe_count = source.public_recipe_count,
-    like_count = source.received_recipe_favorite_count,
     public_recipe_count = source.public_recipe_count,
     coffee_rating_count = source.coffee_rating_count,
     recipe_rating_count = source.recipe_rating_count,
-    quick_note_count = source.quick_note_count,
     cupping_session_count = source.cupping_session_count,
-    cupping_session_coffee_count = source.cupping_session_coffee_count,
     followers_count = source.followers_count,
     received_recipe_favorite_count = source.received_recipe_favorite_count,
     published_article_count = source.published_article_count,
@@ -328,16 +302,12 @@ WHERE target.user_id = source.user_id;
 INSERT INTO user_ranking (
     refreshed_at,
     activity_score,
-    recipe_count,
-    like_count,
     user_id,
     position,
     public_recipe_count,
     coffee_rating_count,
     recipe_rating_count,
-    quick_note_count,
     cupping_session_count,
-    cupping_session_coffee_count,
     followers_count,
     received_recipe_favorite_count,
     published_article_count
@@ -345,16 +315,12 @@ INSERT INTO user_ranking (
 SELECT
     source.refreshed_at,
     source.activity_score,
-    source.public_recipe_count,
-    source.received_recipe_favorite_count,
     source.user_id,
     source.position,
     source.public_recipe_count,
     source.coffee_rating_count,
     source.recipe_rating_count,
-    source.quick_note_count,
     source.cupping_session_count,
-    source.cupping_session_coffee_count,
     source.followers_count,
     source.received_recipe_favorite_count,
     source.published_article_count
@@ -369,14 +335,10 @@ UPDATE user_ranking target
 SET
     position = 0,
     activity_score = 0,
-    recipe_count = 0,
-    like_count = 0,
     public_recipe_count = 0,
     coffee_rating_count = 0,
     recipe_rating_count = 0,
-    quick_note_count = 0,
     cupping_session_count = 0,
-    cupping_session_coffee_count = 0,
     followers_count = 0,
     received_recipe_favorite_count = 0,
     published_article_count = 0,

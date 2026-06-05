@@ -2,12 +2,13 @@
 using brewbase.server.Services.Interfaces;
 using DefaultNamespace;
 using Microsoft.EntityFrameworkCore;
+using brewbase.server.Dtos;
 
 namespace brewbase.server.Services;
 
 public class RecommendationService : IRecommendationService
 {
-     private readonly BrewDbContext _context;
+    private readonly BrewDbContext _context;
     private readonly ICurrentUserProvider _currentUserProvider;
 
     public RecommendationService(
@@ -23,284 +24,188 @@ public class RecommendationService : IRecommendationService
         var userId = _currentUserProvider.GetUserId();
 
         if (userId == null)
-            throw new Exception("User not found");
-
-        var preference = await _context.UserPreferences
-            .Include(x => x.UserPreferenceRegions)
-            .Include(x => x.UserPreferenceBrewingMethods)
-            .Include(x => x.UserPreferenceFlavorProfiles)
-            .FirstOrDefaultAsync(x => x.UserId == userId);
-
-        if (preference == null || !preference.QuizCompleted)
         {
-            return new RecommendationResponseDto
-            {
-                Coffees = await GetFallbackCoffeesAsync(),
-                Recipes = await GetFallbackRecipesAsync()
-            };
+            throw new Exception("User not found");
         }
+
+        var recommendations = await LoadRecommendationsForUserAsync(userId.Value);
+
+        if (recommendations.Count == 0)
+        {
+            await RefreshRecommendationsForUserAsync(userId.Value);
+            recommendations = await LoadRecommendationsForUserAsync(userId.Value);
+        }
+
+        var coffeeIds = recommendations
+            .Where(recommendation => recommendation.CoffeeId != null)
+            .Select(recommendation => recommendation.CoffeeId!.Value)
+            .Distinct()
+            .ToList();
+
+        var recipeIds = recommendations
+            .Where(recommendation => recommendation.RecipeId != null)
+            .Select(recommendation => recommendation.RecipeId!.Value)
+            .Distinct()
+            .ToList();
+
+        var coffeeRankings = await _context.CoffeeRankings
+            .AsNoTracking()
+            .Where(ranking => coffeeIds.Contains(ranking.CoffeeId))
+            .OrderByDescending(ranking => ranking.RefreshedAt)
+            .ToListAsync();
+
+        var recipeRankings = await _context.RecipeRankings
+            .AsNoTracking()
+            .Where(ranking => recipeIds.Contains(ranking.RecipeId))
+            .OrderByDescending(ranking => ranking.RefreshedAt)
+            .ToListAsync();
+
+        var coffeeRankingByCoffeeId = coffeeRankings
+            .GroupBy(ranking => ranking.CoffeeId)
+            .ToDictionary(group => group.Key, group => group.First());
+
+        var recipeRankingByRecipeId = recipeRankings
+            .GroupBy(ranking => ranking.RecipeId)
+            .ToDictionary(group => group.Key, group => group.First());
 
         return new RecommendationResponseDto
         {
-            Coffees = await GenerateCoffeeRecommendationsAsync(preference),
-            Recipes = await GenerateRecipeRecommendationsAsync(preference)
+            Coffees = recommendations
+                .Where(recommendation =>
+                    recommendation.CoffeeId != null &&
+                    recommendation.Coffee != null)
+                .Select(recommendation =>
+                {
+                    coffeeRankingByCoffeeId.TryGetValue(
+                        recommendation.CoffeeId!.Value,
+                        out var ranking);
+
+                    return new CoffeeRecommendationDto
+                    {
+                        CoffeeId = recommendation.CoffeeId.Value,
+                        Name = recommendation.Coffee!.Name,
+                        Region = recommendation.Coffee.Region.Name,
+                        ProcessingMethod = recommendation.Coffee.ProcessingMethod?.Name,
+                        Variety = recommendation.Coffee.Variety?.Name,
+                        Roastery = recommendation.Coffee.Roastery.Name,
+                        AverageRating = ranking?.AverageRating ?? 0,
+                        RatingCount = ranking?.RatingCount ?? 0,
+                        MatchScore = recommendation.MatchScore,
+                        PopularityScore = recommendation.PopularityScore,
+                        FinalScore = recommendation.FinalScore
+                    };
+                })
+                .Take(10)
+                .ToList(),
+
+            Recipes = recommendations
+                .Where(recommendation =>
+                    recommendation.RecipeId != null &&
+                    recommendation.Recipe != null)
+                .Select(recommendation =>
+                {
+                    recipeRankingByRecipeId.TryGetValue(
+                        recommendation.RecipeId!.Value,
+                        out var ranking);
+
+                    return new RecipeRecommendationDto
+                    {
+                        RecipeId = recommendation.RecipeId.Value,
+                        Title = recommendation.Recipe!.Title,
+                        UserLogin = recommendation.Recipe.User.Login,
+                        AverageRating = ranking?.AverageRating ?? 0,
+                        RatingCount = ranking?.RatingCount ?? 0,
+                        MatchScore = recommendation.MatchScore,
+                        PopularityScore = recommendation.PopularityScore,
+                        FinalScore = recommendation.FinalScore
+                    };
+                })
+                .Take(10)
+                .ToList()
         };
     }
-
-    private async Task<List<CoffeeRecommendationDto>> GetFallbackCoffeesAsync()
+    
+    private async Task<List<Recommendation>> LoadRecommendationsForUserAsync(int userId)
     {
-        return await _context.CoffeeRankings
-            .Include(x => x.Coffee)
-            .OrderByDescending(x => x.RankingScore)
-            .Take(10)
-            .Select(x => new CoffeeRecommendationDto
-            {
-                CoffeeId = x.CoffeeId,
-                Name = x.Coffee.Name,
-                MatchScore = 0,
-                AverageRating = x.AverageRating,
-                PopularityScore = x.RankingScore,
-                FinalScore = x.RankingScore
-            })
-            .ToListAsync();
-    }
-
-    private async Task<List<RecipeRecommendationDto>> GetFallbackRecipesAsync()
-    {
-        return await _context.RecipeRankings
-            .Include(x => x.Recipe)
-            .OrderByDescending(x => x.RankingScore)
-            .Take(10)
-            .Select(x => new RecipeRecommendationDto
-            {
-                RecipeId = x.RecipeId,
-                Title = x.Recipe.Title,
-                MatchScore = 0,
-                PopularityScore = x.RankingScore,
-                FinalScore = x.RankingScore
-            })
+        return await _context.Recommendations
+            .AsNoTracking()
+            .Include(recommendation => recommendation.Coffee)
+            .ThenInclude(coffee => coffee!.Region)
+            .Include(recommendation => recommendation.Coffee)
+            .ThenInclude(coffee => coffee!.ProcessingMethod)
+            .Include(recommendation => recommendation.Coffee)
+            .ThenInclude(coffee => coffee!.Variety)
+            .Include(recommendation => recommendation.Coffee)
+            .ThenInclude(coffee => coffee!.Roastery)
+            .Include(recommendation => recommendation.Recipe)
+            .ThenInclude(recipe => recipe!.User)
+            .Where(recommendation =>
+                recommendation.UserId == userId &&
+                recommendation.Algorithm == "cron-recommendation-v1")
+            .OrderByDescending(recommendation => recommendation.FinalScore)
+            .ThenByDescending(recommendation => recommendation.GeneratedAt)
             .ToListAsync();
     }
     
-    private async Task<List<CoffeeRecommendationDto>> GenerateCoffeeRecommendationsAsync(UserPreference preference)
+    private async Task RefreshRecommendationsForUserAsync(int userId)
     {
-        var preferredRegions =
-            preference.UserPreferenceRegions
-                .Select(x => x.RegionId)
-                .ToHashSet();
-        
-        var preferredFlavorProfiles =
-            preference.UserPreferenceFlavorProfiles
-                .Select(x => x.FlavorProfileId)
-                .ToHashSet();
-
-        var coffees = await _context.Coffees
-            .Include(x => x.CoffeeRankings)
-            .Include(x => x.Body)
-            .Include(x => x.Acidity)
-            .Include(x => x.CoffeeFlavorProfiles)
-            .ToListAsync();
-
-        var result = new List<CoffeeRecommendationDto>();
-
-        foreach (var coffee in coffees)
-        {
-            double matchScore = 0;
-
-            if (preferredRegions.Contains(coffee.RegionId))
-            {
-                matchScore += 20;
-            }
-            
-            if (!string.IsNullOrWhiteSpace(preference.PreferredBody)
-                && coffee.Body != null
-                && coffee.Body.Name == preference.PreferredBody)
-            {
-                matchScore += 15;
-            }
-            
-            if (!string.IsNullOrWhiteSpace(preference.PreferredAcidity)
-                && coffee.Acidity != null
-                && coffee.Acidity.Name == preference.PreferredAcidity)
-            {
-                matchScore += 15;
-            }
-            
-            var matchingFlavorProfiles =
-                coffee.CoffeeFlavorProfiles
-                    .Count(x =>
-                        preferredFlavorProfiles.Contains(
-                            x.FlavorProfileId));
-
-            matchScore += matchingFlavorProfiles * 5;
-
-            var ranking = coffee.CoffeeRankings
-                .OrderByDescending(x => x.RefreshedAt)
-                .FirstOrDefault();
-
-            var popularityScore =
-                ranking?.RankingScore ?? 0;
-
-            double matchWeight = 0.5;
-            double popularityWeight = 0.5;
-
-            switch (preference.RecommendationStyle)
-            {
-                case "Bezpieczne wybory":
-                    matchWeight = 0.8;
-                    popularityWeight = 0.2;
-                    break;
-
-                case "Zbalansowane":
-                    matchWeight = 0.5;
-                    popularityWeight = 0.5;
-                    break;
-
-                case "Zaskocz mnie":
-                    matchWeight = 0.2;
-                    popularityWeight = 0.8;
-                    break;
-            }
-
-            var finalScore =
-                (matchScore * matchWeight)
-                + (popularityScore * popularityWeight);
-
-            result.Add(
-                new CoffeeRecommendationDto
-                {
-                    CoffeeId = coffee.Id,
-                    Name = coffee.Name,
-                    MatchScore = matchScore,
-                    AverageRating = ranking?.AverageRating ?? 0,
-                    PopularityScore = popularityScore,
-                    FinalScore = finalScore
-                });
-        }
-        
-        if (!preference.AllowExploration)
-        {
-            result = result
-                .Where(x => x.MatchScore > 0)
-                .ToList();
-        }
-
-        return result
-            .OrderByDescending(x => x.FinalScore)
-            .Take(10)
-            .ToList();
+        await _context.Database.ExecuteSqlRawAsync(
+            "SELECT refresh_all_rankings(); SELECT refresh_recommendations_for_user({0});",
+            userId);
     }
+
+	public async Task SubmitSummaryFeedbackAsync(RecommendationSummaryFeedbackRequestDto request)
+{
+    var userId = _currentUserProvider.GetUserId();
+
+    if (userId == null)
+    {
+        throw new Exception("User not found");
+    }
+
+    if (request.Rating < 1 || request.Rating > 5)
+    {
+        throw new ArgumentException("Rating must be between 1 and 5");
+    }
+
+    var preference = await _context.UserPreferences
+        .FirstOrDefaultAsync(item => item.UserId == userId.Value);
+
+    if (preference == null)
+    {
+        throw new KeyNotFoundException("User preferences not found");
+    }
+
+    var previousStyle = preference.RecommendationStyle;
+
+    var normalizedAction = request.PreferenceAction.Trim().ToLowerInvariant();
+
+    var newStyle = normalizedAction switch
+    {
+        "more_similar" => "safe",
+        "more_diverse" => "explore",
+        "no_change" => request.Rating <= 2 ? "explore" : request.Rating >= 4 ? "safe" : "balanced",
+        _ => request.Rating <= 2 ? "explore" : request.Rating >= 4 ? "safe" : "balanced"
+    };
+
+
+    preference.RecommendationStyle = newStyle;
+
+    _context.RecommendationFeedbackSummaries.Add(new RecommendationFeedbackSummary
+    {
+        UserId = userId.Value,
+        Rating = request.Rating,
+        PreferenceAction = normalizedAction,
+        PreviousRecommendationStyle = previousStyle,
+        NewRecommendationStyle = newStyle,
+		CreatedAt = DateTime.UtcNow
+    });
+
+    await _context.SaveChangesAsync();
+
+    await _context.Database.ExecuteSqlRawAsync(
+        "SELECT refresh_all_rankings(); SELECT refresh_recommendations_for_user({0});",
+        userId.Value);
+}
     
-    private async Task<List<RecipeRecommendationDto>> GenerateRecipeRecommendationsAsync(UserPreference preference)
-    {
-        var preferredRegions =
-            preference.UserPreferenceRegions
-                .Select(x => x.RegionId)
-                .ToHashSet();
-
-        var preferredMethods =
-            preference.UserPreferenceBrewingMethods
-                .Select(x => x.BrewingMethodId)
-                .ToHashSet();
-        
-        var preferredFlavorProfiles =
-            preference.UserPreferenceFlavorProfiles
-                .Select(x => x.FlavorProfileId)
-                .ToHashSet();
-
-        var recipes = await _context.Recipes
-            .Include(x => x.Coffee)
-            .ThenInclude(x => x.CoffeeFlavorProfiles)
-            .Include(x => x.RecipeRankings)
-            .Where(x => x.IsPublic)
-            .ToListAsync();
-
-        var result =
-            new List<RecipeRecommendationDto>();
-
-        foreach (var recipe in recipes)
-        {
-            double matchScore = 0;
-
-            if (recipe.BrewingMethodId.HasValue &&
-                preferredMethods.Contains(
-                    recipe.BrewingMethodId.Value))
-            {
-                matchScore += 20;
-            }
-
-            if (recipe.Coffee != null &&
-                preferredRegions.Contains(
-                    recipe.Coffee.RegionId))
-            {
-                matchScore += 15;
-            }
-
-            if (recipe.Coffee != null)
-            {
-                var matchingFlavorProfiles =
-                    recipe.Coffee.CoffeeFlavorProfiles
-                        .Count(x =>
-                            preferredFlavorProfiles.Contains(
-                                x.FlavorProfileId));
-
-                matchScore += matchingFlavorProfiles * 5;
-            }
-
-            var ranking = recipe.RecipeRankings
-                .OrderByDescending(x => x.RefreshedAt)
-                .FirstOrDefault();
-
-            var popularityScore =
-                ranking?.RankingScore ?? 0;
-
-            double matchWeight = 0.5;
-            double popularityWeight = 0.5;
-
-            switch (preference.RecommendationStyle)
-            {
-                case "Bezpieczne wybory":
-                    matchWeight = 0.8;
-                    popularityWeight = 0.2;
-                    break;
-
-                case "Zbalansowane":
-                    matchWeight = 0.5;
-                    popularityWeight = 0.5;
-                    break;
-
-                case "Zaskocz mnie":
-                    matchWeight = 0.2;
-                    popularityWeight = 0.8;
-                    break;
-            }
-
-            var finalScore =
-                (matchScore * matchWeight)
-                + (popularityScore * popularityWeight);
-
-            result.Add(
-                new RecipeRecommendationDto
-                {
-                    RecipeId = recipe.Id,
-                    Title = recipe.Title,
-                    MatchScore = matchScore,
-                    AverageRating = ranking?.AverageRating ?? 0,
-                    PopularityScore = popularityScore,
-                    FinalScore = finalScore
-                });
-        }
-        
-        if (!preference.AllowExploration)
-        {
-            result = result
-                .Where(x => x.MatchScore > 0)
-                .ToList();
-        }
-
-        return result
-            .OrderByDescending(x => x.FinalScore)
-            .Take(10)
-            .ToList();
-    }
 }

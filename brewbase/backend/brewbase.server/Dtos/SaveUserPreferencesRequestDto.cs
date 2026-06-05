@@ -11,9 +11,7 @@ public class SaveUserPreferencesRequestDto
     public string? PreferredBody { get; set; }
 
     public string? RecommendationStyle { get; set; }
-
-    public bool AllowExploration { get; set; }
-
+    
     public List<int> FlavorProfileIds { get; set; } = [];
 
     public List<int> BrewingMethodIds { get; set; } = [];

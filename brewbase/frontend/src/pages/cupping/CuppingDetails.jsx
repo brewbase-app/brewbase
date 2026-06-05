@@ -10,7 +10,7 @@ import {
     updateCuppingSessionCoffee,
 } from "../../api/cuppingSessionsApi";
 import { getCoffees } from "../../api/coffeeApi";
-import "../../styles/CuppingDetails.css";
+import "../../styles/cupping/CuppingDetails.css";
 
 const createEmptyCupping = () => ({
     rowId: `new-${Date.now()}-${Math.random()}`,

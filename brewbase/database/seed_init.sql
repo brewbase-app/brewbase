@@ -1,6 +1,6 @@
 -- Seed początkowy BrewBase (katalog, użytkownicy, przepisy)
 -- Hasło testowe dla wszystkich kont: Test123!
--- Po tym pliku uruchom seed_wiki.sql, aby zobaczyć działającą wiki.
+-- Po tym pliku uruchom seed_wiki.sql (idempotentny), aby uzupełnić brakujące artykuły wiki.
 
 -- COUNTRY
 INSERT INTO country (id, name) VALUES
@@ -40,7 +40,8 @@ INSERT INTO roastery (id, name) VALUES
                                     (1, 'CoffeeLab'),
                                     (2, 'Hard Beans'),
                                     (3, 'Audun Coffee'),
-                                    (4, 'Java Coffee');
+                                    (4, 'Java Coffee'),
+                                    (5, 'Coffee Collective');
 
 -- USERS (hasło dla wszystkich kont: Test123!)
 INSERT INTO app_user (

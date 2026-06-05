@@ -28,8 +28,12 @@ internal sealed class PostgresTestAuthHandler : AuthenticationHandler<Authentica
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
+        var role = Request.Headers[PostgresTestHttp.RoleHeaderName].FirstOrDefault() ?? "User";
+        var login = Request.Headers[PostgresTestHttp.LoginHeaderName].FirstOrDefault()
+            ?? "postgres.tester";
+
         var identity = new ClaimsIdentity(
-            UserClaims.Create(userId, "postgres.tester", "User"),
+            UserClaims.Create(userId, login, role),
             Scheme.Name);
         UserClaims.Normalize(identity);
 

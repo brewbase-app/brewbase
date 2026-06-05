@@ -30,5 +30,7 @@ public class RecipeDetailResponseDto
 
     public int RatingCount { get; set; }
 
+    public int? UserRating { get; set; }
+
     public bool IsFavorite { get; set; }
 }

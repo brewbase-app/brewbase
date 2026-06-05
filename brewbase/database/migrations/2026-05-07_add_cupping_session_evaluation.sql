@@ -7,7 +7,6 @@ ALTER TABLE cupping_session_coffee
     ADD COLUMN acidity_score int NULL,
     ADD COLUMN body_score int NULL,
     ADD COLUMN flavor_profile_notes text NULL,
-    ADD COLUMN clean_cup boolean NULL,
     ADD COLUMN overall_score int NULL;
 
 ALTER TABLE cupping_session_coffee

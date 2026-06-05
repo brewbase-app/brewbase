@@ -22,21 +22,21 @@ import { getProfile } from "./api/profileApi";
 
 /* HOME */
 
-import Dashboard from "./pages/Dashboard";
-import FavoriteCoffees from "./pages/FavoriteCoffees";
+import Dashboard from "./pages/dashboard/Dashboard";
+import FavoriteCoffees from "./pages/wiki/FavoriteCoffees";
 
 /* RECIPES */
 
-import Recipes from "./pages/Recipes";
-import RecipesForm from "./pages/RecipesForm";
-import RecipesList from "./pages/RecipesList";
-import RecipeDetails from "./pages/RecipeDetails";
+import Recipes from "./pages/recipe/Recipes";
+import RecipesForm from "./pages/recipe/RecipesForm";
+import RecipesList from "./pages/recipe/RecipesList";
+import RecipeDetails from "./pages/recipe/RecipeDetails";
 
 /* AUTH */
 
-import Login from "./pages/Login";
-import RegisterPage from "./pages/RegisterPage";
-import PreferencesOnboardingPage from "./pages/PreferencesOnboardingPage";
+import Login from "./pages/auth/Login";
+import RegisterPage from "./pages/auth/RegisterPage";
+import PreferencesOnboardingPage from "./pages/auth/PreferencesOnboardingPage";
 
 /* CUPPING */
 
@@ -47,16 +47,16 @@ import CuppingPreview from "./pages/cupping/CuppingPreview";
 
 /* QUICK NOTES */
 
-import Quicknotes from "./pages/Quicknotes";
+import Quicknotes from "./pages/quicknotes/Quicknotes";
 
 /* RANKING */
 
-import Ranking from "./pages/Ranking";
+import Ranking from "./pages/ranking/Ranking";
 
 /* PROFILE */
 
-import ProfilePage from "./pages/ProfilePage";
-import EditProfilePage from "./pages/EditProfilePage";
+import ProfilePage from "./pages/profile/ProfilePage";
+import EditProfilePage from "./pages/profile/EditProfilePage";
 
 /* WIKI */
 
@@ -71,18 +71,18 @@ import BrewingMethods from "./pages/wiki/BrewingMethods";
 
 import AddWikiArticle from "./pages/wiki/AddWikiArticle";
 import Roasteries from "./pages/wiki/Roasteries";
-import RoasteryDetails from "./pages/wiki/RoasteryDetails";
+import RoasteryArticleRedirect from "./pages/wiki/RoasteryArticleRedirect";
 import WikiArticleDetails from "./pages/wiki/WikiArticleDetails";
 import MyWikiArticles from "./pages/wiki/MyWikiArticles";
 import MyWikiArticleDetails from "./pages/wiki/MyWikiArticleDetails";
 
 /* REPORT */
 
-import ReportPage from "./pages/ReportPage";
+import ReportPage from "./pages/report/ReportPage";
 
 /* ADMIN */
 
-import AdminModeration from "./pages/AdminModeration";
+import AdminModeration from "./pages/admin/AdminModeration";
 
 function Layout() {
 
@@ -177,9 +177,8 @@ const isAuthPage =
             )}
 
             <div
+                className="app-main"
                 style={{
-                    flex: 1,
-
                     marginLeft:
                         !isAuthPage
                             ? (
@@ -188,33 +187,23 @@ const isAuthPage =
                                     : "100px"
                             )
                             : "0px",
-
-                    transition:
-                        "margin-left 0.25s ease",
-
-                    position: "relative",
-
-                    minHeight: "100vh",
-
-                    background: "#f8f6f3"
                 }}
             >
 
                 {showBackButton && (
-
-                    <button
-                        className="global-back-button"
-                        onClick={handleBackClick}
-                    >
-
-                        <ArrowLeft size={18} />
-
-                        Wróć
-
-                    </button>
-
+                    <div className="global-back-bar">
+                        <button
+                            type="button"
+                            className="global-back-button"
+                            onClick={handleBackClick}
+                        >
+                            <ArrowLeft size={18} />
+                            Wróć
+                        </button>
+                    </div>
                 )}
 
+                <div className="app-main-content">
                 <Routes>
 
                     {/* START */}
@@ -414,7 +403,7 @@ const isAuthPage =
 
                         <Route
                             path="/wiki/roasteries/:id"
-                            element={<RoasteryDetails />}
+                            element={<RoasteryArticleRedirect />}
                         />
                         <Route
                             path="/report"
@@ -433,6 +422,7 @@ const isAuthPage =
                     </Route>
 
                 </Routes>
+                </div>
 
             </div>
 

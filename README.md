@@ -1,50 +1,92 @@
 # BrewBase
 
-Projekt inżynierski: Platforma społecznościowa do odkrywania kaw, tworzenia receptur i budowania kawowej społeczności.
+Projekt inżynierski: platforma społecznościowa do odkrywania kaw, tworzenia receptur parzenia i wymiany wiedzy w społeczności kawowej.
+
+Architektura backendu to **modularny monolit** (jedna aplikacja ASP.NET Core, logiczny podział na moduły i serwisy). 
+Baza danych jest projektowana **database-first** - schemat PostgreSQL jest źródłem prawdy, encje EF pochodzą ze schematu.
 
 ## Funkcje
 
-- **Wiki kawowe** - artykuły społecznościowe o kawach, metodach i palarniach
-- **Przepisy** - tworzenie i udostępnianie przepisów parzenia
-- **Cupping** - sesje degustacyjne z ocenami
-- **Notatki** - szybkie zapiski
-- **Rankingi** - kaw, użytkowników i przepisów
-- **Społeczność** - profile, obserwowanie innych użytkowników
-- **?**
+- **Katalog kaw** — przeglądanie, filtrowanie, oceny i ulubione
+- **Wiki kawowe** — artykuły o kawach, krajach, metodach parzenia i palarniach (moderacja przez admina)
+- **Przepisy** — tworzenie, publikacja, oceny i ulubione (publiczne / prywatne)
+- **Cupping** — sesje degustacyjne z wieloma kawami i ocenami
+- **Notatki** — szybkie zapiski użytkownika
+- **Wyszukiwarka globalna** — kawa, przepisy, wiki, użytkownicy (PostgreSQL: `pg_trgm`, normalizacja tekstu)
+- **Rankingi** — snapshoty kaw, przepisów i aktywności użytkowników (`refresh_*` w bazie)
+- **Rekomendacje** — dopasowanie kaw i przepisów do preferencji użytkownika
+- **Preferencje / onboarding** — quiz smakowy, regiony, metody parzenia
+- **Społeczność** — profile, obserwowanie użytkowników
+- **Moderacja** — zgłoszenia treści, approve/reject artykułów wiki
+- **Powiadomienia** - m.in. dot. warstwy społecznościowej
 
 ## Stack technologiczny
 
-| Warstwa   | Technologie                          |
-|-----------|--------------------------------------|
-| Frontend  | React, Vite, React Router            |
-| Backend   | ASP.NET Core 8, Entity Framework Core |
-| Baza danych | PostgreSQL (database-first)        |
-| Autoryzacja | JWT                                |
+| Warstwa | Technologie |
+|---------|-------------|
+| Frontend | React, Vite, React Router |
+| Backend | ASP.NET Core 8, Entity Framework Core |
+| Baza danych | PostgreSQL (database-first) |
+| Autoryzacja | JWT |
+| Testy backendu | xUnit, SQLite (integracja), Testcontainers + PostgreSQL 18 (integracja PG) |
 
 ## Struktura projektu
 
 ```
 brewbase/
-├── backend/     — backend API ASP.NET Core
-├── frontend/    — aplikacja React (SPA)
-└── database/    — schemat SQL, migracje, dane seed
+├── backend/
+│   ├── brewbase.server/              — API ASP.NET Core
+│   ├── brewbase.server.Tests/        — testy integracyjne na SQLite (~286)
+│   └── brewbase.server.Tests.Postgres/ — testy integracyjne na PostgreSQL (26)
+├── frontend/                         — aplikacja React (SPA)
+└── database/
+    ├── schema.sql                    — schemat bazy (źródło prawdy)
+    ├── migrations/                   — historyczne patche SQL
+    └── seed_*.sql                    — dane startowe / demo
 ```
+
+## Testy backendu
+
+| Projekt | Baza | Liczba testów | Co weryfikuje |
+|---------|------|---------------|---------------|
+| `brewbase.server.Tests` | SQLite in-memory | **286** | Endpointy HTTP, logika aplikacji, CRUD, auth, cupping, przepisy, raporty itd. |
+| `brewbase.server.Tests.Postgres` | PostgreSQL 18 (Docker / Testcontainers) | **26** | SQL specyficzny dla PG: global search, ranking refresh, rekomendacje, constrainty wiki, catalog approve, normalized unique, `EF.Functions.ILike` |
+
+**Razem: ~300 testów.** CI (`.github/workflows/dotnet.yml`) uruchamia `dotnet test brewbase.sln`.
+Testy PostgreSQL wymagają **działającego Dockera**.
+
+### Uruchomienie testów
+
+```bash
+cd brewbase/backend
+
+# wszystkie testy (SQLite + PostgreSQL)
+dotnet test brewbase.sln
+
+# tylko SQLite (bez Dockera)
+dotnet test brewbase.server.Tests/brewbase.server.Tests.csproj
+
+# tylko PostgreSQL (wymagany Docker)
+dotnet test brewbase.server.Tests.Postgres/brewbase.server.Tests.Postgres.csproj
+```
+
+Scenariusze zależne od PostgreSQL (np. wyszukiwanie `ILike`, funkcje `refresh_*`, partial unique index na wiki) **nie są duplikowane na SQLite**.
 
 ## Środowiska
 
 ### Primary environment (docelowe)
 
-Głównym środowiskiem projektu jest **uczelniana VM** ze wspólną bazą PostgreSQL i wspólnym deploymentem aplikacji (backend + frontend). To środowisko służy do wspólnego developmentu i prezentacji projektu.
+Głównym środowiskiem projektu jest **uczelniana VM** ze wspólną bazą PostgreSQL i wspólnym deploymentem (backend + frontend).
 
 ### Local environment (development / fallback)
 
-**Docker PostgreSQL** (lub lokalna instalacja Postgresa) służy wyłącznie do developmentu i jako fallback, gdy VM jest niedostępna. Nie jest to środowisko produkcyjne projektu — ten sam flow bootstrapu bazy, inny host w connection stringu.
+**Docker PostgreSQL** (lub lokalna instalacja) służy do developmentu i jako fallback, gdy VM jest niedostępna. Ten sam flow bootstrapu bazy, inny host w connection stringu.
 
 ---
 
 ## Bootstrap bazy danych
 
-Źródłem prawdy schematu jest `brewbase/database/schema.sql`. Katalog `brewbase/database/migrations/` to **historyczne patche** — stosuj je ręcznie tylko wtedy, gdy baza powstała wcześniej i nie była odtwarzana z aktualnego `schema.sql`.
+Źródłem prawdy schematu jest `brewbase/database/schema.sql`. Katalog `brewbase/database/migrations/` to **historyczne patche**.
 
 ### Kolejność (pełne demo danych)
 
@@ -61,9 +103,9 @@ schema.sql → seed_init.sql → seed_wiki.sql → refresh_all_rankings()
 | 3 | `brewbase/database/seed_wiki.sql` | Artykuły wiki (kawy, kraje, metody parzenia, palarnie) |
 | 4 | `SELECT refresh_all_rankings();` | Wypełnienie tabel snapshot rankingów |
 
-**`seed_wiki.sql`** jest częścią pełnego zestawu demo — bez niego wiki i część katalogu (powiązania artykułów z kawami/metodami) będą wyglądały na puste.
+**`seed_wiki.sql`** jest częścią pełnego zestawu demo — bez niego wiki i część katalogu będą wyglądały na puste. Skrypt można uruchamiać wielokrotnie (dopisuje brakujące artykuły, nie kasuje danych użytkowników).
 
-**`refresh_all_rankings()`** przelicza rankingi do tabel `*_ranking`. Backend czyta stamtąd listy rankingowe; po samym seedzie bez tego kroku strona rankingów może być pusta. Alternatywa: `POST /api/Ranking/refresh` (wymaga uprawnień).
+**`refresh_all_rankings()`** przelicza rankingi do tabel `*_ranking`. Backend czyta stamtąd listy rankingowe; po samym seedzie bez tego kroku strona rankingów może być pusta. Alternatywa: `POST /api/ranking/refresh` (wymaga uprawnień admina).
 
 ### pg_cron (opcjonalnie, infrastruktura VM)
 
@@ -81,11 +123,12 @@ Plik `brewbase/database/cron/pg_cron.sql` rejestruje **godzinny** refresh rankin
 - .NET 8 SDK
 - Node.js (npm)
 - PostgreSQL 16+ (Docker lub lokalna instalacja)
+- Docker
 
 ### Baza danych
 
-1. Utwórz bazę PostgreSQL (np. kontener Docker — wyłącznie do dev).
-2. Wykonaj bootstrap z sekcji [Bootstrap bazy danych](#bootstrap-bazy-danych) (wszystkie cztery kroki).
+1. Utwórz bazę PostgreSQL
+2. Wykonaj bootstrap z sekcji [Bootstrap bazy danych](#bootstrap-bazy-danych).
 
 Konta testowe po seedzie (hasło: `Test123!`): `kawosz`, `maja`, `admin`.
 
@@ -108,10 +151,11 @@ npm install
 npm run dev
 ```
 
-Aplikacja: `http://localhost:5173` (proxy `/api` -> backend).
+Aplikacja: `http://localhost:5173` (proxy `/api` → backend).
 
-### Testy
+Testy frontendu (Vitest):
 
 ```bash
-dotnet test brewbase/backend/brewbase.sln
+cd brewbase/frontend
+npm test
 ```

@@ -8,8 +8,7 @@ export const DEFAULT_USER_PREFERENCES = {
     body: "",
     regions: [],
     processingMethods: [],
-    recommendationStyle: "",
-    allowExploration: false,
+    recommendationStyle: ""
 };
 
 export const USER_PREFERENCE_OPTIONS = {
@@ -18,7 +17,7 @@ export const USER_PREFERENCE_OPTIONS = {
         "Średniozaawansowany",
         "Zaawansowany",
         "Jeszcze nie wiem",
-    ],
+    ],/*
     brewingMethods: [
         "Espresso",
         "V60",
@@ -26,8 +25,8 @@ export const USER_PREFERENCE_OPTIONS = {
         "French Press",
         "Cold Brew",
         "Jeszcze nie wiem",
-    ],
-    acidity: ["Niska", "Średnia", "Wysoka", "Nie mam zdania"],
+    ],*/
+    /*acidity: ["Niska", "Średnia", "Wysoka", "Nie mam zdania"],
     body: ["Lekkie", "Zbalansowane", "Ciężkie", "Nie mam zdania"],
     regions: [
         "Etiopia",
@@ -36,7 +35,7 @@ export const USER_PREFERENCE_OPTIONS = {
         "Kenia",
         "Gwatemala",
         "Nie mam preferencji",
-    ],
+    ],*/
     recommendationStyle: [
         "Bezpieczne wybory",
         "Zbalansowane",
@@ -82,7 +81,6 @@ export function hasAnyPreferences(preferences) {
         Boolean(preferences.acidity) ||
         Boolean(preferences.body) ||
         preferences.regions.length > 0 ||
-        Boolean(preferences.recommendationStyle) ||
-        preferences.allowExploration
+        Boolean(preferences.recommendationStyle)
     );
 }

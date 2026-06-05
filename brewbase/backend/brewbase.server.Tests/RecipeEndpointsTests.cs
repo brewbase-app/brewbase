@@ -196,19 +196,6 @@ public class RecipeEndpointsTests : IDisposable
         Assert.Equal("Beta Recipe", recipeList.First().GetProperty("title").GetString());
     }
 
-    [Fact(Skip = "SQLite does not support EF.Functions.ILike; verified separately on PostgreSQL")]
-    public async Task ShouldSearchRecipesByTitle()
-    {
-        var response = await SendRecipeGetAsync("/api/Recipe?search=beta", devUserId: User1);
-        response.EnsureSuccessStatusCode();
-
-        var root = await ParseResponseRootAsync(response);
-
-        var recipeList = root.EnumerateArray().ToList();
-        Assert.Single(recipeList);
-        Assert.Equal("Beta Recipe", recipeList.First().GetProperty("title").GetString());
-    }
-
     [Fact]
     public async Task ShouldSortRecipesByTitleAscending()
     {
@@ -602,6 +589,50 @@ public class RecipeEndpointsTests : IDisposable
         var rating = context.RecipeRatings.Single(r => r.RecipeId == 1 && r.UserId == User2);
 
         Assert.Equal(4, rating.Value);
+    }
+
+    [Fact]
+    public async Task User2_GetRecipeAfterRating_ReturnsUserRating()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        var recipe = new Recipe
+        {
+            Title = $"User Rating Recipe {Guid.NewGuid()}",
+            Parameters = "{}",
+            Steps = "step",
+            IsPublic = true,
+            UserId = User1,
+            CoffeeId = 1,
+            BrewingMethodId = 1,
+            CreatedAt = now
+        };
+
+        context.Recipes.Add(recipe);
+        await context.SaveChangesAsync();
+
+        var rateBody = """
+            {"value":3}
+            """;
+
+        var rateResponse = await SendRecipeWriteAsync(
+            HttpMethod.Post,
+            $"/api/Recipe/{recipe.Id}/rating",
+            User2,
+            rateBody);
+
+        Assert.Equal(HttpStatusCode.NoContent, rateResponse.StatusCode);
+
+        var getResponse = await SendRecipeGetAsync($"/api/Recipe/{recipe.Id}", devUserId: User2);
+
+        getResponse.EnsureSuccessStatusCode();
+
+        var root = await ParseResponseRootAsync(getResponse);
+
+        Assert.Equal(3, root.GetProperty("userRating").GetInt32());
     }
 
     [Fact]
