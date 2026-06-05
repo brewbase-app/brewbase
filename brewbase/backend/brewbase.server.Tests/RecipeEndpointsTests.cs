@@ -196,19 +196,6 @@ public class RecipeEndpointsTests : IDisposable
         Assert.Equal("Beta Recipe", recipeList.First().GetProperty("title").GetString());
     }
 
-    [Fact(Skip = "SQLite does not support EF.Functions.ILike; verified separately on PostgreSQL")]
-    public async Task ShouldSearchRecipesByTitle()
-    {
-        var response = await SendRecipeGetAsync("/api/Recipe?search=beta", devUserId: User1);
-        response.EnsureSuccessStatusCode();
-
-        var root = await ParseResponseRootAsync(response);
-
-        var recipeList = root.EnumerateArray().ToList();
-        Assert.Single(recipeList);
-        Assert.Equal("Beta Recipe", recipeList.First().GetProperty("title").GetString());
-    }
-
     [Fact]
     public async Task ShouldSortRecipesByTitleAscending()
     {
