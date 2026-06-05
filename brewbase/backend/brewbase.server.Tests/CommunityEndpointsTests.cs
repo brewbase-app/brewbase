@@ -86,6 +86,27 @@ public class CommunityEndpointsTests : IClassFixture<CoffeeApiFactory>
     }
 
     [Fact]
+    public async Task FollowUser_CreatesNotificationWithFollowerLogin()
+    {
+        ResetFollows();
+        ResetNotifications();
+
+        var followResponse = await _client.PostAsync("/api/community/follow/2", null);
+
+        followResponse.EnsureSuccessStatusCode();
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+        var notification = context.Notifications
+            .OrderByDescending(n => n.CreatedAt)
+            .FirstOrDefault(n => n.UserId == 2);
+
+        Assert.NotNull(notification);
+        Assert.Equal("@coffee.tester zaczął Cię obserwować.", notification!.Content);
+    }
+
+    [Fact]
     public async Task GetPublicProfileByLogin_ReturnsNotFoundForUnknownLogin()
     {
         var response = await _client.GetAsync("/api/community/profile/by-login/unknown-user");
@@ -98,6 +119,14 @@ public class CommunityEndpointsTests : IClassFixture<CoffeeApiFactory>
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
         context.Follows.RemoveRange(context.Follows);
+        context.SaveChanges();
+    }
+
+    private void ResetNotifications()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+        context.Notifications.RemoveRange(context.Notifications);
         context.SaveChanges();
     }
 }

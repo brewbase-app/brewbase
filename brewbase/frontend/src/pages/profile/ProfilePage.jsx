@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+const DISCOVER_FOLLOW_HIDE_DELAY_MS = 2500;
 
 import {
     Link,
@@ -98,6 +100,9 @@ function ProfilePage() {
     const [followingList, setFollowingList] = useState([]);
     const [userRecipes, setUserRecipes] = useState([]);
     const [remoteDiscoverUser, setRemoteDiscoverUser] = useState(null);
+    const [discoverVisibleFollowedIds, setDiscoverVisibleFollowedIds] =
+        useState([]);
+    const discoverHideTimeoutsRef = useRef(new Map());
     const [isFollowing, setIsFollowing] = useState(false);
     const [followLoading, setFollowLoading] = useState(false);
 
@@ -190,6 +195,11 @@ function ProfilePage() {
             setFollowersList(followers);
             setUserRecipes(recipes);
             setRemoteDiscoverUser(null);
+            discoverHideTimeoutsRef.current.forEach((timeoutId) =>
+                clearTimeout(timeoutId)
+            );
+            discoverHideTimeoutsRef.current.clear();
+            setDiscoverVisibleFollowedIds([]);
 
             setRankingPosition(rankingEntry?.position ?? null);
 
@@ -221,6 +231,41 @@ function ProfilePage() {
     }, [loadProfile]);
 
     useEffect(() => {
+        const timeouts = discoverHideTimeoutsRef.current;
+
+        return () => {
+            timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+            timeouts.clear();
+        };
+    }, []);
+
+    const clearDiscoverHideTimeout = (userId) => {
+        const timeoutId = discoverHideTimeoutsRef.current.get(userId);
+
+        if (timeoutId != null) {
+            clearTimeout(timeoutId);
+            discoverHideTimeoutsRef.current.delete(userId);
+        }
+    };
+
+    const scheduleDiscoverUserRemoval = (userId) => {
+        clearDiscoverHideTimeout(userId);
+
+        setDiscoverVisibleFollowedIds((previous) =>
+            previous.includes(userId) ? previous : [...previous, userId]
+        );
+
+        const timeoutId = setTimeout(() => {
+            setDiscoverVisibleFollowedIds((previous) =>
+                previous.filter((id) => id !== userId)
+            );
+            discoverHideTimeoutsRef.current.delete(userId);
+        }, DISCOVER_FOLLOW_HIDE_DELAY_MS);
+
+        discoverHideTimeoutsRef.current.set(userId, timeoutId);
+    };
+
+    useEffect(() => {
         const query = searchQuery.trim();
 
         if (query.length < 2) {
@@ -246,7 +291,10 @@ function ProfilePage() {
                     !profile ||
                     profileUserId == null ||
                     profileUserId === resolveUserId(currentUser) ||
-                    profileUserId === resolveUserId(viewedProfile)
+                    profileUserId === resolveUserId(viewedProfile) ||
+                    followingList.some(
+                        (user) => resolveUserId(user) === profileUserId
+                    )
                 ) {
                     setRemoteDiscoverUser(null);
                     return;
@@ -263,7 +311,7 @@ function ProfilePage() {
         }, 400);
 
         return () => clearTimeout(timeoutId);
-    }, [searchQuery, discoverSource, currentUser, viewedProfile]);
+    }, [searchQuery, discoverSource, currentUser, viewedProfile, followingList]);
 
     const viewedUsername = viewedProfile?.login ?? username ?? currentUser?.login;
     const viewedUserId = resolveUserId(viewedProfile);
@@ -278,27 +326,55 @@ function ProfilePage() {
             (user) => resolveUserId(user) === resolveUserId({ userId })
         );
 
+    const shouldShowInDiscover = (user) => {
+        const userId = resolveUserId(user);
+
+        if (userId == null) {
+            return false;
+        }
+
+        if (!isUserFollowed(userId)) {
+            return true;
+        }
+
+        return discoverVisibleFollowedIds.includes(userId);
+    };
+
     const discoverUsers = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
 
+        const visibleInDiscover = (users) =>
+            users.filter((user) => shouldShowInDiscover(user));
+
         let users = query
-            ? discoverSource.filter((user) =>
-                  user.login.toLowerCase().includes(query)
+            ? visibleInDiscover(
+                  discoverSource.filter((user) =>
+                      user.login.toLowerCase().includes(query)
+                  )
               )
-            : discoverSource.slice(0, 5);
+            : visibleInDiscover(discoverSource).slice(0, 5);
+
+        const remoteUserId = resolveUserId(remoteDiscoverUser);
 
         if (
             remoteDiscoverUser &&
+            remoteUserId != null &&
+            shouldShowInDiscover(remoteDiscoverUser) &&
             !users.some(
-                (user) =>
-                    resolveUserId(user) === resolveUserId(remoteDiscoverUser)
+                (user) => resolveUserId(user) === remoteUserId
             )
         ) {
             users = [...users, remoteDiscoverUser];
         }
 
         return users;
-    }, [discoverSource, searchQuery, remoteDiscoverUser]);
+    }, [
+        discoverSource,
+        searchQuery,
+        remoteDiscoverUser,
+        followingList,
+        discoverVisibleFollowedIds,
+    ]);
 
     const recentRecipes = userRecipes.slice(0, 3);
 
@@ -338,6 +414,10 @@ function ProfilePage() {
 
             if (alreadyFollowing) {
                 await unfollowUser(normalizedTargetId);
+                clearDiscoverHideTimeout(normalizedTargetId);
+                setDiscoverVisibleFollowedIds((previous) =>
+                    previous.filter((id) => id !== normalizedTargetId)
+                );
                 setFollowingList((previous) =>
                     previous.filter(
                         (user) =>
@@ -377,6 +457,7 @@ function ProfilePage() {
                         label: targetLabel ?? null,
                     },
                 ]);
+                scheduleDiscoverUserRemoval(normalizedTargetId);
                 updateDiscoverFollowersCount(normalizedTargetId, 1);
 
                 if (isOwnProfile) {
