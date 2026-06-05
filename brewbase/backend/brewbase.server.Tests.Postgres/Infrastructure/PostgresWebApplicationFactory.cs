@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace brewbase.server.Tests.Postgres.Infrastructure;
 
-internal sealed class PostgresWebApplicationFactory : WebApplicationFactory<Program>
+public sealed class PostgresWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string _connectionString;
 
