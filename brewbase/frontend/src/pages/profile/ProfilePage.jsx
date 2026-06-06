@@ -264,20 +264,10 @@ function ProfilePage() {
 
         discoverHideTimeoutsRef.current.set(userId, timeoutId);
     };
-
     useEffect(() => {
         const query = searchQuery.trim();
 
         if (query.length < 2) {
-            setRemoteDiscoverUser(null);
-            return undefined;
-        }
-
-        const hasLocalMatch = discoverSource.some((user) =>
-            user.login.toLowerCase().includes(query.toLowerCase())
-        );
-
-        if (hasLocalMatch) {
             setRemoteDiscoverUser(null);
             return undefined;
         }
@@ -303,6 +293,7 @@ function ProfilePage() {
                 setRemoteDiscoverUser({
                     userId: profileUserId,
                     login: profile.login,
+                    label: profile.label ?? null,
                     followersCount: profile.followersCount ?? 0,
                 });
             } catch {
@@ -343,38 +334,31 @@ function ProfilePage() {
     const discoverUsers = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
 
-        const visibleInDiscover = (users) =>
-            users.filter((user) => shouldShowInDiscover(user));
-
-        let users = query
-            ? visibleInDiscover(
-                  discoverSource.filter((user) =>
-                      user.login.toLowerCase().includes(query)
-                  )
-              )
-            : visibleInDiscover(discoverSource).slice(0, 5);
-
-        const remoteUserId = resolveUserId(remoteDiscoverUser);
-
-        if (
-            remoteDiscoverUser &&
-            remoteUserId != null &&
-            shouldShowInDiscover(remoteDiscoverUser) &&
-            !users.some(
-                (user) => resolveUserId(user) === remoteUserId
+        const users = query
+            ? discoverSource.filter((user) =>
+                user.login.toLowerCase().includes(query)
             )
-        ) {
-            users = [...users, remoteDiscoverUser];
-        }
+            : discoverSource.slice(0, 5);
 
-        return users;
-    }, [
-        discoverSource,
-        searchQuery,
-        remoteDiscoverUser,
-        followingList,
-        discoverVisibleFollowedIds,
-    ]);
+        const mergedUsers = remoteDiscoverUser
+            ? [remoteDiscoverUser, ...users]
+            : users;
+
+        const uniqueUsers = [];
+
+        mergedUsers.forEach((user) => {
+            const userId = resolveUserId(user);
+
+            if (
+                userId != null &&
+                !uniqueUsers.some((existingUser) => resolveUserId(existingUser) === userId)
+            ) {
+                uniqueUsers.push(user);
+            }
+        });
+
+        return uniqueUsers;
+    }, [discoverSource, searchQuery, remoteDiscoverUser]);
 
     const recentRecipes = userRecipes.slice(0, 3);
 

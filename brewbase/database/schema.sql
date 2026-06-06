@@ -850,19 +850,19 @@ SELECT
     row_number() OVER (
         ORDER BY
             AVG(cr.value)::double precision DESC,
-            COUNT(cr.id) DESC,
+            COUNT(DISTINCT cr.id) DESC,
             COUNT(DISTINCT ucf.user_id) DESC,
             COUNT(DISTINCT r.id) DESC,
             c.name ASC
     )::integer AS position,
     c.id AS coffee_id,
     AVG(cr.value)::double precision AS average_rating,
-    COUNT(cr.id)::integer AS rating_count,
+    COUNT(DISTINCT cr.id)::integer AS rating_count,
     COUNT(DISTINCT r.id)::integer AS recipe_used_count,
     COUNT(DISTINCT ucf.user_id)::integer AS like_count,
     (
         AVG(cr.value)::double precision * 100
-        + COUNT(cr.id)::double precision * 2
+        + COUNT(DISTINCT cr.id)::double precision * 2
         + COUNT(DISTINCT r.id)::double precision
         + COUNT(DISTINCT ucf.user_id)::double precision
     ) AS ranking_score,
@@ -940,18 +940,18 @@ SELECT
     row_number() OVER (
         ORDER BY
             AVG(rr.value)::double precision DESC,
-            COUNT(rr.id) DESC,
-            COUNT(urf.recipe_id) DESC,
+            COUNT(DISTINCT rr.id) DESC,
+            COUNT(DISTINCT urf.user_id) DESC,
             r.title ASC
     )::integer AS position,
     r.id AS recipe_id,
     AVG(rr.value)::double precision AS average_rating,
-    COUNT(rr.id)::integer AS rating_count,
-    COUNT(urf.recipe_id)::integer AS save_count,
+    COUNT(DISTINCT rr.id)::integer AS rating_count,
+    COUNT(DISTINCT urf.user_id)::integer AS save_count,
     (
         AVG(rr.value)::double precision * 100
-        + COUNT(rr.id)::double precision * 2
-        + COUNT(urf.recipe_id)::double precision
+        + COUNT(DISTINCT rr.id)::double precision * 2
+        + COUNT(DISTINCT urf.user_id)::double precision
     ) AS ranking_score,
     CURRENT_TIMESTAMP::timestamp without time zone AS refreshed_at
 FROM recipe r

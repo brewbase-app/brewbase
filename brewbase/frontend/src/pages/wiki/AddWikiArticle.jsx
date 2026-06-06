@@ -83,9 +83,7 @@ function AddWikiArticle() {
     const [countryFlavorProfiles, setCountryFlavorProfiles] = useState([]);
 
     const [selectedCountryId, setSelectedCountryId] = useState(null);
-
-    const [files, setFiles] = useState([]);
-
+    
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [submitError, setSubmitError] = useState("");
@@ -818,117 +816,34 @@ function AddWikiArticle() {
                                 />
 
                             </div>
-
-                            <div className="article-actions">
-
-                                {submitError && (
-                                    <p className="submit-error">
-                                        {submitError}
-                                    </p>
-                                )}
-
-                                <button
-                                    className="submit-article-button"
-                                    type="button"
-                                    onClick={handleSubmit}
-                                    disabled={isSubmitting}
-                                >
-                                    <Send size={16} />
-
-                                    {isSubmitting
-                                        ? "Wysyłanie..."
-                                        : "Wyślij do moderacji"}
-                                </button>
-
-                            </div>
+                            
 
                         </>
 
                     )}
+                    
+                    <div className="article-actions">
 
-                    {/* IMAGES + ACTIONS */}
+                        {submitError && (
+                            <p className="submit-error">
+                                {submitError}
+                            </p>
+                        )}
 
-                    {getCategoryValue(category) &&
-                        getCategoryValue(category) !== "roastery" && (
+                        <button
+                            className="submit-article-button"
+                            type="button"
+                            onClick={handleSubmit}
+                            disabled={isSubmitting}
+                        >
+                            <Send size={16} />
 
-                        <>
+                            {isSubmitting
+                                ? "Wysyłanie..."
+                                : "Wyślij do moderacji"}
+                        </button>
 
-                            <div className="form-group">
-
-                                <label>
-                                    Zdjęcia
-                                </label>
-
-                                <label className="upload-box">
-
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        multiple
-                                        onChange={(e) =>
-                                            setFiles(
-                                                [...e.target.files]
-                                            )
-                                        }
-                                    />
-
-                                    <span>
-                                        Przeciągnij zdjęcia lub kliknij,
-                                        aby dodać fotografie
-                                    </span>
-
-                                </label>
-
-                                {files.length > 0 && (
-
-                                    <div className="uploaded-files">
-
-                                        {files.map((file, index) => (
-
-                                            <div
-                                                key={index}
-                                                className="uploaded-file"
-                                            >
-                                                {file.name}
-                                            </div>
-
-                                        ))}
-
-                                    </div>
-
-                                )}
-
-                            </div>
-
-                            <div className="article-actions">
-
-                                {submitError && (
-                                    <p className="submit-error">
-                                        {submitError}
-                                    </p>
-                                )}
-
-                                <button
-                                    className="submit-article-button"
-                                    type="button"
-                                    onClick={handleSubmit}
-                                    disabled={isSubmitting}
-                                >
-
-                                    <Send size={16} />
-
-                                    {isSubmitting
-                                        ? "Wysyłanie..."
-                                        : "Wyślij do moderacji"}
-
-                                </button>
-
-                            </div>
-
-                        </>
-
-                    )}
-
+                    </div>
                 </div>
 
             </div>
