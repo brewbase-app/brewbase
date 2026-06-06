@@ -351,14 +351,22 @@ function ProfilePage() {
 
             if (
                 userId != null &&
-                !uniqueUsers.some((existingUser) => resolveUserId(existingUser) === userId)
+                !uniqueUsers.some(
+                    (existingUser) => resolveUserId(existingUser) === userId
+                )
             ) {
                 uniqueUsers.push(user);
             }
         });
 
-        return uniqueUsers;
-    }, [discoverSource, searchQuery, remoteDiscoverUser]);
+        return uniqueUsers.filter(shouldShowInDiscover);
+    }, [
+        discoverSource,
+        searchQuery,
+        remoteDiscoverUser,
+        followingList,
+        discoverVisibleFollowedIds,
+    ]);
 
     const recentRecipes = userRecipes.slice(0, 3);
 
