@@ -473,12 +473,6 @@ function EditProfilePage() {
                             <h2>Preferencje z rejestracji</h2>
                         </div>
 
-                        <p className="preferences-helper preferences-helper--intro">
-                            Te ustawienia pochodzą z onboardingu po
-                            rejestracji. Na razie zapisujemy je lokalnie —
-                            backend API zostanie podłączony później.
-                        </p>
-
                         {preferencesLoaded &&
                             !hasAnyPreferences(preferences) && (
                                 <p className="preferences-empty">
