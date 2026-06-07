@@ -1,5 +1,3 @@
-//using brewbase.server.Authentication;
-//using Microsoft.AspNetCore.Authentication;
 using brewbase.server.Models;
 using brewbase.server.Services;
 using brewbase.server.Services.Validation;
@@ -20,20 +18,8 @@ var swaggerEnabled = builder.Configuration.GetValue(
     "Swagger:Enabled",
     builder.Environment.IsDevelopment());
 
-// Add services to the container.
-/*
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = "ApiPassthrough";
-        options.DefaultForbidScheme = "ApiPassthrough";
-        options.DefaultChallengeScheme = "ApiPassthrough";
-    })
-    .AddScheme<AuthenticationSchemeOptions, ApiPassthroughAuthHandler>("ApiPassthrough", _ => { });
-    */
-
 builder.Services.AddControllers();
 
-//JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -106,7 +92,6 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
-//builder.Services.AddSwaggerGen();
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
@@ -173,7 +158,6 @@ builder.Services.AddOptions<RankingRefreshOptions>()
             options.Enabled = true;
         }
     });
-//builder.Services.AddHostedService<RankingRefreshBackgroundService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 
@@ -197,7 +181,6 @@ builder.Services.AddScoped<IAcidityReadService, AcidityReadService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (swaggerEnabled)
 {
     app.UseSwagger();
