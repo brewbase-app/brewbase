@@ -62,78 +62,7 @@ public class PreferenceService : IPreferenceService
         };
     }
 
-    /*public async Task SavePreferencesAsync(
-        SaveUserPreferencesRequestDto dto)
-    {
-        var userId = _currentUserProvider.GetUserId();
-
-        if (userId == null)
-            throw new Exception("User not found");
-
-        var preference = await _context.UserPreferences
-            .Include(p => p.UserPreferenceFlavorProfiles)
-            .Include(p => p.UserPreferenceBrewingMethods)
-            .Include(p => p.UserPreferenceRegions)
-            .FirstOrDefaultAsync(p => p.UserId == userId);
-
-        if (preference == null)
-        {
-            preference = new UserPreference
-            {
-                UserId = userId.Value,
-                QuizCompleted = true
-            };
-
-            _context.UserPreferences.Add(preference);
-            await _context.SaveChangesAsync();
-        }
-
-        preference.ExperienceLevel = dto.ExperienceLevel;
-        preference.PreferredRoastLevel = dto.PreferredRoastLevel;
-        preference.PreferredAcidity = dto.PreferredAcidity;
-        preference.PreferredBody = dto.PreferredBody;
-        preference.RecommendationStyle = dto.RecommendationStyle;
-        preference.QuizCompleted = true;
-
-        _context.UserPreferenceFlavorProfiles.RemoveRange(
-            preference.UserPreferenceFlavorProfiles);
-
-        _context.UserPreferenceBrewingMethods.RemoveRange(
-            preference.UserPreferenceBrewingMethods);
-
-        _context.UserPreferenceRegions.RemoveRange(
-            preference.UserPreferenceRegions);
-
-        foreach (var flavorId in dto.FlavorProfileIds)
-        {
-            preference.UserPreferenceFlavorProfiles.Add(
-                new UserPreferenceFlavorProfile
-                {
-                    FlavorProfileId = flavorId
-                });
-        }
-
-        foreach (var brewingMethodId in dto.BrewingMethodIds)
-        {
-            preference.UserPreferenceBrewingMethods.Add(
-                new UserPreferenceBrewingMethod
-                {
-                    BrewingMethodId = brewingMethodId
-                });
-        }
-
-        foreach (var regionId in dto.RegionIds)
-        {
-            preference.UserPreferenceRegions.Add(
-                new UserPreferenceRegion
-                {
-                    RegionId = regionId
-                });
-        }
-
-        await _context.SaveChangesAsync();
-    }*/
-        public async Task SavePreferencesAsync(SaveUserPreferencesRequestDto dto)
+    public async Task SavePreferencesAsync(SaveUserPreferencesRequestDto dto)
     {
         var userId = _currentUserProvider.GetUserId();
 
@@ -153,21 +82,18 @@ public class PreferenceService : IPreferenceService
             _context.UserPreferences.Add(preference);
         }
 
-        // Pola wymagane
         preference.PreferredRoastLevel = dto.PreferredRoastLevel;
         preference.FavoriteNotes = "";
         preference.QuizCompleted = true;
 
-        // Pola opcjonalne
         preference.ExperienceLevel = dto.ExperienceLevel;
         preference.PreferredAcidity = dto.PreferredAcidity;
         preference.PreferredBody = dto.PreferredBody;
         preference.RecommendationStyle = dto.RecommendationStyle;
 
-        // Najpierw zapis UserPreference aby mieć wygenerowane ID
+        // Save UserPreference first so the generated ID is available for relation rows.
         await _context.SaveChangesAsync();
 
-        // Usunięcie starych powiązań
         _context.UserPreferenceFlavorProfiles.RemoveRange(
             _context.UserPreferenceFlavorProfiles
                 .Where(x => x.UserPreferenceId == preference.Id));
@@ -192,7 +118,6 @@ public class PreferenceService : IPreferenceService
                 });
         }
 
-        // Dodanie metod parzenia
         foreach (var brewingMethodId in dto.BrewingMethodIds ?? [])
         {
             _context.UserPreferenceBrewingMethods.Add(
@@ -203,7 +128,6 @@ public class PreferenceService : IPreferenceService
                 });
         }
 
-        // Dodanie regionów
         foreach (var regionId in dto.RegionIds ?? [])
         {
             _context.UserPreferenceRegions.Add(

@@ -60,8 +60,6 @@ public class AuthController : ControllerBase
         }
     }
 
-    
-    //Testowa metoda do sprawdzania czy token który został wygenerowany zwraca odpowiednie dane
     [Authorize]
     [HttpGet("me")]
     public IActionResult Me()

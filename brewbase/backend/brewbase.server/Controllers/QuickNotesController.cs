@@ -22,7 +22,6 @@ public class QuickNotesController : ControllerBase
         _currentUserProvider = currentUserProvider;
     }
 
-    /// <summary>Creates a quick note for the current user.</summary>
     [HttpPost]
     [ProducesResponseType(typeof(QuickNoteResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -51,7 +50,7 @@ public class QuickNotesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    /// <summary>Returns the current user quick notes, newest first. Optional search filters by content (case-insensitive substring).</summary>
+    /// <summary>Returns the current user's quick notes, newest first. Optional search filters by content (case-insensitive substring).</summary>
     [HttpGet]
     [ProducesResponseType(typeof(List<QuickNoteResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -89,7 +88,6 @@ public class QuickNotesController : ControllerBase
         return Ok(note);
     }
 
-    /// <summary>Updates a quick note owned by the current user.</summary>
     [HttpPut("{id:int}")]
     [ProducesResponseType(typeof(QuickNoteResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -124,7 +122,6 @@ public class QuickNotesController : ControllerBase
         return Ok(updated);
     }
 
-    /// <summary>Deletes a quick note owned by the current user.</summary>
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

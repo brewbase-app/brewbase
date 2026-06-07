@@ -7,7 +7,7 @@ using Xunit;
 namespace brewbase.server.Tests.Postgres.Search;
 
 /// <summary>
-/// Scenariusze wyszukiwania przez EF.Functions.ILike — na SQLite nie tłumaczone poprawnie.
+/// EF.Functions.ILike search scenarios — not translated correctly on SQLite.
 /// </summary>
 public sealed class EfIlikeSearchPostgresTests : PostgresIntegrationTestBase
 {

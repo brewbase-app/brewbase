@@ -1,8 +1,8 @@
 namespace brewbase.server.Tests.Postgres.Infrastructure;
 
 /// <summary>
-/// Brakujące elementy schematu względem schema.sql (obecne w current_schema.sql / produkcji).
-/// Idempotentne — bezpieczne przy każdym uruchomieniu fixture.
+/// Schema elements missing from schema.sql but present in current_schema.sql / production.
+/// Idempotent — safe to run on every fixture startup.
 /// </summary>
 internal static class PostgresTestSchemaSupplement
 {
