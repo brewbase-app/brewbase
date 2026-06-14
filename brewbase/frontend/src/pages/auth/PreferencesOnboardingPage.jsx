@@ -14,8 +14,10 @@ import { getBrewingMethods } from "../../api/brewingMethodApi"; //OC
 import { getBody } from "../../api/bodyApi.js"; //OC
 import { getAcidity } from "../../api/acidityApi.js"; //OC
 import { getRegions } from "../../api/regionApi.js"; //OC
+import { sortByName } from "../../utils/sortOptions";
 
 import "../../styles/auth/PreferencesOnboardingPage.css";
+
 
 const steps = [
     "Poziom",
@@ -55,10 +57,10 @@ export default function PreferencesOnboardingPage() {
                 setFlavorProfilesError("");
 
                 const data = await getOnboardingFlavorProfiles(10);
-                setFlavorProfiles(Array.isArray(data) ? data : []);
+                setFlavorProfiles(sortByName(Array.isArray(data) ? data : []));
 
                 const methods = await getBrewingMethods(); //OC
-                setBrewingMethods(Array.isArray(methods) ? methods : []); //OC
+                setBrewingMethods(sortByName(Array.isArray(methods) ? methods : []));
 
                 const bodyData = await getBody(); //OC
                 setBody(Array.isArray(bodyData) ? bodyData : []); //OC
@@ -67,7 +69,7 @@ export default function PreferencesOnboardingPage() {
                 setAcidity(Array.isArray(acidityData) ? acidityData : []); //OC
                 
                 const regionData = await getRegions(); //OC
-                setRegion(Array.isArray(regionData) ? regionData : []); //OC
+                setRegion(sortByName(Array.isArray(regionData) ? regionData : []));
             } catch {
                 setFlavorProfilesError(
                     "Nie udało się pobrać profili smakowych."

@@ -17,6 +17,8 @@ public class BrewingMethodReadService : IBrewingMethodReadService
     public async Task<List<BrewingMethodResponseDto>> GetAllAsync()
     {
         return await _context.BrewingMethods
+            .AsNoTracking()
+            .OrderBy(b => b.Name)
             .Select(b => new BrewingMethodResponseDto
             {
                 Id = b.Id,
