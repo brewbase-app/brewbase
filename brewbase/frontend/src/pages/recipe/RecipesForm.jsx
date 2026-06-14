@@ -30,6 +30,7 @@ import { getRecipeModerationComment } from "../../utils/recipeModeration";
 
 import "../../styles/recipe/recipeLayout.css";
 import "../../styles/recipe/RecipesForm.css";
+import { sortByName } from "../../utils/sortOptions";
 
 const RecipesForm = () => {
 
@@ -171,8 +172,8 @@ const RecipesForm = () => {
                 getBrewingMethods()
             ]);
 
-            setCoffees(Array.isArray(coffeeList) ? coffeeList : []);
-            setBrewingMethods(Array.isArray(methodList) ? methodList : []);
+            setCoffees(sortByName(Array.isArray(coffeeList) ? coffeeList : []));
+            setBrewingMethods(sortByName(Array.isArray(methodList) ? methodList : []));
         } catch (error) {
             console.error(error);
             setCatalogError("Nie udało się pobrać katalogu kaw i metod parzenia.");

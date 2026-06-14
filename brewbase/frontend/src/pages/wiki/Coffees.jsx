@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import "../../styles/wiki/Coffees.css";
 
 import { useNavigate } from "react-router-dom";
+import { sortByName, sortStrings } from "../../utils/sortOptions";
 
 import {
     Search,
@@ -84,17 +85,21 @@ function Coffees() {
                     getCountries(),
                 ]);
 
-                setCoffees(Array.isArray(coffeeData) ? coffeeData : []);
+                setCoffees(sortByName(Array.isArray(coffeeData) ? coffeeData : []));
                 setArticles(Array.isArray(articleData) ? articleData : []);
                 setFlavorProfileNames(
-                    (Array.isArray(flavorProfilesData)
-                        ? flavorProfilesData
-                        : []
-                    ).map((profile) => profile.name)
+                    sortStrings(
+                        (Array.isArray(flavorProfilesData)
+                                ? flavorProfilesData
+                                : []
+                        ).map((profile) => profile.name)
+                    )
                 );
                 setCountryNames(
-                    (Array.isArray(countriesData) ? countriesData : []).map(
-                        (country) => country.name
+                    sortStrings(
+                        (Array.isArray(countriesData) ? countriesData : []).map(
+                            (country) => country.name
+                        )
                     )
                 );
             } catch {
@@ -148,8 +153,8 @@ function Coffees() {
             return normalizedName === "" || !catalogNames.has(normalizedName);
         });
 
-    const allItems = [...catalogItems, ...articleItems];
-
+    const allItems = sortByName([...catalogItems, ...articleItems]);
+    
     const originCountries = buildFilterOptions(
         countryNames,
         catalogItems.map((item) => item.beanOriginCountry),

@@ -11,6 +11,7 @@ import {
 } from "../../api/cuppingSessionsApi";
 import { getCoffees } from "../../api/coffeeApi";
 import "../../styles/cupping/CuppingDetails.css";
+import { sortByName } from "../../utils/sortOptions";
 
 const createEmptyCupping = () => ({
     rowId: `new-${Date.now()}-${Math.random()}`,
@@ -87,8 +88,8 @@ const CuppingDetails = () => {
                     date: formatDateInput(sessionData.sessionDate ?? sessionData.createdAt),
                     description: sessionData.description ?? "",
                 });
-                setAvailableCoffees(normalizeCoffeeList(coffeesData));
-
+                setAvailableCoffees(sortByName(normalizeCoffeeList(coffeesData)));
+                
                 setCuppings(
                     sessionData.coffees.length > 0
                         ? sessionData.coffees.map((coffee) => ({

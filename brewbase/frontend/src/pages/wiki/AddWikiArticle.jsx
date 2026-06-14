@@ -19,6 +19,7 @@ import MultiSelectInput from "../../components/MultiSelectInput";
 import { COFFEE_VARIETIES } from "../../utils/coffeeVarieties";
 import { COFFEE_PROCESSING_METHODS } from "../../utils/coffeeProcessingMethods";
 import { ROASTING_STYLE_OPTIONS } from "../../utils/roastingStyleOptions";
+import { sortByName } from "../../utils/sortOptions";
 
 const CATEGORY_OPTIONS = [
     { value: "coffee", label: "Kawy" },
@@ -138,7 +139,7 @@ function AddWikiArticle() {
 
                 const matches = await lookupCoffeesByName(trimmedTitle);
 
-                setCoffeeSuggestions(Array.isArray(matches) ? matches : []);
+                setCoffeeSuggestions(sortByName(Array.isArray(matches) ? matches : []));
             } catch {
                 setCoffeeSuggestions([]);
             } finally {
@@ -161,7 +162,7 @@ function AddWikiArticle() {
 
                 const methods = await getBrewingMethods();
                 setCatalogBrewingMethods(
-                    Array.isArray(methods) ? methods : []
+                    sortByName(Array.isArray(methods) ? methods : [])
                 );
             } catch {
                 setCatalogBrewingMethods([]);
