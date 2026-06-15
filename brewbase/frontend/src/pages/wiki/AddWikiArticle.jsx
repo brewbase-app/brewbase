@@ -477,58 +477,66 @@ function AddWikiArticle() {
                                 />
 
                                 {linkedCoffeeId && (
-                                    <p className="linked-coffee-notice">
-                                        Powiązana kawa w katalogu:{" "}
-                                        <strong>{linkedCoffeeName}</strong>
+                                    <div className="linked-coffee-notice">
+                                        <div className="linked-coffee-info">
+                                        <span className="linked-coffee-label">
+                                            Powiązana kawa w katalogu
+                                        </span>
+
+                                            <strong>{linkedCoffeeName}</strong>
+                                        </div>
+
                                         <button
                                             type="button"
-                                            className="link-button"
+                                            className="unlink-button"
                                             onClick={handleClearLinkedCoffee}
                                         >
                                             Usuń powiązanie
                                         </button>
-                                    </p>
+                                    </div>
                                 )}
 
                                 {!linkedCoffeeId &&
-                                    title.trim().length >= 2 && (
+                                    title.trim().length >= 2 &&
+                                    (suggestionsLoading || coffeeSuggestions.length > 0) && (
                                         <div className="coffee-suggestions">
                                             {suggestionsLoading ? (
                                                 <p>Szukam podobnych kaw...</p>
                                             ) : coffeeSuggestions.length > 0 ? (
                                                 <>
+                                                   
                                                     <p>
                                                         Podobne kawy w katalogu:
                                                     </p>
-                                                    <ul>
-                                                        {coffeeSuggestions.map(
-                                                            (coffee) => (
-                                                                <li
-                                                                    key={
-                                                                        coffee.id
+                                                    
+                                                    <div className="coffee-suggestion-list">
+                                                        {coffeeSuggestions.map((coffee) => (
+                                                            <div
+                                                                key={coffee.id}
+                                                                className="coffee-suggestion-card"
+                                                            >
+                                                                <div className="coffee-suggestion-content">
+                                                                    <strong>{coffee.name}</strong>
+
+                                                                    <span>
+                                                                        Znaleziono w katalogu BrewBase
+                                                                    </span>
+                                                                </div>
+
+                                                                <button
+                                                                    type="button"
+                                                                    className="link-button"
+                                                                    onClick={() =>
+                                                                        handleSelectLinkedCoffee(coffee)
                                                                     }
                                                                 >
-                                                                    {
-                                                                        coffee.name
-                                                                    }
-                                                                    <button
-                                                                        type="button"
-                                                                        className="link-button"
-                                                                        onClick={() =>
-                                                                            handleSelectLinkedCoffee(
-                                                                                coffee
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        Powiąż
-                                                                    </button>
-                                                                </li>
-                                                            )
-                                                        )}
-                                                    </ul>
+                                                                    Powiąż
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                     <p>
-                                                        Możesz też pominąć
-                                                        sugestie i wysłać artykuł
+                                                        Możesz też pominąć sugestie i wysłać artykuł
                                                         bez powiązania.
                                                     </p>
                                                 </>
