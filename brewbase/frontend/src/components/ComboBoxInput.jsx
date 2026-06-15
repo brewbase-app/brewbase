@@ -1,17 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 function ComboBoxInput({
-    value,
-    onChange,
-    options,
-    placeholder,
-    id,
-    disabled = false,
-}) {
+                           value,
+                           onChange,
+                           options,
+                           placeholder,
+                           id,
+                           disabled = false,
+                           allowCustom = true,
+                       }) {
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef(null);
 
     const filteredOptions = useMemo(() => {
+        if (!allowCustom) {
+            return options;
+        }
+
         const query = value.trim().toLowerCase();
 
         if (!query) {
@@ -21,7 +26,7 @@ function ComboBoxInput({
         return options.filter((option) =>
             option.toLowerCase().includes(query)
         );
-    }, [value, options]);
+    }, [value, options, allowCustom]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -54,11 +59,21 @@ function ComboBoxInput({
                 placeholder={placeholder}
                 autoComplete="off"
                 disabled={disabled}
+                readOnly={!allowCustom}
                 onChange={(event) => {
+                    if (!allowCustom) {
+                        return;
+                    }
+
                     onChange(event.target.value);
                     setIsOpen(true);
                 }}
                 onFocus={() => {
+                    if (!disabled) {
+                        setIsOpen(true);
+                    }
+                }}
+                onClick={() => {
                     if (!disabled) {
                         setIsOpen(true);
                     }

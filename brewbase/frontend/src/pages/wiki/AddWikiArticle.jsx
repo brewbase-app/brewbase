@@ -443,6 +443,7 @@ function AddWikiArticle() {
                             onChange={setCategory}
                             options={CATEGORY_LABELS}
                             placeholder="Wybierz kategorię"
+                            allowCustom={false}
                         />
 
                     </div>
