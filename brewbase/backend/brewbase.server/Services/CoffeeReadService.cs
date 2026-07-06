@@ -27,7 +27,9 @@ public class CoffeeReadService : ICoffeeReadService
         int? pageSize,
         int? currentUserId = null)
     {
-        var query = _context.Coffees.AsQueryable();
+        var query = _context.Coffees
+            .WhereVisibleInCatalog(_context)
+            .AsQueryable();
 
         if (regionId.HasValue)
         {
@@ -94,6 +96,7 @@ public class CoffeeReadService : ICoffeeReadService
     public async Task<CoffeeDetailResponseDto?> GetByIdAsync(int id, int? currentUserId = null)
     {
         var coffee = await _context.Coffees
+            .WhereVisibleInCatalog(_context)
             .Where(c => c.Id == id)
             .Select(c => new CoffeeDetailResponseDto
             {
@@ -153,6 +156,7 @@ public class CoffeeReadService : ICoffeeReadService
 
         return await _context.Coffees
             .AsNoTracking()
+            .WhereVisibleInCatalog(_context)
             .Where(coffee =>
                 coffee.Name != null
                 && coffee.Name.ToLower().Contains(lowerName))

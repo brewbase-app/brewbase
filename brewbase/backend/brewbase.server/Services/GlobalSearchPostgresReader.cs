@@ -42,10 +42,28 @@ internal sealed class GlobalSearchPostgresReader
                 FROM coffee c
                 INNER JOIN roastery r ON r.id = c.roastery_id
                 INNER JOIN region reg ON reg.id = c.region_id
-                WHERE brewbase_search_text(c.name) % brewbase_search_text({normalizedQuery})
+                WHERE (
+                    NOT EXISTS (
+                        SELECT 1
+                        FROM article hidden_article
+                        WHERE hidden_article.coffee_id = c.id
+                          AND hidden_article.module = 'coffee'
+                          AND hidden_article.status = 'Removed'
+                    )
+                    OR EXISTS (
+                        SELECT 1
+                        FROM article visible_article
+                        WHERE visible_article.coffee_id = c.id
+                          AND visible_article.module = 'coffee'
+                          AND visible_article.status = 'Approved'
+                    )
+                )
+                  AND (
+                    brewbase_search_text(c.name) % brewbase_search_text({normalizedQuery})
                    OR similarity(brewbase_search_text(c.name), brewbase_search_text({normalizedQuery})) > {SimilarityThreshold}
                    OR brewbase_search_text(c.name) ILIKE {ilikePattern}
                    OR brewbase_search_text(COALESCE(r.name, '') || ' ' || COALESCE(reg.name, '')) ILIKE {ilikePattern}
+                  )
                 ORDER BY "RankScore" DESC, c.name
                 LIMIT {take}
                 """)

@@ -109,6 +109,7 @@ public class ReportService : IReportService
                 .Select(r => r.Title)
                 .FirstOrDefaultAsync(),
             "coffee" => await _context.Coffees
+                .WhereVisibleInCatalog(_context)
                 .Where(c => c.Id == contentId)
                 .Select(c => c.Name)
                 .FirstOrDefaultAsync(),
@@ -129,7 +130,9 @@ public class ReportService : IReportService
                     : null;
 
             case "coffee":
-                if (!await _context.Coffees.AnyAsync(c => c.Id == contentId))
+                if (!await _context.Coffees
+                        .WhereVisibleInCatalog(_context)
+                        .AnyAsync(c => c.Id == contentId))
                     return null;
 
                 var linkedArticleId = await _context.Articles

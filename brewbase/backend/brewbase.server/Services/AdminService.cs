@@ -457,21 +457,21 @@ public class AdminService : IAdminService
         int coffeeId,
         string? moderationComment)
     {
-        var coffeeExists = await _context.Coffees
-            .AnyAsync(coffee => coffee.Id == coffeeId);
+        var coffee = await _context.Coffees
+            .FirstOrDefaultAsync(c => c.Id == coffeeId);
 
-        if (!coffeeExists)
+        if (coffee == null)
             return false;
 
         var linkedArticles = await _context.Articles
             .Where(article =>
-                article.CoffeeId == coffeeId &&
-                article.Status == "Approved")
+                article.CoffeeId == coffeeId
+                && article.Status == CatalogCoffeeVisibility.ApprovedStatus)
             .ToListAsync();
 
         foreach (var article in linkedArticles)
         {
-            article.Status = "Removed";
+            article.Status = CatalogCoffeeVisibility.RemovedStatus;
             article.PublishedAt = null;
             article.ModeratedAt = DateTime.Now;
             article.ModeratedByUserId = _currentUserProvider.GetUserId();
@@ -482,6 +482,39 @@ public class AdminService : IAdminService
                 Content = string.IsNullOrWhiteSpace(moderationComment)
                     ? "Artykuł wiki powiązany z kawą został usunięty w wyniku moderacji zgłoszenia."
                     : $"Artykuł wiki powiązany z kawą został usunięty w wyniku moderacji zgłoszenia. Komentarz moderacji: {moderationComment}",
+                CreatedAt = DateTime.Now
+            });
+        }
+
+        var hasLinkedCoffeeArticles = await _context.Articles
+            .AnyAsync(article =>
+                article.CoffeeId == coffeeId
+                && article.Module == CatalogCoffeeVisibility.CoffeeModule);
+
+        if (!hasLinkedCoffeeArticles)
+        {
+            var now = DateTime.Now;
+
+            _context.Articles.Add(new Article
+            {
+                Title = coffee.Name,
+                Content = "Treść usunięta w wyniku moderacji zgłoszenia.",
+                Module = CatalogCoffeeVisibility.CoffeeModule,
+                Status = CatalogCoffeeVisibility.RemovedStatus,
+                CoffeeId = coffeeId,
+                UserId = coffee.CreatedByUserId,
+                CreatedAt = now,
+                UpdatedAt = now,
+                ModeratedAt = now,
+                ModeratedByUserId = _currentUserProvider.GetUserId()
+            });
+
+            _context.Notifications.Add(new Notification
+            {
+                UserId = coffee.CreatedByUserId,
+                Content = string.IsNullOrWhiteSpace(moderationComment)
+                    ? "Kawa została usunięta z katalogu w wyniku moderacji zgłoszenia."
+                    : $"Kawa została usunięta z katalogu w wyniku moderacji zgłoszenia. Komentarz moderacji: {moderationComment}",
                 CreatedAt = DateTime.Now
             });
         }
