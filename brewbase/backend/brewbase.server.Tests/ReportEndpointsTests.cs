@@ -310,6 +310,48 @@ public class ReportEndpointsTests : IDisposable
     }
 
     [Fact]
+    public async Task Admin_UpholdCoffeeReport_HidesCoffeeFromCatalog()
+    {
+        const string moderationComment = "Kawa narusza zasady społeczności.";
+        const int coffeeId = 1;
+
+        await SeedApprovedCoffeeWikiAsync(coffeeId, "Reported catalog coffee");
+
+        var createReport = await _userClient.PostAsJsonAsync(
+            "/api/reports",
+            ValidReportBody(contentType: "coffee", contentId: coffeeId));
+        Assert.Equal(HttpStatusCode.OK, createReport.StatusCode);
+
+        var reportId = await GetOpenReportIdForContentAsync("coffee", coffeeId);
+
+        var uphold = await _adminClient.PatchAsJsonAsync(
+            $"/api/admin/reports/{reportId}/uphold",
+            new ModerateArticleRequestDto
+            {
+                Comment = moderationComment
+            });
+        Assert.Equal(HttpStatusCode.NoContent, uphold.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+
+            var linkedArticles = await context.Articles
+                .Where(article => article.CoffeeId == coffeeId)
+                .ToListAsync();
+            Assert.All(linkedArticles, article => Assert.Equal("Removed", article.Status));
+        }
+
+        var listResponse = await _anonymousClient.GetAsync("/api/Coffee");
+        listResponse.EnsureSuccessStatusCode();
+        var coffees = await listResponse.Content.ReadFromJsonAsync<List<JsonElement>>();
+        Assert.DoesNotContain(coffees!, coffee => coffee.GetProperty("id").GetInt32() == coffeeId);
+
+        var detailResponse = await _anonymousClient.GetAsync($"/api/Coffee/{coffeeId}");
+        Assert.Equal(HttpStatusCode.NotFound, detailResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task Admin_DismissArticleReport_KeepsArticle()
     {
         var articleId = await SeedApprovedArticleAsync("Dismiss keeps article");
@@ -370,6 +412,29 @@ public class ReportEndpointsTests : IDisposable
             Category = "Spam lub reklama",
             Comment = "Test report comment"
         };
+
+    private async Task SeedApprovedCoffeeWikiAsync(int coffeeId, string title)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BrewDbContext>();
+        var now = DateTime.UtcNow;
+
+        var article = new Article
+        {
+            Title = title,
+            Content = $"{title} body",
+            Module = "coffee",
+            Status = "Approved",
+            UserId = 1,
+            CoffeeId = coffeeId,
+            CreatedAt = now,
+            UpdatedAt = now,
+            PublishedAt = now
+        };
+
+        context.Articles.Add(article);
+        await context.SaveChangesAsync();
+    }
 
     private async Task<int> SeedApprovedArticleAsync(string title)
     {

@@ -271,6 +271,7 @@ public sealed class GlobalSearchService : IGlobalSearchService
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var candidates = await context.Coffees
             .AsNoTracking()
+            .WhereVisibleInCatalog(context)
             .Select(coffee => new
             {
                 coffee.Id,

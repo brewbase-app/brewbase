@@ -26,7 +26,9 @@ public class CoffeeFavoriteService : ICoffeeFavoriteService
             return FavoriteServiceStatus.Unauthorized;
         }
 
-        var coffeeExists = await _context.Coffees.AnyAsync(c => c.Id == coffeeId);
+        var coffeeExists = await _context.Coffees
+            .WhereVisibleInCatalog(_context)
+            .AnyAsync(c => c.Id == coffeeId);
         if (!coffeeExists)
         {
             return FavoriteServiceStatus.NotFound;
@@ -81,6 +83,9 @@ public class CoffeeFavoriteService : ICoffeeFavoriteService
         return await _context.UserCoffeeFavorites
             .AsNoTracking()
             .Where(f => f.UserId == userId.Value)
+            .Where(f => _context.Coffees
+                .WhereVisibleInCatalog(_context)
+                .Any(coffee => coffee.Id == f.CoffeeId))
             .OrderByDescending(f => f.CreatedAt)
             .Select(f => new CoffeeListResponseDto
             {
