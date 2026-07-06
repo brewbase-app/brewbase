@@ -206,6 +206,18 @@ const RecipesList = ({ title }) => {
                                 <div className="recipe-card__meta">
                                     <Clock3 size={14} />
                                     <span>{formatDate(r.createdAt)}</span>
+                                    {r.coffee && (
+                                        <>
+                                            <span aria-hidden="true">·</span>
+                                            <span>{r.coffee}</span>
+                                        </>
+                                    )}
+                                    {r.brewingMethod && (
+                                        <>
+                                            <span aria-hidden="true">·</span>
+                                            <span>{r.brewingMethod}</span>
+                                        </>
+                                    )}
                                 </div>
 
                                 {title === "Twoje receptury" &&

@@ -71,6 +71,19 @@ describe("RecipeDetails", () => {
         expect(screen.getByText("Ładowanie receptury...")).toBeInTheDocument();
     });
 
+    it("shows linked catalog coffee when recipe has coffeeId", async () => {
+        vi.mocked(getRecipeById).mockResolvedValue(sampleRecipe);
+        vi.mocked(getProfile).mockResolvedValue(sampleProfile);
+
+        renderRecipeDetails();
+
+        const coffeeLink = await screen.findByRole("link", {
+            name: /Etiopia Yirgacheffe/i,
+        });
+        expect(coffeeLink).toHaveAttribute("href", "/wiki/coffees/10");
+        expect(screen.getByText("V60")).toBeInTheDocument();
+    });
+
     it("shows message when user cannot rate own recipe", async () => {
         vi.mocked(getRecipeById).mockResolvedValue({
             ...sampleRecipe,

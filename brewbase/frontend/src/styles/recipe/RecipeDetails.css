@@ -25,6 +25,15 @@
     font-weight: 600;
 }
 
+.recipe-details__badge--link {
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+}
+
+.recipe-details__badge--link:hover {
+    background-color: #dedede;
+}
+
 .recipe-details__meta-row {
     display: flex;
     align-items: center;
