@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 
 import {
     useNavigate,
-    useParams
+    useParams,
+    Link
 } from "react-router-dom";
 
 import {
@@ -261,6 +262,9 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
 
     const hasUserRated = userRating > 0;
 
+    const recipeCoffeeId = recipe.coffeeId ?? recipe.CoffeeId;
+    const recipeCoffeeName = recipe.coffee ?? recipe.Coffee;
+
     return (
         <div className="recipe-page recipe-page--centered">
             <div className="recipe-page__container recipe-page__container--lg">
@@ -272,10 +276,27 @@ Title,Brewing Method,Status,Coffee,Water,Temperature,Brew Time,Grind Size,Steps
                     <div className="recipe-details__header-row">
                         <div>
                             <div className="recipe-details__badges">
-                                <div className="recipe-details__badge">
-                                    <Coffee size={14} />
-                                    {recipe.brewingMethod}
-                                </div>
+                                {recipeCoffeeName && recipeCoffeeId ? (
+                                    <Link
+                                        to={`/wiki/coffees/${recipeCoffeeId}`}
+                                        className="recipe-details__badge recipe-details__badge--link"
+                                    >
+                                        <Coffee size={14} />
+                                        {recipeCoffeeName}
+                                    </Link>
+                                ) : recipeCoffeeName ? (
+                                    <div className="recipe-details__badge">
+                                        <Coffee size={14} />
+                                        {recipeCoffeeName}
+                                    </div>
+                                ) : null}
+
+                                {recipe.brewingMethod && (
+                                    <div className="recipe-details__badge">
+                                        <Droplets size={14} />
+                                        {recipe.brewingMethod}
+                                    </div>
+                                )}
 
                                 <div className="recipe-details__badge">
                                     {recipe.isPublic ? (

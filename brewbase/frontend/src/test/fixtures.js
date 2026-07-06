@@ -12,6 +12,8 @@ export const sampleRecipe = {
     }),
     steps: "Zalej kawę wodą.",
     brewingMethod: "V60",
+    coffee: "Etiopia Yirgacheffe",
+    coffeeId: 10,
     averageRating: null,
     ratingCount: 0,
     isFavorite: false,
